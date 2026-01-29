@@ -2,7 +2,7 @@
   "name": "global-project-manager",
   "description": "Centralized task and project management with local storage and optional S3/Minio synchronization",
   "license": "MIT",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "author": {
     "name": "Arnaud (Arhuman) ASSAD",
     "email": "arhuman@gmail.com"

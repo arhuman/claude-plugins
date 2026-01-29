@@ -18,6 +18,15 @@ In claude code
 /plugin install global-project-manager
 ```
 
+## Permissions
+
+The plugin automatically requests minimal permissions when first used:
+- **Read/Write** access to `.claude/global-project/` (for task storage)
+- **Read** access to project directory (for context)
+- **Bash** commands for `jj` and `git` (if using version control)
+
+These permissions are pre-declared in the plugin via `allowed-tools` frontmatter, reducing permission prompts during normal operation. You'll be asked to approve these on first use in each project.
+
 ## Task Statuses
 
 | Status | Description |
