@@ -52,6 +52,18 @@ These permissions are pre-declared in the plugin via `allowed-tools` frontmatter
 └── ...
 ```
 
+## Environment Variables
+
+The plugin loads `~/.claude/.env` automatically if present. Use this file to configure S3/Minio sync credentials:
+
+```bash
+MINIO_ENDPOINT=your-minio-endpoint
+MINIO_ACCESS_KEY=your-access-key
+MINIO_SECRET_KEY=your-secret-key
+```
+
+When these variables are set, tasks are synced to `s3://global_projects/{project-shortname}/`.
+
 ## Licence
 
 MIT License - see LICENSE file for details
