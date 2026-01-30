@@ -1,0 +1,10 @@
+{
+  "tree_sitter": {
+    "command": "uvx",
+    "args": ["mcp-server-tree-sitter"]
+  },
+  "context7": {
+    "command": "npx",
+    "args": ["-y", "@upstash/context7-mcp"]
+  }
+}

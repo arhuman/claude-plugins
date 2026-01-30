@@ -10,6 +10,11 @@
       "name": "global-project-manager",
       "source": "./plugins/global-project-manager",
       "category": "development"
+    },
+    {
+      "name": "10xcoder",
+      "source": "./plugins/10xcoder",
+      "category": "development"
     }
   ]
 }

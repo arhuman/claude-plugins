@@ -19,12 +19,17 @@ type S3Storage struct {
 	prefix     string
 }
 
-// NewS3Storage creates a new S3Storage with the given configuration.
-func NewS3Storage(cfg *config.Config, shortname string) (*S3Storage, error) {
-	client, err := minio.New(cfg.MinIOEndpoint, &minio.Options{
+// NewMinioClient creates a MinIO client from the given configuration.
+func NewMinioClient(cfg *config.Config) (*minio.Client, error) {
+	return minio.New(cfg.MinIOEndpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.MinIOAccessKey, cfg.MinIOSecretKey, ""),
 		Secure: cfg.MinIOSecure,
 	})
+}
+
+// NewS3Storage creates a new S3Storage with the given configuration.
+func NewS3Storage(cfg *config.Config, shortname string) (*S3Storage, error) {
+	client, err := NewMinioClient(cfg)
 	if err != nil {
 		return nil, err
 	}

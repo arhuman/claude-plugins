@@ -1,5 +1,5 @@
 ---
-name: task-setter
+name: task-setter-agent
 description: Detects task initiation and delegates to global-project-manager skill. Triggers when user starts new work requiring tracking.
 model: haiku
 color: green
