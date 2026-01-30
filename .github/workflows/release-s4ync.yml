@@ -1,0 +1,103 @@
+name: Release s4ync
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+      - master
+
+jobs:
+  release:
+    name: Build and Release s4ync
+    runs-on: ubuntu-latest
+    # Only run on tag pushes, not regular branch commits
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'tools/s4ync/go.mod'
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          # Extract version from tag (v1.2.3 -> 1.2.3)
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Building version: ${VERSION}"
+
+      - name: Run tests
+        working-directory: tools/s4ync
+        run: make test
+
+      - name: Build for Linux (amd64)
+        working-directory: tools/s4ync
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          make build
+          mv s4ync s4ync-linux-amd64
+
+      - name: Build for Linux (arm64)
+        working-directory: tools/s4ync
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GOOS: linux
+          GOARCH: arm64
+        run: |
+          make build
+          mv s4ync s4ync-linux-arm64
+
+      - name: Build for macOS (amd64)
+        working-directory: tools/s4ync
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GOOS: darwin
+          GOARCH: amd64
+        run: |
+          make build
+          mv s4ync s4ync-darwin-amd64
+
+      - name: Build for macOS (arm64)
+        working-directory: tools/s4ync
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GOOS: darwin
+          GOARCH: arm64
+        run: |
+          make build
+          mv s4ync s4ync-darwin-arm64
+
+      - name: Build for Windows (amd64)
+        working-directory: tools/s4ync
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GOOS: windows
+          GOARCH: amd64
+        run: |
+          make build
+          mv s4ync s4ync-windows-amd64.exe
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: s4ync v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            tools/s4ync/s4ync-linux-amd64
+            tools/s4ync/s4ync-linux-arm64
+            tools/s4ync/s4ync-darwin-amd64
+            tools/s4ync/s4ync-darwin-arm64
+            tools/s4ync/s4ync-windows-amd64.exe
+          generate_release_notes: true
