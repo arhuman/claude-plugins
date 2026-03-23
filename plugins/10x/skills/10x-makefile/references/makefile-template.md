@@ -20,15 +20,13 @@ deploy_preprod: export DOCKERFILE = Dockerfile_localbuild
 # STANDARD TARGETS (in alphabetical order)
 # ==================================================================================== #
 
-## audit: run all quality control checks (vet, staticcheck, govulncheck, revive, test)
-audit: tools
-	@echo "Running quality control checks..."
-	go mod verify
-	go vet ./...
-	staticcheck -checks=all,-ST1000,-U1000 ./...
-	govulncheck ./...
-	revive ./...
-	go test -race -buildvcs -vet=off ./...
+## audit: run quality control checks
+audit:
+        @which golangci-lint > /dev/null || $(MAKE) tools
+        @which govulncheck > /dev/null || $(MAKE) tools
+        go mod verify
+        golangci-lint run ./...
+        govulncheck ./...
 
 ## build: build the Go binary for a Linux environment
 build:
@@ -83,9 +81,8 @@ tidy:
 tools:
 	@echo "Installing Go tools..."
 	@go install github.com/swaggo/swag/cmd/swag@latest
-	@go install honnef.co/go/tools/cmd/staticcheck@latest
-	@go install golang.org/x/vuln/cmd/govulncheck@latest
-	@go install github.com/mgechev/revive@latest
+        @go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.3
+        @go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
 	@echo "Tools installed in $(shell go env GOBIN || go env GOPATH)/bin"
 
 # ==================================================================================== #

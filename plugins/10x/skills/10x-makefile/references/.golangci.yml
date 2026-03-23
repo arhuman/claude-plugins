@@ -1,0 +1,23 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - bodyclose
+    - contextcheck
+    - govet
+    - noctx
+    - revive
+    - sqlclosecheck
+    - staticcheck
+  settings:
+    staticcheck:
+      checks:
+        - "all"
+        - "-ST1000"
+        - "-U1000"
+  exclusions:
+    rules:
+      - linters:
+          - errcheck
+        text: "Error return value of .*\\.Close` is not checked"

@@ -1,6 +1,6 @@
-# 10xCoder
+# 10x
 
-Plugin to make Claude Code a 10x Coder
+Plugin to make Claude Code a 10x more efficient
 
 ## Features
 
@@ -77,7 +77,7 @@ In claude code
 
 ```bash
 /plugin marketplace add arhuman/claude-plugin
-/plugin install 10xcoder 
+/plugin install 10x 
 ```
 
 ## Permissions
