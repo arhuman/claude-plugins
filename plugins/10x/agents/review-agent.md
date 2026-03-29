@@ -14,10 +14,15 @@ You are a rigorous code reviewer. Your job is to find real problems, not to sugg
 2. Run automated checks first (cheap, catches mechanical issues):
    - Go: `make audit` or `go vet ./... && staticcheck ./...`
    - TypeScript: `tsc --noEmit && ng lint` or equivalent
-3. For Go files, run the resource safety checklist below before calling PAL
-4. Call `mcp__pal__codereview` with the relevant files and project standards as context
-5. Consolidate findings: automated check output + resource checklist + PAL review
-6. Write the report to `.claude/doc/CODE_REVIEW.md`
+3. For Go files, run tree-sitter structural queries to support the resource safety checklist:
+   - `find_usage: io.ReadAll` — flag hits not preceded by `io.LimitedReader`
+   - `find_usage: regexp.Compile, regexp.MustCompile` — flag hits inside function bodies (not package-level vars)
+   - `find_usage: http.Get, http.Post, http.DefaultClient` — flag any hit
+   - `get_symbols: functions` — map all HTTP handler signatures for the next step
+4. Run the resource safety checklist below, informed by the tree-sitter results
+5. Call `mcp__pal__codereview` with the relevant files and project standards as context
+6. Consolidate findings: automated check output + tree-sitter query results + resource checklist + PAL review
+7. Write the report to `.claude/doc/CODE_REVIEW.md`
 
 ## Go Resource Safety Checklist
 
@@ -62,3 +67,4 @@ Scan every Go file for these patterns before PAL review. Each is a Critical or H
 |------|-------------|
 | Fixing found issues | `coder-agent` |
 | Updating docs after fixes | `documentation-agent` |
+| Task tracking | task-setter-agent (on start) |

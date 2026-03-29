@@ -36,3 +36,10 @@ description: TypeScript and Angular coding best practices. Use when working with
 - Mutate objects passed as inputs or function arguments
 - Use `@ts-ignore` without a comment explaining why
 - Use `setTimeout` for async coordination — use Promises or Observables instead
+
+## Agent Behavior
+
+- Before creating a new service or component, use tree-sitter `find_similar_code` to detect existing patterns that could be reused or extended.
+- Use tree-sitter `find_usage: subscribe` to locate all Observable subscriptions and verify each has a corresponding `takeUntilDestroyed` or `DestroyRef` teardown.
+- Use tree-sitter `find_usage: any` for a targeted audit of `any` type usages before enforcing strict types.
+- Use tree-sitter `get_symbols(symbol_types: ["functions", "classes"])` to map a module's public surface before modifying its interface.

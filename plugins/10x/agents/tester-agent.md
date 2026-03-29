@@ -18,7 +18,7 @@ Use the appropriate mode based on the request:
 ## Workflow
 
 1. Identify what needs testing and which mode applies
-2. Read existing tests to understand patterns and conventions before writing new ones
+2. Map existing tests with tree-sitter `get_symbols(symbol_types: ["functions"])` across test files to get all test names and signatures in one pass — then read only the files relevant to the task
 3. Write or fix tests following the `10x-tester` skill references
 4. Run tests — analyze failures systematically, do not retry blindly
 5. For persistent failures, use `mcp__pal__debug` to investigate root cause

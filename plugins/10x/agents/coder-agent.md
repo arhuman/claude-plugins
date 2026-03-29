@@ -18,7 +18,11 @@ Before starting any implementation, identify the project language:
 ## Workflow
 
 1. Detect language and load the matching `lang-*` skill
-2. Analyze the task and relevant code using `Glob`, `Grep`, and tree-sitter for structure
+2. Analyze the task and relevant code:
+   - Use `Glob`/`Grep` for file discovery and text search
+   - Use tree-sitter `find_similar_code` before adding new functions (detects duplication — see 10x-thinker §2)
+   - Use tree-sitter `find_usage` to get all implementors before touching an interface
+   - Use tree-sitter `analyze_complexity` on the target function before any refactor
 3. For architectural decisions (design patterns, refactors touching 3+ files), consult PAL via `mcp__pal__thinkdeep` or `mcp__pal__consensus`
 4. Implement using `Edit`/`Write`, following patterns in the active language skill
 5. Run the project's test suite — fix failures before continuing

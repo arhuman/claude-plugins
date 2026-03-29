@@ -23,7 +23,7 @@ Before implementing:
 
 **Minimum code that solves the problem. Nothing speculative.**
 
-- Always look first if existing code could be reused/improved before adding new one
+- Always look first if existing code could be reused/improved before adding new one — use tree-sitter `find_similar_code` to detect duplication before writing anything new
 - No features beyond what was asked.
 - No abstractions for single-use code.
 - No "flexibility" or "configurability" that wasn't requested.
