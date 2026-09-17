@@ -18,11 +18,11 @@ two different spellings of the same artifact.
 | `docs/adr/NNNN-<slug>.md` | grill-with-docs, 10x-plan (`rule`) | 10x-loop (Refs), `verify-adr.sh` | `../../grill-with-docs/ADR-FORMAT.md` | Durable; superseded, never deleted |
 | `CONTEXT.md` (foreign repo: `.claude/project/context.md`) | grill-with-docs | grill-with-docs, 10x-plan (`rule`) | `../../grill-with-docs/CONTEXT-FORMAT.md` | Durable domain glossary |
 | `.claude/handoff.md` | /handoff (write mode) | /handoff (`--resume`) | inline in `commands/handoff.md` | Ephemeral, one per repo, rewritten in place, gitignored |
-| `.claude/doc/conform-<repo>.md` | check_conform, make_conform, conform-agent (via `diagnose-steps.md`) | humans | `../../10x-conform/references/conformance-report.md` | Snapshot, regenerated per run, never re-read |
+| `.claude/doc/conform-<repo>.md` | /check_conform, /make_conform, conform-agent (via `diagnose-steps.md`) | humans | `../../10x-conform/references/conformance-report.md` | Snapshot, regenerated per run, never re-read |
 | `.claude/doc/probe-proposal-<slug>.md` | /propose_probe | humans (approval gate) | `../../10x-conform/references/probe-proposal.md` | Draft until approved into `standard.yml` |
 | `.claude/doc/design-brief-<scope>.md` | /design_handoff (brief mode) | external generator, humans | `../../10x-frontend-design/references/design-handoff.md` | One per brief, never re-read by the plugin |
 | `.claude/doc/<task-resume>.md` (+ `-gemini`/`-openai`/`-deepseek` siblings) | /evaluate | humans | inline in `commands/evaluate.md` | One per question; slug per the collision rule below |
-| `.claude/doc/test-report-<slug>.md` | tester-agent, 10x-tester | humans | `../../10x-tester/references/test-reports.md` | Snapshot per test campaign |
+| `.claude/doc/test-report-<slug>.md` | 10x-tester, tester-agent | humans | `../../10x-tester/references/test-reports.md` | Snapshot per test campaign |
 | `<css-dir>/.audit-ui-baseline` | /audit_ui (`baseline`) | `audit-ui.sh` (ratchet) | `../../10x-frontend-design/references/quality-guards.md` | Durable ratchet floor |
 | `CLAUDE.md` / `AGENTS.md` stamp (`10x-standard:`, `10x-profile:`) | nobody automated (hand-written; see note) | `conform.sh`, `ownership.sh` | `../../10x-conform/SKILL.md` repo-stamp section | Durable declaration |
 | `CHANGELOG.md` `[Unreleased]` (tracked, repo root) | 10x-commit (feat/fix/perf) | release tooling | Keep a Changelog | Durable; promoted at release. Distinct from a private `.claude/CHANGELOG.md` working log |

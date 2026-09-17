@@ -20,6 +20,10 @@ jobs:
         run: sh scripts/check-makefile-tabs.sh
       - name: Canonical rules not restated outside their owning skill
         run: sh scripts/check-rule-duplication.sh
+      - name: No references to private or removed components
+        run: sh scripts/check-dangling-refs.sh
+      - name: Artifact registry matches what writers actually produce
+        run: sh scripts/check-artifact-registry.sh
       - name: Analysis agents cannot edit the code they analyse
         run: sh scripts/check-agent-tools.sh
       - name: Frontmatter parses as YAML
