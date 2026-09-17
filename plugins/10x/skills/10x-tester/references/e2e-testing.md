@@ -1,5 +1,7 @@
 # E2E Testing
 
+For new projects, prefer **Playwright** (first-class trace viewer, multi-browser, and the Playwright MCP server used elsewhere in this toolchain). The Cypress patterns below are kept for existing Cypress suites: the concepts (fixture interception, custom commands, deterministic waits) transfer directly.
+
 ## Stack
 
 Cypress with Jasmine-style assertions. Tests live in `cypress/e2e/`. Configuration in `cypress.config.ts`.

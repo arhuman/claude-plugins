@@ -34,7 +34,7 @@ Composition classes come from **Every Layout primitives** (see `every-layout.md`
 
 ## Layer 2: Utility
 
-Single-responsibility classes that apply one design token. Always use `!important` to win specificity battles — that is intentional.
+Single-responsibility classes that apply one design token. Always use `!important` to win specificity battles: that is intentional.
 
 ```css
 .text-step-0  { font-size: var(--step-0) !important; }
@@ -47,7 +47,7 @@ Single-responsibility classes that apply one design token. Always use `!importan
 
 ### Naming convention
 
-`{property}-{token}` — e.g., `text-step-2`, `bg-base`, `color-muted`, `radius-m`.
+`{property}-{token}`: e.g., `text-step-2`, `bg-base`, `color-muted`, `radius-m`.
 
 Utilities are generated from your design token scale, not invented per component.
 
@@ -72,8 +72,8 @@ Block styles are scoped to a component. One class, one component.
 ```
 
 Rules:
-- Block selectors are flat (`.card`, `.card__title`) — no nesting beyond one level
-- Block does **not** set margin or position — that is the composition layer's job
+- Block selectors are flat (`.card`, `.card__title`): no nesting beyond one level
+- Block does **not** set margin or position: that is the composition layer's job
 - Use BEM-style element names only when needed; avoid them for simple components
 
 ---
@@ -100,7 +100,7 @@ Exceptions modify a block's appearance using `data-*` attributes. They override 
 
 Rules:
 - Exceptions use `data-*` selectors, never modifier classes (`card--featured`)
-- Keep exceptions minimal — if you have many, the block design needs rethinking
+- Keep exceptions minimal: if you have many, the block design needs rethinking
 - Document `data-*` values in comments or a component README
 
 ---
@@ -114,18 +114,18 @@ CUBE CSS relies on a custom property token system. Define at `:root`:
   /* Space scale (fluid or stepped) */
   --space-3xs: clamp(0.25rem, 0.23rem + 0.11vw, 0.31rem);
   --space-2xs: clamp(0.5rem, 0.46rem + 0.22vw, 0.63rem);
-  --space-xs:  clamp(0.75rem, 0.69rem + 0.33vw, 0.94rem);
-  --space-s:   clamp(1rem, 0.91rem + 0.43vw, 1.25rem);
-  --space-m:   clamp(1.5rem, 1.37rem + 0.65vw, 1.88rem);
-  --space-l:   clamp(2rem, 1.83rem + 0.87vw, 2.5rem);
-  --space-xl:  clamp(3rem, 2.74rem + 1.3vw, 3.75rem);
+  --space-xs: clamp(0.75rem, 0.69rem + 0.33vw, 0.94rem);
+  --space-s:  clamp(1rem, 0.91rem + 0.43vw, 1.25rem);
+  --space-m:  clamp(1.5rem, 1.37rem + 0.65vw, 1.88rem);
+  --space-l:  clamp(2rem, 1.83rem + 0.87vw, 2.5rem);
+  --space-xl: clamp(3rem, 2.74rem + 1.3vw, 3.75rem);
 
   /* Type scale */
   --step--1: clamp(0.8rem, 0.78rem + 0.11vw, 0.88rem);
-  --step-0:  clamp(1rem, 0.96rem + 0.22vw, 1.13rem);
-  --step-1:  clamp(1.25rem, 1.19rem + 0.33vw, 1.5rem);
-  --step-2:  clamp(1.56rem, 1.5rem + 0.33vw, 1.88rem);
-  --step-3:  clamp(1.95rem, 1.84rem + 0.54vw, 2.38rem);
+  --step-0: clamp(1rem, 0.96rem + 0.22vw, 1.13rem);
+  --step-1: clamp(1.25rem, 1.19rem + 0.33vw, 1.5rem);
+  --step-2: clamp(1.56rem, 1.5rem + 0.33vw, 1.88rem);
+  --step-3: clamp(1.95rem, 1.84rem + 0.54vw, 2.38rem);
 
   /* Colors */
   --color-text: #1a1a2e;

@@ -1,6 +1,6 @@
 ---
 name: lang-typescript
-description: TypeScript and Angular coding best practices. Use when working with TypeScript, Angular, or Node.js files: implementation, testing, refactoring, RxJS Observables, type system, strict mode, generics, and async patterns.
+description: 'TypeScript and Angular coding best practices. Use when working with TypeScript, Angular, or Node.js files: implementation, testing, refactoring, signals, RxJS Observables, type system, strict mode, generics, and async patterns. Not for HTML templates, HTMX, or CSS: use lang-html.'
 ---
 # lang-typescript
 
@@ -10,6 +10,7 @@ description: TypeScript and Angular coding best practices. Use when working with
 - Favor `interface` for object shapes, `type` for unions, intersections, and mapped types.
 - Keep functions pure where possible. Isolate side effects at the edges.
 - Angular: keep components thin. Business logic belongs in services, not templates or components.
+- Angular: standalone components and signals are the default; NgModules and imperative subscriptions are legacy patterns to migrate away from, not to extend.
 
 ## Reference
 
@@ -26,16 +27,19 @@ description: TypeScript and Angular coding best practices. Use when working with
 - Type all function parameters and return values explicitly
 - Use `readonly` on properties that should not be mutated
 - Unsubscribe from Observables in Angular components (use `takeUntilDestroyed` or `DestroyRef`)
-- Inject dependencies via constructor in Angular services, not `inject()` at module level
+- Use the `inject()` function for dependency injection in new Angular code (field initializers); keep constructor injection consistent within files that already use it
+- Prefer signals (`signal`, `computed`, `input()`) for component state; use RxJS for event streams and async composition: see `./references/async.md`
+- Use `satisfies` over a widening type annotation for config objects and lookup tables: see `./references/types.md`
 - Use `const` by default; `let` only when reassignment is necessary
+- Comments: default to none inside function bodies, and follow the `10x-documentation` Code Comments section. It is canonical; do not restate its rules here.
 
 ## MUST NOT
 
-- Use `any` — use `unknown` and narrow, or define a proper type
+- Use `any`: use `unknown` and narrow, or define a proper type
 - Subscribe inside a subscribe (use `switchMap`, `mergeMap`, etc.)
 - Mutate objects passed as inputs or function arguments
 - Use `@ts-ignore` without a comment explaining why
-- Use `setTimeout` for async coordination — use Promises or Observables instead
+- Use `setTimeout` for async coordination: use Promises or Observables instead
 
 ## Agent Behavior
 

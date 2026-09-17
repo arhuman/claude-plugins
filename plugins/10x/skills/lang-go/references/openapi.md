@@ -31,7 +31,7 @@ swagger: tools
 	swag init -g cmd/api/main.go --parseDependency --parseInternal
 ```
 
-## main.go — Global Annotations
+## main.go: Global Annotations
 
 Place global annotations in the `main` function comment block and import the generated `docs` package
 so `swag` finds it:
@@ -41,7 +41,7 @@ so `swag` finds it:
 package main
 
 import (
-    docs "github.com/yourorg/yourapp/docs" // required — triggers docs registration
+    docs "github.com/yourorg/yourapp/docs" // required: triggers docs registration
     _ "github.com/swaggo/swag"
 )
 
@@ -63,7 +63,7 @@ func main() {
 }
 ```
 
-## routes.go — Register the UI Endpoint
+## routes.go: Register the UI Endpoint
 
 ```go
 import (
@@ -230,15 +230,15 @@ func (s *Server) GetUser(c *gin.Context) {
 
 ## Healthcheck (No Spec Entry Needed)
 
-Unauthenticated utility routes (healthcheck, metrics, pprof) typically should NOT be annotated —
+Unauthenticated utility routes (healthcheck, metrics, pprof) typically should NOT be annotated: 
 they clutter the spec. Register them outside the versioned group and omit annotations.
 
 ## Best Practices
 
-1. **godoc first** — the comment above the handler must start with `FuncName godoc` or swag may skip it.
-2. **Always add `@Failure`** — document 400, 401, 403, 404, 500 for every protected endpoint.
-3. **Always add `@Security`** — any route behind JWT middleware must declare its scheme.
-4. **Use concrete types, not `interface{}`** — `{object} MyResponse` gives a useful schema; `{object} interface{}` does not.
-5. **Re-generate after every handler change** — treat `docs/` as generated output; add `make swagger` to CI.
-6. **Validate** — run `swagger-cli validate docs/swagger.json` or `spectral lint docs/swagger.yaml` in CI.
-7. **Group logically** — consistent `@Tags` values produce a clean, navigable Swagger UI.
+1. **godoc first**: the comment above the handler must start with `FuncName godoc` or swag may skip it.
+2. **Always add `@Failure`**: document 400, 401, 403, 404, 500 for every protected endpoint.
+3. **Always add `@Security`**: any route behind JWT middleware must declare its scheme.
+4. **Use concrete types, not `interface{}`**: `{object} MyResponse` gives a useful schema; `{object} interface{}` does not.
+5. **Re-generate after every handler change**: treat `docs/` as generated output; add `make swagger` to CI.
+6. **Validate**: run `swagger-cli validate docs/swagger.json` or `spectral lint docs/swagger.yaml` in CI.
+7. **Group logically**: consistent `@Tags` values produce a clean, navigable Swagger UI.

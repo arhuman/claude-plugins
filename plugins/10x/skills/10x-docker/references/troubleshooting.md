@@ -4,7 +4,7 @@
 
 | Symptom | Check |
 |---------|-------|
-| Slow builds | Layer caching order — dependency files must be copied before source |
+| Slow builds | Layer caching order: dependency files must be copied before source |
 | Missing files in image | `.dockerignore` may be too aggressive |
 | COPY path errors | Verify paths relative to build context |
 | Dependency download fails | Check network in build stage, verify base image |
@@ -31,7 +31,7 @@ docker compose build --no-cache         # Force clean build
 
 - K8S requires group 0 read access: add `chmod -R g=u /app` or equivalent
 - `USER 1001` must be set; create user in Dockerfile if not present in base image
-- Volume files created by container run as UID 1001 — ensure host directory is writable
+- Volume files created by container run as UID 1001: ensure host directory is writable
 
 ## Architecture Issues
 

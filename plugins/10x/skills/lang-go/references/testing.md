@@ -5,14 +5,14 @@
 **Tests define the contract between code and its users.**
 
 - Do NOT modify or remove existing test assertions without explicit user approval
-- Do NOT remove test cases without user approval — each case encodes a known behavior
+- Do NOT remove test cases without user approval: each case encodes a known behavior
 - Preserve test intent: you may refactor test structure, helpers, and setup code freely
 - When adding new test cases: add them with a `// TODO: uncomment and validate with user` comment and notify the user
 - When changing behavior under test: explain your reasoning and ask for confirmation first
 
 ## Table-Driven Tests
 
-The standard Go testing pattern — use it for any function with multiple input/output scenarios.
+The standard Go testing pattern: use it for any function with multiple input/output scenarios.
 
 ```go
 func TestDivide(t *testing.T) {
@@ -259,12 +259,25 @@ go test -race -run TestConcurrentAccess ./internal/cache/...
 ## Coverage
 
 ```bash
-go test -coverprofile=coverage.out ./...
+go test -covermode=atomic -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out        # HTML report
 go tool cover -func=coverage.out        # per-function summary
 ```
 
-Target: 80%+ coverage for business logic packages. Coverage is a floor, not a goal.
+Use `-covermode=atomic` (required for correct counts under `-race`). Gate the
+total in CI and the Makefile rather than eyeballing it: the `make cover` target
+extracts the total and fails below a floor:
+
+```bash
+total=$(go tool cover -func=coverage.out | awk '/^total:/ {print $3}' | tr -d '%')
+awk -v t="$total" -v min="$COVER_MIN" 'BEGIN { exit (t+0 < min+0) }' \
+    || { echo "coverage $total% < $COVER_MIN%"; exit 1; }
+```
+
+Target 80%+ for business-logic packages. Coverage is a floor, not a goal, and a
+ratchet: raise `COVER_MIN` as coverage improves, never lower it to green a build.
+To measure the production code a test *exercises* (not just the package it lives
+in), pass `-coverpkg=./...`. No package should sit at 0% in a final report.
 
 ## Golden Files
 
@@ -290,9 +303,91 @@ func TestRenderReport(t *testing.T) {
 
 Update: `go test -run TestRenderReport -update`
 
+Keep golden files under `testdata/` (the toolchain ignores that dir) and regen
+with an `-update` flag. For structured output, assert a deterministic projection
+struct rather than a raw dump so unrelated field churn does not rewrite goldens.
+
+## Build-Tag Matrix
+
+When a feature has more than one implementation selected at build time (e.g. an
+embedded vs. external backend, CGO vs. pure-Go), give every variant a real build
+and a real test. The pattern: two files behind opposite tags, a shared test that
+compiles under both.
+
+```go
+//go:build embed
+
+package store
+
+func newBackend() Backend { return embeddedBackend{} }
+```
+
+```go
+//go:build !embed
+
+package store
+
+func newBackend() Backend { return externalBackend{} }
+```
+
+Run the whole matrix in CI so neither variant rots:
+
+```bash
+go test ./...                 # default tags
+go test -tags embed ./...     # embedded variant
+```
+
+A no-op/stub implementation still gets a test asserting it is inert: that is
+what stops a "disabled" path from silently breaking.
+
+## Shared Helpers (internal/testutil)
+
+Put fixtures, golden loaders, fake clocks, and in-memory fakes in an
+`internal/testutil` package so tests across packages share one set of helpers
+instead of copy-pasting setup. Every helper calls `t.Helper()` so failures point
+at the caller, and uses `t.Cleanup(...)` to tear down (temp dirs, DB handles)
+without a trailing `defer` in each test.
+
+```go
+// package testutil
+func NewTempDB(t *testing.T) *sql.DB {
+    t.Helper()
+    db, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "test.db"))
+    require.NoError(t, err)
+    t.Cleanup(func() { _ = db.Close() })
+    return db
+}
+```
+
+## Short Tests
+
+Use `testing.Short()` to skip any test that requires external resources (database, container, network, long computation). This is the idiomatic Go way to keep `go test -short` as a fast unit-only run.
+
+```go
+func TestCreateUser_WithDB(t *testing.T) {
+    if testing.Short() {
+        t.Skip("skipping: requires database")
+    }
+    db := setupTestDB(t)
+    // ... test against real DB
+}
+
+func TestSendEmail_WithSMTP(t *testing.T) {
+    if testing.Short() {
+        t.Skip("skipping: requires SMTP server")
+    }
+    // ... test against real mail server
+}
+```
+
+Rule: if the test starts a container, opens a real DB connection, hits a network endpoint, or takes more than ~100ms, guard it with `testing.Short()`.
+
+Run unit tests only: `go test -short ./...`
+Run all tests: `go test ./...`
+
 ## Integration Tests
 
-Use build tags to separate integration tests from unit tests.
+Use build tags in addition to `testing.Short()` when integration tests need a separate build step or CI environment.
 
 ```go
 //go:build integration
@@ -310,7 +405,6 @@ func TestIntegration_CreateUser(t *testing.T) {
 ```
 
 Run: `go test -tags=integration ./...`
-Run short (unit only): `go test -short ./...`
 
 ## HTTP Handler Testing
 
@@ -336,7 +430,7 @@ func TestGetUser(t *testing.T) {
 
 ## Environment Variables in Tests
 
-Use `t.Setenv` — automatically restored after the test:
+Use `t.Setenv`: automatically restored after the test:
 
 ```go
 func TestConfig(t *testing.T) {
@@ -358,6 +452,6 @@ func TestConfig(t *testing.T) {
 | `go test -cover` | Show coverage percentage |
 | `go test -coverprofile=c.out` | Generate coverage profile |
 | `go test -fuzz=FuzzXxx` | Run fuzzer |
-| `go test -short` | Skip long tests |
-| `go test -tags=integration` | Include integration tests |
+| `go test -short` | Unit tests only (skips DB/container/slow tests) |
+| `go test -tags=integration` | Include integration build-tagged tests |
 | `go test -count=1` | Disable test caching |

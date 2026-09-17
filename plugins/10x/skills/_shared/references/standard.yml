@@ -1,0 +1,359 @@
+# 10x engineering standard: the machine-checkable manifest (single source of truth).
+#
+# This file defines WHAT the standard is, once. Both sides read it:
+#   - the generator (skills emit code that satisfies these checks)
+#   - the conformance checker (10x-conform's global references/conform.sh verifies a repo against them)
+# so "what we emit" and "what we enforce" cannot diverge. It sits beside versions.md
+# because it is the same kind of cross-skill single source of truth.
+#
+# Bump standard_version whenever a check is added, removed, or changes severity.
+# The portable runner references/conform.sh is a generated view of the `checks`
+# below; regenerate it from this manifest after editing this file so the two stay in sync.
+#
+# Fields per check:
+#   id          stable dotted identifier (dimension.thing)
+#   dimension   makefile | ci | docker | compose | version | tests | governance | lint | supply-chain | ui
+#   applies_to  repo types this check is relevant to (all | go | go-service | go-cli | go-lib |
+#               python | python-service | python-cli | python-lib | web-app | proto)
+#   severity    P0 (security/correctness) | P1 (parity/consistency) | P2 (polish). Baseline, used
+#               when no profile override matches.
+#   profiles    optional per-profile severity override: {private: NA, internal: P2, public: P1}.
+#               NA drops the check entirely for that profile. See the `profiles` block below.
+#   probe       POSIX sh + grep/test one-liner; exit 0 = PASS. Omit for judgment-only checks.
+#   manual      true when only an agent can judge it (no mechanizable probe)
+#   expected    prose the agent evaluates and the report prints
+#   remediation which skill/reference/agent fixes it
+
+# v1.6: makefile.prod_preflight also fires on a port-published prod overlay that
+# injects secrets (a service fronted by the host's own reverse proxy), not only
+# Traefik Host() stacks, so a prod that boots on env.sample secrets is caught too.
+# v1.7: adds compose.traefik_apex (P1). `make up` must drive docker-compose.prod.yml,
+# and that overlay must route through Traefik (traefik.enable=true) with Host() rules
+# that reference ${APEX_DOMAIN}. Mandatory for every go-service/web-app: a prod overlay
+# with no Traefik labels no longer satisfies the standard (this deliberately tightens
+# the older per-check exemptions for host-reverse-proxy prods).
+# v1.8: adds the audience profile axis. `applies_to` already answers "what kind of
+# artifact is this"; profiles answer the orthogonal question "who consumes it". Only
+# governance, release and supply-chain checks vary: a private tool needs no disclosure
+# path or signed SBOM, while a published library needs both more than a service does.
+# Security and correctness checks (P0) never vary by profile, because exposure is a
+# property of the deployment, not of the audience.
+# v1.9: repo-type detection gains `python`/`python-service`/`python-cli`/`python-lib`
+# (pyproject.toml or setup.py), so the release family is no longer Go-only. The
+# goreleaser-specific check stays go-only (it names a tool), but release.workflow
+# and release.script generalize to the shared intent (tag-triggered publish;
+# scripted, semver-derived release), and a new release.python_build check is the
+# Python analogue of release.goreleaser (a PEP 517 build backend).
+# v1.10: version.stamp tightens from "the Makefile stamps" to "the binary knows
+# its version on every build path". ldflags cover `make build` and goreleaser;
+# `go install <module>@latest`, the path a README documents for users, applies
+# none, so a repo that passed the old probe still shipped `dev (unknown,
+# unknown)` to everyone who installed it that way. The check now also requires
+# the debug.ReadBuildInfo fallback (10x-makefile/references/version-go.md).
+# v1.11: three ui.* checks for server-rendered UI (cube_layers, color_literals,
+#        contract). The CSS layer of 10x-frontend-design was defended by twelve
+#        audits the plugin never shipped, and the intent layer by nothing at all,
+#        so a monolithic stylesheet and an undocumented screen both probed clean.
+#        All P2: on an existing UI the CUBE split is a real refactor, and a
+#        standard that fails a repo for it on day one gets the profile widened
+#        rather than the CSS fixed.
+# v1.12: makefile.test_split. The test/fulltest pair existed in makefile-go.md
+#        since the beginning and nothing probed it, so a repo could put -race,
+#        -cover and the e2e stack rebuild inside `test` and pay minutes on every
+#        red/green iteration: measured on a real repo, a 300s `make test` was
+#        36s of tests and the rest instrumented recompilation, 58 e2e stack
+#        rebuilds in 23 sessions. `test` is the seconds-scale loop, `fulltest`
+#        the once-per-phase gate; the probe requires both targets to exist.
+# v1.13: release.workflow and release.script gain `go-lib`. v1.9 generalized this
+#        family from Go-only to Python and added python-lib, but never added the
+#        Go library it had just made room for, so a Python library owed a
+#        tag-triggered publish and a scripted release while a Go library owed
+#        neither. A Go library releases BY TAG (the proxy serves what the tag
+#        says), so semver derivation, the changelog stamp and correct tagging are
+#        load-bearing even with no artifact to build. The tag-vs-manifest check
+#        existed only for Python (release.workflow names "a tag-vs-pyproject.toml
+#        version check"); Go had no counterpart at any type, because for a binary
+#        version.stamp catches drift indirectly via ldflags and for a library
+#        nothing did. version.stamp stays go-service/go-cli: it enforces ldflags,
+#        --version and a ReadBuildInfo fallback, all properties of a linked
+#        binary, and forcing it on a library would mean a hand-maintained
+#        constant that can contradict the tag. release.goreleaser likewise stays
+#        binary-only: a library has no cross-platform artifact to build or sign.
+standard_version: "1.13"
+
+# Audience profiles. A repo declares one; everything else is a default, never an
+# inference. Declare it as `10x-profile: <name>` in the repo's CLAUDE.md, beside the
+# `10x-standard: vX.Y` stamp, or pass CONFORM_PROFILE=<name> to the runner.
+#
+# The default is `public`, the strictest, on purpose: an undeclared repo must not
+# quietly lose checks. Weakening the standard is an explicit act that leaves a trace
+# in the repo, and the report always prints which profile it ran under.
+default_profile: public
+
+profiles:
+  private:
+    description: "Personal or single-operator. Not published, no external contributors, no consumers but the author. Community and contribution governance is pure noise here."
+  internal:
+    description: "Shared inside an org. Contributors exist and are colleagues; review routing and commit hygiene matter, but there is no outside audience to disclose to or publish for."
+  public:
+    description: "Published for outside consumption: open source, a public registry, or a public endpoint. Every governance, release and supply-chain expectation applies at full weight."
+
+checks:
+  - id: ci.audit
+    dimension: ci
+    applies_to: [go]
+    severity: P0
+    probe: 'grep -rqsE "make audit" .github/workflows'
+    expected: "CI calls `make audit` (golangci-lint + govulncheck + -race + coverage), never reimplements it in YAML."
+    remediation: {skill: 10x-ci, ref: ci.yml}
+
+  - id: version.stamp
+    dimension: version
+    applies_to: [go-service, go-cli]
+    severity: P0
+    probe: 'grep -qsE "\-X .*\.Version=" Makefile && grep -rqs ReadBuildInfo --include=*.go .'
+    expected: "Binary is version-stamped via ldflags -X into a version package (Makefile + goreleaser + Dockerfile), exposes a --version command, and falls back to debug.ReadBuildInfo when the linker stamped nothing. The fallback is not optional: `go install <module>@latest` applies no ldflags, so without it a tagged release reports `dev (unknown, unknown)` to every user who installs it the documented way, while the Makefile still probes clean. One resolved value feeds --version and every other place a version is printed, and the `v` prefix is identical across the three build paths (goreleaser's .Version strips it; `git describe` and the module version keep it)."
+    remediation: {skill: 10x-makefile, ref: version-go.md, agent: coder-agent}
+
+  - id: docker.nonroot
+    dimension: docker
+    applies_to: [go-service, web-app]
+    severity: P0
+    probe: 'grep -qsE "^USER +[A-Za-z1-9]" Dockerfile* && ! grep -qsE "^USER +root" Dockerfile*'
+    expected: "Runtime stage runs non-root (USER 1001 + OpenShift chgrp 0 / chmod g=u)."
+    remediation: {skill: 10x-docker, ref: go-api-dockerfile.md, agent: docker-agent}
+
+  - id: compose.security_headers
+    dimension: compose
+    applies_to: [go-service, web-app]
+    severity: P0
+    probe: 'grep -qsE "headers\.stsSeconds" docker-compose.prod.yml || grep -rqsE "Strict-Transport-Security" --include=*.go .'
+    expected: "HSTS + baseline security headers exist, either at the Traefik edge or in the app layer."
+    remediation: {skill: 10x-docker, ref: docker-compose-environments.md, agent: docker-agent}
+
+  - id: compose.ports_configurable
+    dimension: compose
+    applies_to: [go-service, web-app]
+    severity: P1
+    probe: '! cat docker-compose.yml docker-compose.local.yml docker-compose.prod.yml 2>/dev/null | grep -qE "[0-9]{2,5}:[0-9]{2,5}"'
+    expected: "Every published host port in the base/local/prod compose files is an overridable variable with a default (`${API_PORT:-8080}`, `${DB_PORT:-25432}`), never a bare `host:container` literal, so a second stack or a host process (a datastore already on 5432/3306) can coexist without editing the file. Datastore host ports are the ones that bite: bind them to 127.0.0.1 and keep the host-facing DSN (env.sample DATABASE_URL) pointed at the same published DB_PORT, not the container-internal 5432. The disposable `-p`-namespaced test overlay is exempt."
+    remediation: {skill: 10x-docker, ref: docker-compose-environments.md, agent: docker-agent}
+
+  - id: compose.proxy_routing
+    dimension: compose
+    applies_to: [go-service, web-app]
+    severity: P1
+    probe: '! grep -qsE "traefik\.enable=true" docker-compose.prod.yml || { grep -qsE "traefik\.docker\.network" docker-compose.prod.yml && grep -qsE "external: *true" docker-compose.prod.yml ; }'
+    expected: "When the prod overlay routes through the host's shared Traefik (traefik.enable=true), it joins an external `proxy` network (`external: true`) and pins `traefik.docker.network` so routing is deterministic when the service is multi-homed. It must not bundle a per-app proxy binding 80/443. Overlays with no Traefik labels (host-port or app-internal prod) are exempt."
+    remediation: {skill: 10x-docker, ref: docker-compose-environments.md, agent: docker-agent}
+
+  - id: compose.apex_domain
+    dimension: compose
+    applies_to: [go-service, web-app]
+    severity: P2
+    probe: '! grep -qsE "Host\(" docker-compose.prod.yml || grep -qsE "_DOMAIN" docker-compose.prod.yml'
+    expected: "Traefik `Host()` rules in the prod overlay reference a `${..._DOMAIN}` env variable (canonically `APEX_DOMAIN`), never a hardcoded hostname, so the same overlay deploys to any domain from `.env`. Route apex and www as two routers to one service (canonical www at priority 1 plus a `-bare` apex router) rather than one `||` rule. Overlays with no `Host()` rule are exempt."
+    remediation: {skill: 10x-docker, ref: docker-compose-environments.md, agent: docker-agent}
+
+  - id: compose.traefik_apex
+    dimension: compose
+    applies_to: [go-service, web-app]
+    severity: P1
+    probe: 'grep -qsE "^up:" Makefile && grep -qsE "docker-compose\.prod\.yml" Makefile && grep -qsE "traefik\.enable=true" docker-compose.prod.yml && grep -qsE "Host\([^)]*APEX_DOMAIN" docker-compose.prod.yml'
+    expected: "`make up` drives the prod overlay (`up` runs `docker-compose.prod.yml`, canonically via a PROD_COMPOSE `-f` chain), and that overlay routes through the host's shared Traefik: `traefik.enable=true` labels whose `Host()` rules reference `${APEX_DOMAIN}` (never a hardcoded host), using the canonical apex + www two-router shape from the 10x docker-compose template. Mandatory for every service (v1.7 tightening): a prod overlay that ships no Traefik labels, or hardcodes its hostname, does not satisfy this, even when the host fronts it with another reverse proxy."
+    remediation: {skill: 10x-docker, ref: docker-compose-environments.md, agent: docker-agent}
+
+  - id: lint.config
+    dimension: lint
+    applies_to: [go]
+    severity: P0
+    probe: 'ls .golangci.y*ml >/dev/null 2>&1'
+    expected: "A committed golangci-lint v2 config with gosec enabled; thresholds mirror 10x-review."
+    remediation: {skill: 10x-makefile, ref: .golangci.yml}
+
+  - id: coverage.gate
+    dimension: makefile
+    applies_to: [go]
+    severity: P1
+    probe: 'grep -qsE "COVER_MIN" Makefile'
+    expected: "A single coverage floor (COVER_MIN) enforced by `make cover`, on which `audit` depends. CI calls make, so the number lives in one place."
+    remediation: {skill: 10x-makefile, ref: makefile-go.md}
+
+  - id: makefile.test_split
+    dimension: makefile
+    applies_to: [go-service, go-lib, web-app, cli]
+    severity: P1
+    probe: '! test -f Makefile || { grep -qsE "^test:" Makefile && grep -qsE "^fulltest:" Makefile; }'
+    expected: "The Makefile separates `test` (short unit tests only, seconds on a warm cache: the red/green iteration loop) from `fulltest` (long units, -race, -cover, and the e2e / db-backed suites where a compose test overlay exists: the once-per-phase gate). A `test` target carrying -race, -cover or a docker stack rebuild makes every iteration pay the full gate: measured on a real repo, 300s per run of which 36s were tests, the rest instrumented recompilation and 58 e2e stack rebuilds across 23 sessions."
+    remediation: {skill: 10x-makefile, ref: makefile-go.md}
+
+  - id: makefile.local_run
+    dimension: makefile
+    applies_to: [go-service, web-app]
+    severity: P1
+    probe: 'grep -qsE "^local:" Makefile && grep -qsE "^up:" Makefile && grep -qsE "^down:" Makefile'
+    expected: "The full stack lifecycle is a canonical, memorable command set: every service exposes `make local` (dev stack, published ports, prints its URL), `make up` (prod stack, detached), and `make down` (teardown). Both single-compose and overlay projects expose all three; overlay projects wire them to LOCAL_COMPOSE/PROD_COMPOSE, single-compose projects use the base skeleton. Project-specific aliases like `docker-up`/`docker-down` do not satisfy this: the canonical `local`/`up`/`down` targets must each exist."
+    remediation: {skill: 10x-makefile, ref: makefile-base.md, agent: docker-agent}
+
+  - id: makefile.local_port
+    dimension: makefile
+    applies_to: [go-service, web-app]
+    severity: P2
+    probe: 'grep -qsE "^[A-Za-z_]*PORT[A-Za-z_]* *\?=" Makefile && grep -qsE "echo.*(localhost|127\.0\.0\.1)" Makefile'
+    expected: "The local stack's host port is an overridable `?=` Makefile variable (e.g. API_PORT ?= 8080, exported so compose interpolation resolves it), and the local bring-up target prints the URL it is reachable on (e.g. http://localhost:$(API_PORT)). Never hardcode the port in the recipe."
+    remediation: {skill: 10x-makefile, ref: makefile-compose.md, agent: docker-agent}
+
+  - id: makefile.prod_preflight
+    dimension: makefile
+    applies_to: [go-service, web-app]
+    severity: P1
+    probe: '{ ! grep -qsE "Host\(" docker-compose.prod.yml && ! { grep -qsE "^[[:space:]]*ports:" docker-compose.prod.yml && grep -qsE "(PASSWORD|SECRET|TOKEN|_KEY)" docker-compose.yml docker-compose.prod.yml ; } ; } || { grep -qsE "^up:.*preflight" Makefile && grep -qsE "^preflight:" Makefile ; }'
+    expected: "Prod must never boot on `env.sample` template defaults the way `make local` may, so `make up` is gated by a `preflight` target (`up: preflight`), never by `$(ENV_FILE)`. `preflight` hard-fails when `.env` is missing or its unsafe-by-default secrets (admin password, JWT/signing secret, and a domain-routed stack's `APEX_DOMAIN`) are empty or still the template value. The gate is required whenever the prod overlay is a real deployment: it routes a domain through Traefik `Host()` rules, OR it publishes a host port while injecting secret env vars (a port-published service fronted by the host's own reverse proxy). Only a prod overlay that neither routes a domain nor exposes secrets is exempt."
+    remediation: {skill: 10x-makefile, ref: makefile-compose.md, agent: docker-agent}
+
+  - id: docker.healthcheck
+    dimension: docker
+    applies_to: [go-service, web-app]
+    severity: P1
+    probe: 'grep -qsE "HEALTHCHECK" Dockerfile* || grep -qsE "healthcheck:" docker-compose*.yml'
+    expected: "A healthcheck exists (in-image HEALTHCHECK preferred so it works outside compose, e.g. Kubernetes)."
+    remediation: {skill: 10x-docker, ref: go-api-dockerfile.md}
+
+  - id: release.goreleaser
+    dimension: version
+    applies_to: [go-service, go-cli]
+    severity: P1
+    profiles: {private: P2, internal: P1, public: P1}
+    probe: 'ls .goreleaser.y*ml >/dev/null 2>&1'
+    expected: "A goreleaser config produces cross-platform, version-stamped release artifacts on tag."
+    remediation: {skill: 10x-ci, ref: goreleaser.yaml}
+
+  - id: release.workflow
+    dimension: ci
+    applies_to: [go-service, go-cli, go-lib, python-service, python-cli, python-lib]
+    severity: P1
+    profiles: {private: P2, internal: P1, public: P1}
+    probe: 'test -f .github/workflows/release.yml'
+    expected: "A tag-triggered release.yml builds and publishes version-stamped artifacts using the ecosystem's canonical tool: goreleaser (contents: write, fetch-depth: 0) for Go binaries; build + twine + PyPI Trusted Publishing (id-token: write, a tag-vs-pyproject.toml version check) for Python. A Go library builds no artifact of its own (the module proxy serves the tag), so there the job verifies the release instead: it runs the repo's quality gate and fails when the pushed tag does not match the top version heading in CHANGELOG.md."
+    remediation: {skill: 10x-ci, ref: release.yml}
+
+  - id: release.python_build
+    dimension: version
+    applies_to: [python-service, python-cli, python-lib]
+    severity: P1
+    profiles: {private: P2, internal: P1, public: P1}
+    probe: 'grep -qsE "^\[build-system\]" pyproject.toml'
+    expected: "A PEP 517 [build-system] backend (hatchling, setuptools, poetry-core) in pyproject.toml produces version-stamped sdist+wheel artifacts on tag, the Python analogue of release.goreleaser."
+    remediation: {skill: 10x-ci, ref: release-python.yml}
+
+  - id: release.script
+    dimension: makefile
+    applies_to: [go-service, go-cli, go-lib, python-service, python-cli, python-lib]
+    severity: P2
+    probe: 'test -f scripts/release.sh && { [ ! -f Makefile ] || grep -qsE "scripts/release\.sh" Makefile ; }'
+    expected: "A scripted release (scripts/release.sh, wired to `make release` when a Makefile exists) derives the next semver from Conventional Commits, confirms an editable default, gates on the repo's own quality check (`make ci` for Go; the project's test+lint command for Python), stamps CHANGELOG.md (and, for Python, the pyproject.toml `version` field so it matches the tag), then tags and pushes."
+    remediation: {skill: 10x-makefile, ref: release.sh, agent: fixer-agent}
+
+  - id: governance.security_md
+    dimension: governance
+    applies_to: [all]
+    severity: P1
+    profiles: {private: NA, internal: P2, public: P1}
+    probe: 'test -f SECURITY.md'
+    expected: "SECURITY.md with a supported-versions table and a private disclosure path. A disclosure path presumes someone outside the team has something to disclose, so this drops away on a private repo and stays advisory internally."
+    remediation: {skill: 10x-plan, ref: security.md}
+
+  - id: governance.contributing
+    dimension: governance
+    applies_to: [all]
+    severity: P1
+    profiles: {private: NA, internal: P2, public: P1}
+    probe: 'test -f CONTRIBUTING.md'
+    expected: "CONTRIBUTING.md describing the make targets and the commit convention. Addressed to a contributor who does not already know the repo, which is nobody on a private one."
+    remediation: {skill: 10x-plan, ref: contributing.md}
+
+  - id: governance.dependabot
+    dimension: governance
+    applies_to: [all]
+    severity: P1
+    probe: 'test -f .github/dependabot.yml'
+    expected: "dependabot.yml covering gomod + github-actions (+ docker where images are built)."
+    remediation: {skill: 10x-ci, ref: dependabot.yml}
+
+  - id: governance.codeowners
+    dimension: governance
+    applies_to: [all]
+    severity: P2
+    profiles: {private: NA, internal: P1, public: P2}
+    probe: 'test -f CODEOWNERS || test -f .github/CODEOWNERS'
+    expected: "A CODEOWNERS file routes review. This peaks internally rather than publicly: a team with several owners needs the routing most, a solo repo has nothing to route, and a public project's review routing is usually already encoded in its maintainer list."
+    remediation: {skill: 10x-plan, ref: codeowners}
+
+  - id: governance.changelog_root
+    dimension: governance
+    applies_to: [all]
+    severity: P2
+    profiles: {private: P2, internal: P2, public: P1}
+    probe: 'test -f CHANGELOG.md'
+    expected: "CHANGELOG.md at the repo root (Keep a Changelog), always mandatory and never satisfied by pointing at .claude/CHANGELOG.md instead: the two serve different audiences and neither substitutes for the other. The root file stays succinct and public-facing only, what changed, not why or how it was decided, ideally populated from tagged releases via Conventional Commits (scripts/release.sh promotes [Unreleased] under a version heading on `make release`; goreleaser's changelog block derives the matching GitHub Release notes the same way). `.claude/CHANGELOG.md`, excluded from version control, is a separate, detailed, decision-level log for the author alone; its content must never be copied or promoted into the root file to satisfy this check. Weighs heavier in public, where the changelog is the upgrade contract for people who cannot read the commit log for context."
+    remediation: {skill: 10x-plan, ref: changelog.md}
+
+  - id: ui.cube_layers
+    dimension: ui
+    applies_to: [web-app]
+    severity: P2
+    probe: 'find . -type d -name blocks -not -path "./.git/*" -not -path "./node_modules/*" -not -path "./vendor/*" 2>/dev/null | grep -q . || find . -name tokens.css -not -path "./.git/*" -not -path "./node_modules/*" 2>/dev/null | grep -q .'
+    expected: "Hand-written CSS is layered per CUBE: tokens.css (custom properties only), composition.css (Every Layout primitives), blocks/NNN-*.css (named blocks), utilities.css. A single monolithic stylesheet has no seam to add a component along, so every feature edits the same file and the cascade becomes the shared mutable state nobody can reason about. P2 because the split is a refactor with real cost on an existing UI: what it buys is that a new block cannot silently redefine another's spacing."
+    remediation: {skill: 10x-frontend-design, ref: css-contract.md}
+
+  - id: ui.color_literals
+    dimension: ui
+    applies_to: [web-app]
+    severity: P2
+    probe: '! find . \( -name "*.css" -not -name tokens.css \) -not -path "./.git/*" -not -path "./node_modules/*" -not -path "./vendor/*" -print0 2>/dev/null | xargs -0 -r grep -lE "#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(" 2>/dev/null | grep -q .'
+    expected: "Zero colour literals outside tokens.css. A hardcoded colour is a component that cannot be themed and will not follow a palette change, which is exactly the drift a token contract exists to prevent. Ratchet discipline applies: existing occurrences are tolerated on an inherited codebase, any addition fails."
+    remediation: {skill: 10x-frontend-design, ref: css-contract.md}
+
+  - id: ui.contract
+    dimension: ui
+    applies_to: [web-app]
+    severity: P2
+    profiles: {private: P2, internal: P2, public: P2}
+    probe: 'test -f docs/ux.md || test -f .claude/project/ux.md'
+    expected: "A UX contract records the screens (route, dominant action, tension relieved) and the component registry. 10x-frontend-design already calls the screen table a required artifact without ever giving it a home, so the intent layer is defended by nothing while the CSS layer has twelve audits. Same severity on every profile: an undocumented screen costs the next feature the same whether the repo is public or not, because the reader who needs it is the one adding screen eleven."
+    remediation: {skill: 10x-plan, ref: ux.md}
+
+  - id: commit.ci_check
+    dimension: ci
+    applies_to: [all]
+    severity: P2
+    profiles: {private: P2, internal: P1, public: P1}
+    probe: 'grep -rqsE "commitlint" .github/workflows'
+    expected: "Commit messages are checked in CI (dependency-free commitlint) AND locally (a lefthook/commit-msg hook). The convention is what makes release notes and semver derivation mechanical, so it matters wherever more than one person or one release consumes the history."
+    remediation: {skill: 10x-ci, ref: shell-gates.md}
+
+  - id: supply_chain.sign_sbom
+    dimension: supply-chain
+    applies_to: [go-service, go-cli]
+    severity: P2
+    profiles: {private: NA, internal: P2, public: P1}
+    probe: 'grep -qsE "sboms:|signs:" .goreleaser.y*ml'
+    expected: "goreleaser emits an SBOM (syft) and signs artifacts (cosign keyless). A signature is only worth producing where someone else verifies it, which is what makes this a public-audience check rather than a universal one."
+    remediation: {skill: 10x-ci, ref: goreleaser.yaml}
+
+  - id: supply_chain.scan
+    dimension: supply-chain
+    applies_to: [go-service, web-app]
+    severity: P2
+    profiles: {private: P2, internal: P1, public: P1}
+    probe: 'grep -rqsE "trivy|grype|codeql" .github/workflows'
+    expected: "CI runs a container/image scan (trivy or grype) and/or CodeQL SAST. Never drops to NA: a scan protects the deployment, and a private repo can still ship a vulnerable image to production."
+    remediation: {skill: 10x-ci, ref: ci.yml}
+
+  - id: docs.no_drift
+    dimension: governance
+    applies_to: [all]
+    severity: P2
+    manual: true
+    expected: "Every make target and build tag named in README/CONTRIBUTING/CLAUDE.md actually exists (verify-docs). Judgment check: the agent cross-reads docs against the Makefile."
+    remediation: {skill: 10x-conform, agent: conform-agent}

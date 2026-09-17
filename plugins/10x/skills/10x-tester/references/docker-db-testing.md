@@ -4,11 +4,13 @@
 
 Integration tests run against real database containers. Define services with healthchecks so dependent containers wait until the DB is actually ready.
 
+The authoritative service definitions live in the 10x-docker skill (`references/mariadb-docker-compose-service.md` and friends); the excerpt below shows the healthcheck wiring that matters for tests.
+
 ```yaml
 # docker-compose.yml
 services:
   app_db:
-    image: mariadb:10.4
+    image: mariadb:11
     environment:
       MARIADB_ROOT_PASSWORD: rootpass
       MARIADB_DATABASE: appdb
@@ -66,7 +68,7 @@ The standard script to start the stack, wait for the server to be ready, run tes
 #!/bin/bash
 set -e
 
-make compose_run_d
+make up
 echo "Waiting for server..."
 
 MAX_RETRIES=25
@@ -93,7 +95,7 @@ while true; do
     echo "  attempt $CPT: HTTP $HTTP_CODE"
 done
 
-go test -v ./internal/api
+go test -v ./internal/...
 RC=$?
 
 docker compose stop
@@ -104,42 +106,12 @@ Always stop the stack on exit, even on failure. `set -e` is fine here because th
 
 ## Makefile Targets
 
+Targets come from the 10x-makefile skill (single source of truth): `up`/`down` from `makefile-base.md`, `test`/`fulltest`/`cover`/`audit`/`ci` from `makefile-go.md`. The only test-specific wiring is pointing `fulltest` at the script above:
+
 ```makefile
-.PHONY: test fulltest cover audit ci
-
-## test: run unit tests (no Docker required)
-test:
-	go test -race -v ./...
-
-## fulltest: start Docker stack and run integration tests
+## fulltest: start the Docker stack and run integration tests
 fulltest:
 	./run_tests.sh
-
-## cover: run tests with HTML coverage report
-cover:
-	go test -race -coverprofile=coverage.out -covermode=atomic ./...
-	go tool cover -html=coverage.out -o coverage.html
-	go tool cover -func=coverage.out | grep total
-
-## audit: static analysis and vulnerability scan
-audit:
-	go mod verify
-	go vet ./...
-	staticcheck -checks=all,-ST1000,-U1000 ./...
-	govulncheck ./...
-	revive ./...
-	go test -race -buildvcs -vet=off ./...
-
-## ci: all checks (run in CI/CD pipeline)
-ci: test cover audit
-
-## compose_run_d: start Docker Compose stack detached
-compose_run_d:
-	docker compose up -d --build
-
-## compose_stop: stop Docker Compose stack
-compose_stop:
-	docker compose stop
 ```
 
 ## Test Environment Configuration
@@ -180,5 +152,5 @@ func findProjectRoot(t *testing.T) string {
 | Health check | `depends_on: condition: service_healthy` |
 | Server readiness | Poll `/healthcheck` with `curl`, not just port with `nc` |
 | Test env setup | `godotenv.Load` + override DBHOST/DBPORT |
-| Test target | `go test -v ./internal/api` |
-| Full pipeline | `make ci` (test + cover + audit) |
+| Test target | `go test -v ./internal/...` (or the project's integration packages) |
+| Full pipeline | `make ci` (see 10x-makefile `makefile-go.md`) |

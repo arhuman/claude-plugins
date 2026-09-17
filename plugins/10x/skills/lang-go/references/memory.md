@@ -9,7 +9,7 @@ Always limit, drain, and close `r.Body` in HTTP handlers. Without draining, the 
 ```go
 // Apply at the top of every handler that reads a body
 func (s *Server) createUser(w http.ResponseWriter, r *http.Request) {
-    // Limit before reading — prevents runaway client sending large payloads
+    // Limit before reading: prevents runaway client sending large payloads
     r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MB
     defer func() {
         io.Copy(io.Discard, r.Body) // drain remainder
@@ -43,10 +43,10 @@ data, err := io.ReadAll(limited)
 
 Never discard `resp.Body` without both draining and closing it. Failing to drain prevents the transport from reusing the connection.
 
-Always limit the body read — a misbehaving or compromised upstream can push unbounded data and cause OOM. Use `io.LimitedReader` (not `io.LimitReader`) when you need to detect truncation rather than silently accept it.
+Always limit the body read: a misbehaving or compromised upstream can push unbounded data and cause OOM. Use `io.LimitedReader` (not `io.LimitReader`) when you need to detect truncation rather than silently accept it.
 
 ```go
-const maxBody = 1 * 1024 * 1024 // 1 MB — tune to domain expectations
+const maxBody = 1 * 1024 * 1024 // 1 MB: tune to domain expectations
 
 var myClient = &http.Client{Timeout: 10 * time.Second} // never use http.DefaultClient
 
@@ -69,14 +69,14 @@ func fetch(url string) ([]byte, error) {
         return nil, fmt.Errorf("fetch read: %w", err)
     }
     if limited.N == 0 {
-        // N reaches 0 when limit+1 bytes were consumed — stream was truncated
+        // N reaches 0 when limit+1 bytes were consumed: stream was truncated
         return nil, fmt.Errorf("fetch: response exceeded %d byte limit", maxBody)
     }
     return data, nil
 }
 ```
 
-**Why `io.LimitedReader` over `io.LimitReader`**: `io.LimitReader` silently truncates — the caller cannot distinguish a legitimate 1 MB response from a silently cut-off 100 MB one. Using `&io.LimitedReader{N: limit+1}` and checking `limited.N == 0` after reading makes overflow explicit and returnable as an error.
+**Why `io.LimitedReader` over `io.LimitReader`**: `io.LimitReader` silently truncates: the caller cannot distinguish a legitimate 1 MB response from a silently cut-off 100 MB one. Using `&io.LimitedReader{N: limit+1}` and checking `limited.N == 0` after reading makes overflow explicit and returnable as an error.
 
 ---
 
@@ -84,24 +84,7 @@ func fetch(url string) ([]byte, error) {
 
 ### errgroup with limit (preferred)
 
-`errgroup.SetLimit` is the cleanest way to cap goroutines for a batch of work. Requires `golang.org/x/sync/errgroup`.
-
-```go
-import "golang.org/x/sync/errgroup"
-
-func processAll(ctx context.Context, items []Item) error {
-    g, ctx := errgroup.WithContext(ctx)
-    g.SetLimit(10) // at most 10 goroutines active at once
-
-    for _, item := range items {
-        item := item
-        g.Go(func() error {
-            return process(ctx, item)
-        })
-    }
-    return g.Wait()
-}
-```
+`errgroup.SetLimit` is the cleanest way to cap goroutines for a batch of work. The canonical example lives in `concurrency.md` (Goroutine Count Control): one copy, so the two files cannot drift.
 
 ### Weighted semaphore (for non-errgroup scenarios)
 
@@ -153,11 +136,11 @@ go build -gcflags="-m=1" ./...
 Every value stored in an `interface{}` / `any` escapes to the heap. Prefer concrete types in performance-sensitive code.
 
 ```go
-// BAD — boxes `n` on every call
+// BAD: boxes `n` on every call
 func logValue(v any) { fmt.Println(v) }
 logValue(42)
 
-// GOOD — no allocation
+// GOOD: no allocation
 func logInt(n int) { fmt.Println(n) }
 logInt(42)
 ```
@@ -167,14 +150,14 @@ logInt(42)
 Returning a pointer forces the value to escape. Return by value when the struct is small (≤ a few cache lines); the compiler can inline and stack-allocate it.
 
 ```go
-// BAD — Point escapes to heap
+// BAD: Point escapes to heap
 func newPoint(x, y int) *Point { return &Point{x, y} }
 
-// GOOD — stays on stack at call site
+// GOOD: stays on stack at call site
 func newPoint(x, y int) Point { return Point{x, y} }
 ```
 
-Exception: large structs (>= ~128 bytes) or structs whose lifetime exceeds the calling function's frame — use a pointer there.
+Exception: large structs (>= ~128 bytes) or structs whose lifetime exceeds the calling function's frame: use a pointer there.
 
 ### Pre-allocate slices and maps
 
@@ -202,7 +185,7 @@ m := make(map[string]int, expectedSize)
 ### strings.Builder over fmt.Sprintf for repeated concatenation
 
 ```go
-// BAD — each Sprintf allocates
+// BAD: each Sprintf allocates
 var s string
 for _, part := range parts {
     s += fmt.Sprintf("%s,", part)
@@ -220,9 +203,9 @@ result := b.String()
 
 ---
 
-## sync.Pool — Reuse Temporary Allocations
+## sync.Pool: Reuse Temporary Allocations
 
-Use `sync.Pool` for objects that are frequently allocated, used briefly, and discarded — e.g., `bytes.Buffer`, scratch byte slices, encoder/decoder instances.
+Use `sync.Pool` for objects that are frequently allocated, used briefly, and discarded: e.g., `bytes.Buffer`, scratch byte slices, encoder/decoder instances.
 
 ```go
 var bufPool = sync.Pool{
@@ -246,7 +229,7 @@ func encode(v any) ([]byte, error) {
 
 **Rules for sync.Pool:**
 - Always `Reset()` the object before putting it back
-- Never store pointers to pooled objects outside the pool's scope — the GC may reclaim pool contents between GC cycles
+- Never store pointers to pooled objects outside the pool's scope: the GC may reclaim pool contents between GC cycles
 - Do not pool objects that hold open resources (file handles, connections)
 
 ---
@@ -256,12 +239,12 @@ func encode(v any) ([]byte, error) {
 | Pattern | Rule |
 |---------|------|
 | `r.Body` in handlers | `http.MaxBytesReader` + drain + close |
-| `resp.Body` in clients — limit | `&io.LimitedReader{R: resp.Body, N: limit+1}` then check `limited.N == 0` for overflow |
-| `resp.Body` in clients — drain | `io.Copy(io.Discard, resp.Body)` then close (enables connection reuse) |
+| `resp.Body` in clients: limit | `&io.LimitedReader{R: resp.Body, N: limit+1}` then check `limited.N == 0` for overflow |
+| `resp.Body` in clients: drain | `io.Copy(io.Discard, resp.Body)` then close (enables connection reuse) |
 | `resp.Body` on `client.Do` error | `if resp != nil { resp.Body.Close() }` before returning the error |
-| HTTP client timeout | Never `http.Get`/`http.DefaultClient` — always `&http.Client{Timeout: N}` |
+| HTTP client timeout | Never `http.Get`/`http.DefaultClient`: always `&http.Client{Timeout: N}` |
 | `io.LimitReader` | use only when silent truncation is acceptable; prefer `io.LimitedReader` otherwise |
-| Regex in hot paths | `var re = regexp.MustCompile(...)` at package level — never inside per-request functions |
+| Regex in hot paths | `var re = regexp.MustCompile(...)` at package level: never inside per-request functions |
 | Goroutine cap | `errgroup.SetLimit(n)` or `semaphore.NewWeighted(n)` |
 | Small structs | return by value, not pointer |
 | Hot-path values | avoid storing in `any` / `interface{}` |

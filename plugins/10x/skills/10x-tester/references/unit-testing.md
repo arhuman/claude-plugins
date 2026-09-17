@@ -2,7 +2,7 @@
 
 ## Go: Table-Driven Tests
 
-The standard pattern for all non-trivial Go tests. Use `t.Run` for subtests.
+The authoritative Go testing guide is the `lang-go` skill's `references/testing.md` (table-driven tests, testify, benchmarks, fuzzing, mocking, coverage): consult it for Go projects. The pattern below is the minimum shape; use `t.Run` for subtests.
 
 ```go
 func TestConfigValidation(t *testing.T) {
@@ -12,13 +12,13 @@ func TestConfigValidation(t *testing.T) {
         expectError bool
     }{
         {
-            name:        "valid config",
-            input:       Config{Directory: ".", MappingFile: "test.csv"},
+            name:       "valid config",
+            input:      Config{Directory: ".", MappingFile: "test.csv"},
             expectError: false,
         },
         {
-            name:        "missing directory",
-            input:       Config{MappingFile: "test.csv"},
+            name:       "missing directory",
+            input:      Config{MappingFile: "test.csv"},
             expectError: true,
         },
     }
@@ -86,7 +86,7 @@ Use `jasmine.createSpyObj(name, methodNames)` to mock services injected via DI. 
 
 | Pattern | Go | TypeScript |
 |---------|----|------------|
-| Test runner | `go test ./...` | `ng test` (Karma) |
+| Test runner | `go test ./...` | `ng test` (Web Test Runner or Jest per project; Karma is deprecated) |
 | Assertions | `assert.Equal`, `require.NoError` | `expect(...).toBe`, `expect(...).toBeTruthy` |
 | Mocking | test doubles via interfaces | `jasmine.createSpyObj()` |
 | Setup | `SetupData(t *testing.T)` | `beforeEach(() => TestBed.configureTestingModule(...))` |

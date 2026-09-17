@@ -1,0 +1,48 @@
+# golangci-lint config — MINIMAL tier (golangci-lint v2)
+#
+# The lowest-friction gate that still catches real correctness/resource bugs.
+# Use for small tools, libraries, and early-stage projects that want a green
+# bar without a ratchet program. `default: none` means ONLY the linters listed
+# below run — nothing is inherited.
+#
+# Tier ladder: minimal (this file) -> standard (../../10x-makefile/references/.golangci.yml)
+#              -> strict (./golangci-strict.yml). See ../README.md.
+#
+# The tier ladder scales complexity and style pressure, NOT security. gosec is
+# on at every tier because the lint.config check in ./standard.yml is a P0, and
+# a P0 does not vary by tier any more than it varies by audience profile. A repo
+# that adopts this file must still pass that check. Exclude a specific gosec
+# rule at a specific path with a reason; never drop the linter.
+#
+# Pin the golangci-lint binary to the version in ./versions.md.
+
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - bodyclose        # HTTP response bodies are closed
+    - contextcheck     # functions use an inherited context, not context.Background mid-call
+    - gosec            # security-oriented checks; required at every tier, see below
+    - govet            # stdlib correctness vet checks
+    - noctx            # no HTTP requests without a context.Context
+    - revive           # broad style/correctness rules (golint successor)
+    - sqlclosecheck    # sql.Rows / sql.Stmt are closed
+    - staticcheck      # the staticcheck suite
+  settings:
+    staticcheck:
+      checks:
+        - "all"
+        - "-ST1000"    # do not require package comments on every package
+        - "-U1000"     # tolerate unused code (early-stage churn)
+  exclusions:
+    rules:
+      # Fixtures need traversable directories and sometimes deliberately odd
+      # modes (G301/G302/G306). None of it ships in the binary.
+      - path: _test\.go
+        linters:
+          - gosec
+
+formatters:
+  enable:
+    - gofmt

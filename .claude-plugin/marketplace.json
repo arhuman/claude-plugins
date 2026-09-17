@@ -7,11 +7,6 @@
   },
   "plugins": [
     {
-      "name": "global-project-manager",
-      "source": "./plugins/global-project-manager",
-      "category": "development"
-    },
-    {
       "name": "10x",
       "source": "./plugins/10x",
       "category": "development"

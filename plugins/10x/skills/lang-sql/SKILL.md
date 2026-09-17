@@ -1,11 +1,13 @@
 ---
 name: lang-sql
-description: SQL coding best practices and patterns. Use when working with SQL files, writing migrations, or reviewing schema design.
+description: 'PostgreSQL-first SQL best practices and patterns. Use when working with SQL files, writing migrations, or reviewing schema design. Not for application-layer query code (GORM, drivers): use lang-go.'
 ---
 
 # lang-sql
 
-This skill defines rules for writing correct, maintainable, and production-safe SQL — covering schema design, migrations, queries, and indexing.
+This skill defines rules for writing correct, maintainable, and production-safe SQL: covering schema design, migrations, queries, and indexing.
+
+**Dialect**: the rules assume PostgreSQL. For MariaDB/Oracle/MSSQL projects (see 10x-docker services), the principles hold but the specifics (`IDENTITY` syntax, `JSONB`, partial indexes, `ON CONFLICT`) need dialect translation: say so when reviewing non-Postgres SQL.
 
 ## Reference Guide
 
@@ -16,7 +18,7 @@ This skill defines rules for writing correct, maintainable, and production-safe 
 ## Architecture Principles
 
 ### Schema Design
-- Use `SERIAL PRIMARY KEY` for surrogate keys
+- Use `BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY` for surrogate keys (`SERIAL` is legacy; identity columns are the PostgreSQL 10+ standard)
 - Prefer `TEXT` over `VARCHAR(n)` unless a hard limit is meaningful (e.g. `VARCHAR(45)` for IP addresses, `VARCHAR(500)` for tokens)
 - Use `TIMESTAMPTZ NOT NULL DEFAULT NOW()` for audit timestamps (`created_at`, `computed_at`)
 - Nullable columns should be explicit: use `DEFAULT NULL` when adding optional columns
@@ -34,13 +36,13 @@ Document the transition flow in a `COMMENT ON COLUMN`.
 
 ### Foreign Keys
 - Add `ON DELETE CASCADE` on child tables when child rows are meaningless without the parent
-- Remove FK constraints intentionally when data preservation matters more than referential integrity (e.g. soft-delete QCMs while preserving quiz history) — always document this trade-off in the migration comment
+- Remove FK constraints intentionally when data preservation matters more than referential integrity (e.g. soft-deleting a parent while preserving child history): always document this trade-off in the migration comment
 - Never silently drop an FK; write a comment explaining why
 
 ### JSON Columns
 - Use `JSONB` (not `JSON`) for structured data that may be queried or indexed
 - Only use JSONB when the structure is variable or too large for normalized columns (e.g. `scores`, `question_sequence`)
-- Avoid JSONB for fields that are queried by value — normalize them instead
+- Avoid JSONB for fields that are queried by value: normalize them instead
 
 ## MUST DO
 
@@ -54,17 +56,17 @@ Document the transition flow in a `COMMENT ON COLUMN`.
 - **Use `COALESCE`** to handle NULLs explicitly in calculations rather than relying on implicit NULL propagation
 - **Use `EXTRACT(EPOCH FROM interval) * 1000`** for millisecond durations from timestamp deltas
 - **Use `LAG()` window function** for computing deltas between consecutive rows (e.g. answer timing)
-- **Parameterize all queries** — never interpolate user input into SQL strings
+- **Parameterize all queries**: never interpolate user input into SQL strings
 
 ## MUST NOT DO
 
-- Do not use `SELECT *` in application queries — always list columns explicitly
+- Do not use `SELECT *` in application queries: always list columns explicitly
 - Do not add columns without a `DEFAULT` on a large live table (it locks the table in old PG versions)
-- Do not use `TIMESTAMP` without timezone — always use `TIMESTAMPTZ`
+- Do not use `TIMESTAMP` without timezone: always use `TIMESTAMPTZ`
 - Do not drop a foreign key without a comment explaining the trade-off
-- Do not use `JSON` — always `JSONB`
-- Do not put business logic (scoring, state transitions) in SQL — keep it in the application layer
-- Do not use `COUNT(*)` to check existence — use `EXISTS (SELECT 1 FROM ...)` instead
+- Do not use `JSON`: always `JSONB`
+- Do not put business logic (scoring, state transitions) in SQL: keep it in the application layer
+- Do not use `COUNT(*)` to check existence: use `EXISTS (SELECT 1 FROM ...)` instead
 
 ## Coding Style
 
@@ -79,7 +81,7 @@ Document the transition flow in a `COMMENT ON COLUMN`.
 -- Migration: Short description of what this migration does
 --
 -- Purpose: Why this change is needed
--- Impact:  What tables/columns/indexes are affected
+-- Impact: What tables/columns/indexes are affected
 -- Trade-off: Any integrity or performance trade-off (if applicable)
 
 ALTER TABLE quizzes
@@ -122,16 +124,17 @@ WHERE question_id = $2;
 
 ## Quality Standards
 
-- Every migration must be tested on a local DB before committing
-- Migrations are **not reversible** by default — write a separate rollback file only when rollback is planned
+- Every migration must be tested on a local DB before committing, and the **whole chain** replayed onto an empty volume: one migration passing in isolation says nothing about its position. A constraint, index, or FK added before the rename or backfill it depends on is green on a fresh database and breaks every existing one, because a deployed volume replays only the tail.
+- Order a dependent migration after what it depends on, never merely near it: add the `CHECK` after the rename that produces the values it accepts, and after the backfill that makes existing rows satisfy it
+- Migrations are **not reversible** by default: write a separate rollback file only when rollback is planned
 - All indexes on high-write tables must be justified (indexes slow writes)
 - `CHECK` constraints must cover all valid values of an enum-like column
 - IP address columns use `VARCHAR(45)` to support both IPv4 and IPv6
 
 ## Agent Behavior
 
-- When asked to add a column, always produce a numbered migration file in `conf/initdb/`
+- When asked to add a column, always produce a numbered migration file in the project's migration directory (locate it first: `conf/initdb/`, `migrations/`, `db/migrations/`, …)
 - When modifying a `CHECK` constraint, drop the old one first (`DROP CONSTRAINT IF EXISTS`) then add the new one
-- When writing a JOIN query, always use explicit `INNER JOIN` / `LEFT JOIN` — never implicit comma joins
+- When writing a JOIN query, always use explicit `INNER JOIN` / `LEFT JOIN`: never implicit comma joins
 - When unsure whether a query will be slow, suggest `EXPLAIN ANALYZE` before shipping
 - Never generate a migration that drops a column or table without first asking for confirmation

@@ -1,6 +1,6 @@
 # Every Layout Reference
 
-Every Layout primitives solve layout problems intrinsically — without media queries where possible.
+Every Layout primitives solve layout problems intrinsically: without media queries where possible.
 
 Source: https://every-layout.dev
 
@@ -216,7 +216,7 @@ Inline SVG icon sized to the current font.
 | Horizontal scroll carousel | Reel |
 | Text label with icon | Icon |
 
-Do **not** combine primitives by nesting their CSS — compose them in HTML.
+Do **not** combine primitives by nesting their CSS: compose them in HTML.
 
 ```html
 <!-- Correct: compose in HTML -->

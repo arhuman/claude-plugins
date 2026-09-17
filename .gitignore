@@ -1,1 +1,12 @@
 tools/s4ync/s4ync
+__pycache__/
+*.pyc
+
+# Private working context. Gitignored globally on the author's machine; repeated
+# here so a fresh clone gets the same protection. Note the trailing slash: it must
+# not swallow the tracked .claude-plugin/ marketplace manifests.
+.claude/
+.env
+.env.*
+!.env.example
+.playwright-mcp/

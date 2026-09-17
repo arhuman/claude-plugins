@@ -1,0 +1,40 @@
+name: plugin-checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: SKILL.md reference pointers resolve
+        run: sh scripts/check-skill-references.sh
+      - name: Relative markdown links resolve
+        run: sh scripts/check-markdown-links.sh
+      - name: SKILL.md stays under 500 lines
+        run: sh scripts/check-skill-size.sh
+      - name: Makefile templates use tabs
+        run: sh scripts/check-makefile-tabs.sh
+      - name: Canonical rules not restated outside their owning skill
+        run: sh scripts/check-rule-duplication.sh
+      - name: Analysis agents cannot edit the code they analyse
+        run: sh scripts/check-agent-tools.sh
+      - name: Frontmatter parses as YAML
+        # pyyaml so the script takes its real-parse path; without it the script
+        # falls back to a grep for the one construct that has broken before,
+        # which is a weaker check that would pass on a novel YAML error.
+        run: |
+          python3 -m pip install --quiet pyyaml
+          sh scripts/check-frontmatter-parses.sh
+      - name: Slop check recipes self-test
+        run: |
+          sudo apt-get update && sudo apt-get install -y ripgrep
+          sh plugins/10x/skills/10x-review/references/slop-checks.sh --self-test
+      - name: Validate plugin manifests (strict)
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude plugin validate plugins/10x --strict
+          claude plugin validate plugins/introspect --strict

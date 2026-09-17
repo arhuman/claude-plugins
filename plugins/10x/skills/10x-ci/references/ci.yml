@@ -1,0 +1,189 @@
+# CI workflow scaffold for a Go project driven by a Makefile.
+# Calls `make` targets so CI and local never drift. Pin action/tool versions to
+# ../_shared/references/versions.md. Replace the go.mod floor in the matrix
+# with the target repo's own `go` line, then delete this sentence.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: CI only reads the repo. The release workflow gets write.
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Floor = go.mod minimum (keep in sync); "stable" = latest release, which
+        # is also what release.yml ships with (stdlib security patches).
+        go: ["1.25", "stable"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go }}
+          check-latest: true
+      - name: Build
+        run: make build
+      # If the project uses build tags, build every variant so none rots:
+      # - name: Build (embed tag)
+      #   run: CGO_ENABLED=0 go build -tags embed ./...
+      - name: Test (race)
+        run: make test
+      - name: Benchmarks (smoke, 1x)
+        run: go test -run='^$' -bench=. -benchmem -benchtime=1x ./...
+
+  lint:
+    name: lint + vuln + coverage gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          # Not `stable`: the pinned golangci-lint's staticcheck must understand
+          # this toolchain's stdlib; a newer Go panics it.
+          # Probe `stable` in the test matrix; keep go.mod on the latest patch.
+          go-version-file: go.mod
+      # Pre-install the pinned tools so `make audit` reuses them instead of
+      # bootstrapping via `make tools`. Versions MUST equal ../_shared/references/versions.md.
+      - name: Install pinned tools
+        run: |
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
+          go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+      # `make audit` = go mod verify + golangci-lint + govulncheck + coverage gate
+      # (audit depends on cover). One code path, local and CI.
+      - name: Audit
+        run: make audit
+      # Alternative to `make audit`'s golangci-lint step, trading the
+      # never-drift guarantee for inline PR annotations + caching:
+      #   - uses: golangci/golangci-lint-action@v8
+      #     with: { version: v2.13.2 }
+
+  commitlint:
+    name: commit messages
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Conventional Commits on PR commits
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          pattern='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9/_.-]+\))?(!)?: .+'
+          fail=0
+          for sha in $(git rev-list --no-merges "$BASE..$HEAD"); do
+            subject=$(git log -1 --format=%s "$sha")
+            if ! printf '%s' "$subject" | grep -qE "$pattern"; then
+              echo "::error::commit $sha is not Conventional Commits: '$subject'"
+              fail=1
+            fi
+          done
+          exit $fail
+
+  # OPTIONAL — delete if the project ships no container image. Satisfies the
+  # supply_chain.scan item in ../_shared/references/standard.yml, which grades a
+  # repo on running trivy/grype and/or CodeQL. Versions come from
+  # ../_shared/references/versions.md; note trivy-action's tag is v-prefixed, and
+  # an unprefixed 0.x.y fails at "Set up job" before a single step runs.
+  scan:
+    name: image scan + SAST
+    runs-on: ubuntu-latest
+    # CodeQL needs this to upload findings; trivy's SARIF goes the same way.
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: go
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:go
+
+      # Scan the image that actually ships, not a synthetic one: the base image
+      # and its packages are as much a part of the deployment as the binary.
+      - name: Build the image
+        run: make image
+      # Recompute the tag `make image` used rather than guessing: the Makefile's
+      # VERSION is `git describe --tags --always --dirty` (see
+      # ../../10x-makefile/references/makefile-go.md). Replace the name on the
+      # left with the Makefile's BINARY if it differs from the repo name.
+      - name: Resolve the tag make image produced
+        id: img
+        run: |
+          echo "tag=${{ github.event.repository.name }}:$(git describe --tags --always --dirty)" >> "$GITHUB_OUTPUT"
+      # Two passes on purpose: report everything to the Security tab, but fail
+      # only on what the maintainer can actually act on. A CRITICAL with no fixed
+      # version available blocks the pipeline without offering a way forward.
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.img.outputs.tag }}
+          format: sarif
+          output: trivy.sarif
+          severity: CRITICAL,HIGH,MEDIUM,LOW
+          exit-code: "0"
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy.sarif
+          category: trivy
+      - name: Fail on a fixable HIGH or CRITICAL
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.img.outputs.tag }}
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+  # OPTIONAL — delete if the project has no integration tests. Exercises the real
+  # DB behind a `//go:build integration` suite. The service healthcheck options
+  # mirror the compose file so CI and local behave identically; the same
+  # `make integration` target runs in both, with DSNs passed via env.
+  integration:
+    name: integration (postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: app
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d app"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+      - name: Integration tests
+        env:
+          APP_POSTGRES_DSN: postgres://app:app@localhost:5432/app?sslmode=disable
+        run: make integration

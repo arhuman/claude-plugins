@@ -28,7 +28,7 @@
 
 ```go
 var rootCmd = &cobra.Command{
-    Use:   "myapp",
+    Use:  "myapp",
     Short: "One-line description of myapp",
     PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
         return initConfig()
@@ -58,7 +58,7 @@ func init() {
 - Exit 1: general runtime error
 - Exit 2: misuse / bad args
 
-Never call `os.Exit` directly in cobra commands — return errors and let `main()` handle the exit.
+Never call `os.Exit` directly in cobra commands: return errors and let `main()` handle the exit.
 
 ## Output Format
 

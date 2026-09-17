@@ -1,8 +1,8 @@
 # HTMX Reference
 
-HTMX enables server-driven partial page updates via HTML attributes. It extends HTML — don't fight it.
+HTMX enables server-driven partial page updates via HTML attributes. It extends HTML: don't fight it.
 
-Source: https://htmx.org/docs
+Targets **htmx 2.x**. Source: https://htmx.org/docs
 
 ---
 
@@ -26,17 +26,17 @@ Source: https://htmx.org/docs
 ## Swap Strategies
 
 ```
-innerHTML   — replace inner HTML of target (default)
-outerHTML   — replace the target element itself
-beforebegin — insert before target
-afterbegin  — prepend inside target
-beforeend   — append inside target
-afterend    — insert after target
-delete      — delete target, ignore response
-none        — no DOM change (side-effect requests)
+innerHTML  : replace inner HTML of target (default)
+outerHTML  : replace the target element itself
+beforebegin: insert before target
+afterbegin : prepend inside target
+beforeend  : append inside target
+afterend   : insert after target
+delete     : delete target, ignore response
+none       : no DOM change (side-effect requests)
 ```
 
-**Warning**: never use `outerHTML` on the element that issued the request — it deletes itself before the swap completes.
+**Warning**: never use `outerHTML` on the element that issued the request: it deletes itself before the swap completes.
 
 ---
 
@@ -156,7 +156,7 @@ Use `HX-Request` on the server to return partial HTML vs full page.
 ## MUST NOT
 
 - Use `hx-swap="outerHTML"` on the element issuing the request
-- Embed business logic in `hx-vals` — keep that on the server
-- Rely on HTMX for form validation — use native HTML5 constraint validation + server-side
+- Embed business logic in `hx-vals`: keep that on the server
+- Rely on HTMX for form validation: use native HTML5 constraint validation + server-side
 - Use `hx-trigger="every 1s"` for polling without a termination condition (`hx-trigger="every 5s [document.hasFocus()]"`)
-- Skip the no-JS fallback for critical interactions — `<a href="/page">` degrades gracefully, `<div hx-get="/page">` does not
+- Skip the no-JS fallback for critical interactions: `<a href="/page">` degrades gracefully, `<div hx-get="/page">` does not

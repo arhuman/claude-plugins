@@ -1,11 +1,14 @@
 {
   "name": "10x",
-  "description": "Various skills and agent to make Claude Code a 10x more efficient",
+  "displayName": "10x",
+  "description": "Skills, agents, and commands that make Claude Code 10x more efficient",
   "license": "MIT",
-  "version": "0.6.0",
+  "version": "0.27.0",
   "author": {
     "name": "Arnaud (Arhuman) ASSAD",
     "email": "arhuman@gmail.com"
   },
-  "keywords": ["skills", "coding", "agent", "go", "docker", "html", "htmx", "css"]
+  "homepage": "https://github.com/arhuman/claude-plugins",
+  "repository": "https://github.com/arhuman/claude-plugins",
+  "keywords": ["skills", "coding", "agent", "review", "testing", "go", "typescript", "sql", "docker", "html", "htmx", "css", "ci", "github-actions", "release", "design", "ux", "accessibility", "conformance", "drift"]
 }

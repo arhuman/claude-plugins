@@ -1,9 +1,9 @@
 ---
 name: 10x-tester
-description: Comprehensive testing specialist for all levels and types. Use when writing unit, integration, E2E, performance, or security tests; creating test strategies and plans; analyzing test coverage; building automation frameworks; managing defects; debugging test failures; manual testing (exploratory, usability, accessibility); scaling CI/CD test pipelines.
+description: Comprehensive testing specialist for all levels and types. Use when writing unit, integration, E2E, performance, or security tests; creating test strategies and plans; analyzing test coverage; managing defects; debugging test failures; manual testing (exploratory, usability, accessibility); scaling CI/CD test pipelines. For a strict red-green-refactor loop, use the tdd skill instead.
 ---
 
-# Test Master
+# 10x Tester
 
 Comprehensive testing specialist ensuring software quality through functional, performance, and security testing.
 
@@ -18,6 +18,8 @@ You are a senior QA engineer with 12+ years of testing experience. You think in 
 3. **Write tests** - Implement tests with proper assertions
 4. **Execute** - Run tests and collect results
 5. **Report** - Document findings with actionable recommendations
+
+Done when: every planned test case has an executed result (pass, fail, or skipped with a stated reason), the suite runs green in the working tree (`go test -race ./...` or the project's equivalent), and the report lists findings with severity for passes that actually ran, never invented ones.
 
 ## Reference Guide
 
@@ -35,7 +37,6 @@ Load detailed guidance based on context:
 | Security | `references/security-testing.md` | Security test checklist |
 | Reports | `references/test-reports.md` | Report templates, findings |
 | QA Methodology | `references/qa-methodology.md` | Manual testing, quality advocacy, shift-left, continuous testing |
-| Automation | `references/automation-frameworks.md` | Framework patterns, scaling, maintenance, team enablement |
 | TDD Iron Laws | `references/tdd-iron-laws.md` | TDD methodology, test-first development, red-green-refactor |
 | Testing Anti-Patterns | `references/testing-anti-patterns.md` | Test review, mock issues, test quality problems |
 
@@ -43,12 +44,11 @@ Load detailed guidance based on context:
 
 **MUST DO**
 - Test happy paths and error cases
-- Use table-driven tests with `t.Run` in Go; `describe`/`it` with Jasmine in TypeScript
-- Store reference JSON responses in `assets/tests/` and compare with `jsondiff`
+- Sweep every input surface for the seven recurring edge shapes: empty, duplicate, concurrent, stale, missing, hostile, partial
+- Use table-driven tests with `t.Run` in Go; `describe`/`it` in TypeScript
 - Override DB host/port in test env setup (never rely on production connection strings)
 - Add health check polling before running integration tests against a live server
 - Run `go test -race ./...` for all Go tests
-- Run `go test -v ./internal/api` for API integration tests (requires Docker Compose to be up)
 - Cover: `make cover` or `go test -coverprofile=coverage.out ./...`
 
 **MUST NOT**
@@ -71,7 +71,13 @@ When creating test plans, provide:
 ## Knowledge Reference
 
 Go: testify/assert, testify/require, table-driven tests, go test -race, go tool cover, govulncheck
-TypeScript: Jasmine, Karma, Angular TestBed, jasmine.createSpyObj, Cypress, cy.intercept, cy.fixture, saveLocalStorage/restoreLocalStorage custom commands
+TypeScript: Jasmine + Angular TestBed for unit tests (Karma is deprecated; new projects use Web Test Runner or Jest per Angular config), Playwright preferred for new E2E suites, Cypress patterns for existing ones
 Database: Docker Compose with MariaDB/Oracle/MSSQL, SQL init scripts (docker-entrypoint-initdb.d), healthcheck polling, port override in test env
-CI/CD: run_tests.sh pattern, Makefile targets (test, fulltest, cover, audit, ci), go vet, staticcheck, revive
-Fixtures: assets/tests/ JSON files, jsondiff comparison, MD5-keyed Cypress fixture responses
+CI/CD: the run_tests.sh pattern (documented in `references/docker-db-testing.md`), Makefile targets from the 10x-makefile skill (test, fulltest, cover, audit, ci)
+
+## Reference Project Conventions (example)
+
+One reference Go/Angular project uses these conventions; adapt them per project rather than treating them as universal:
+- Reference JSON responses stored in `assets/tests/`, compared with `jsondiff`
+- API integration tests in `internal/api`, run with Docker Compose up
+- Cypress fixture responses keyed by MD5 of the request, with saveLocalStorage/restoreLocalStorage custom commands

@@ -12,7 +12,7 @@ async function fetchUser(id: string): Promise<User> {
   return response.json() as Promise<User>;
 }
 
-// Parallel execution — use Promise.all, not sequential awaits
+// Parallel execution: use Promise.all, not sequential awaits
 async function loadDashboard(userId: string): Promise<Dashboard> {
   const [user, posts, notifications] = await Promise.all([
     fetchUser(userId),
@@ -29,7 +29,41 @@ const users = results
   .map((r) => r.value);
 ```
 
+## Signals (Angular)
+
+Signals are the primary state primitive for component and service state in modern Angular. Reach for RxJS only for event streams and async composition (debounce, cancellation, retries).
+
+```typescript
+import { Component, signal, computed, input, effect, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+@Component({ /* standalone by default */ })
+export class CartComponent {
+  private readonly cartService = inject(CartService);
+
+  // Writable state
+  readonly quantity = signal(1);
+  // Derived state: recomputed only when dependencies change
+  readonly total = computed(() => this.quantity() * this.unitPrice());
+  // Signal inputs replace @Input()
+  readonly unitPrice = input.required<number>();
+  // Bridge an Observable into signal-land at the edge
+  readonly user = toSignal(this.cartService.user$, { initialValue: null });
+
+  increment(): void {
+    this.quantity.update((q) => q + 1);
+  }
+}
+```
+
+Guidance:
+- `signal`/`computed` for state, `input()`/`model()` for component I/O, `toSignal`/`toObservable` at the RxJS boundary.
+- Use `effect()` sparingly: for synchronization with non-Angular code, not for derived state (that is `computed`).
+- Signals pair with `OnPush`/zoneless change detection; avoid mutating objects inside a signal (use `update` with a new reference).
+
 ## RxJS Observables (Angular)
+
+Still the right tool for streams over time: user events to debounce, HTTP cancellation, websockets, polling.
 
 ```typescript
 import { Observable, Subject, BehaviorSubject } from 'rxjs';

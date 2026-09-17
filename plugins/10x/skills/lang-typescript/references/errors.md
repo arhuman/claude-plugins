@@ -93,7 +93,7 @@ this.userService.getUser(id).pipe(
 ## Unknown Error Narrowing
 
 ```typescript
-// Never use catch (e: any) — always narrow from unknown
+// Never use catch (e: any): always narrow from unknown
 function toMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === 'string') return error;

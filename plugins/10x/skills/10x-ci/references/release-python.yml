@@ -1,0 +1,78 @@
+# Release workflow: a v* tag triggers a build + PyPI publish. Python analogue of
+# release.yml/goreleaser.yaml. Requires a PyPI Trusted Publisher registered for
+# this repo + workflow (https://pypi.org/manage/account/publishing/) instead of
+# a stored API token: id-token: write is what proves the upload's provenance.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+# The publish job needs id-token: write for OIDC: the rest only read.
+permissions:
+  contents: read
+
+jobs:
+  # Tag pushes usually don't hit the branch-scoped push trigger in ci.yml, so
+  # this re-runs the test suite rather than assuming main was green when the
+  # tag was cut. Delegate to a reusable workflow shared with ci.yml so the two
+  # cannot drift apart.
+  test:
+    uses: ./.github/workflows/_test.yml
+
+  build:
+    name: Build distribution
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # The sdist/wheel embed the version from pyproject.toml, not from the
+      # git tag, so a mismatch here means the artifact and the release name
+      # disagree before it ever reaches PyPI.
+      - name: Verify tag matches pyproject.toml version
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          pyproject_version=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          if [ "$tag_version" != "$pyproject_version" ]; then
+            echo "Tag $GITHUB_REF_NAME (version $tag_version) does not match pyproject.toml version $pyproject_version"
+            exit 1
+          fi
+
+      - name: Install build tooling
+        run: pip install build twine
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Check metadata (README rendering, classifiers, etc.)
+        run: twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    # Must match the environment name (if any) entered when registering the
+    # Trusted Publisher. Omit this whole block if no environment was configured.
+    environment:
+      name: pypi
+      url: https://pypi.org/project/${{ github.event.repository.name }}/
+    permissions:
+      id-token: write # PyPI Trusted Publishing (OIDC token exchange), no stored secret
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

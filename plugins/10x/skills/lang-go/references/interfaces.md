@@ -14,7 +14,7 @@ func Parse(r io.Reader) (Processor, error) { ... }
 
 ## Small, Focused Interfaces
 
-Go interfaces work best when they are small — ideally one method.
+Go interfaces work best when they are small: ideally one method.
 
 ```go
 // Single-method interfaces (idiomatic Go)
@@ -45,7 +45,7 @@ type ReadWriteCloser interface {
 
 ## Interface Segregation
 
-Split fat interfaces into focused ones; compose at the call site.
+Split fat interfaces into focused ones; compose at the call site. The segregated form below is the target once multiple consumers with different needs exist. Do not pre-split a repository into five single-method interfaces at the provider: each consumer declares the narrow interface it needs, when it needs it.
 
 ```go
 // Bad: fat repository interface forces full implementation for every consumer
@@ -59,7 +59,7 @@ type Repository interface {
     Count() (int, error)
 }
 
-// Good: segregated — each consumer declares only what it needs
+// Good: segregated: each consumer declares only what it needs
 type ItemCreator interface { Create(item Item) error }
 type ItemReader  interface { Read(id string) (Item, error) }
 type ItemUpdater interface { Update(item Item) error }
@@ -104,9 +104,9 @@ func WithTimeout(d time.Duration) Option {
 
 func NewServer(opts ...Option) *Server {
     s := &Server{ // defaults
-        host:     "localhost",
-        port:     8080,
-        timeout:  30 * time.Second,
+        host:    "localhost",
+        port:    8080,
+        timeout: 30 * time.Second,
         maxConns: 100,
     }
     for _, opt := range opts {
@@ -204,7 +204,7 @@ func NewService(logger Logger) *Service {
 ## Type Assertions and Type Switches
 
 ```go
-// Safe two-value assertion — prefer over panicking single-value form
+// Safe two-value assertion: prefer over panicking single-value form
 if str, ok := v.(string); ok {
     fmt.Println("string:", str)
 }
@@ -264,7 +264,7 @@ type EmailSender interface {
     Send(ctx context.Context, to, subject, body string) error
 }
 
-// Service receives interfaces — easy to test with mocks
+// Service receives interfaces: easy to test with mocks
 type UserService struct {
     repo   UserRepository
     mailer EmailSender
@@ -284,17 +284,66 @@ func (s *UserService) Register(ctx context.Context, email string) error {
 }
 ```
 
+## Constructors Normalize Nil Dependencies
+
+A `New*` constructor substitutes a safe default for a nil dependency rather than
+storing the nil and letting a later method panic. This keeps callers (and tests)
+from having to wire every optional collaborator, and turns "forgot to pass a
+logger" into a no-op instead of a crash.
+
+```go
+type Service struct {
+    repo Repository
+    log  *slog.Logger
+    scan SecretScanner
+}
+
+// NewService normalizes nil deps: a nil logger discards, a nil scanner uses the
+// default regex scanner. repo is required and is the caller's responsibility.
+func NewService(repo Repository, log *slog.Logger, scan SecretScanner) *Service {
+    if log == nil {
+        log = slog.New(slog.DiscardHandler) // Go 1.24+
+    }
+    if scan == nil {
+        scan = defaultScanner{}
+    }
+    return &Service{repo: repo, log: log, scan: scan}
+}
+```
+
+Rules:
+- Normalize **optional** collaborators (logger, metrics, clock, feature-flag
+  scanner). Do **not** silently fabricate a required dependency like a database
+  handle: return an error or document it as a hard precondition.
+- Return the concrete `*Service`, not an interface: let callers keep the full
+  type and pick which behavior interface they depend on (`unexported-return` /
+  "accept interfaces, return structs").
+- A normalized default must be inert: `slog.DiscardHandler` logs nothing, an
+  empty config yields zero-value behavior. Never make the default do surprising
+  I/O.
+
+## When NOT to Define an Interface
+
+Concrete types are the default; an interface is a cost the reader pays on every call site. An interface with a single implementation is justified only when it inverts a genuine external dependency (DB, network, filesystem, clock, another process). Otherwise:
+
+- **No interface for testability alone.** A concrete type with injected values (a `*Service` built from real structs, an in-memory `*sql.DB`, a fixed `time.Time`) is already testable. Mock only what crosses a process boundary.
+- **No provider-side interface.** Declare the interface at the point of consumption, narrow to what that consumer calls; the provider keeps returning its concrete type.
+- **No speculative seam.** A second implementation that might exist someday is not a reason. Introduce the interface in the change that brings the second implementation or the external dependency.
+
+Before writing `type X interface`, name what the reader gains at the call site. If the answer is only "it can be mocked", keep the concrete type.
+
 ## Quick Reference
 
 | Pattern | Use Case | Key Principle |
 |---------|----------|---------------|
 | Small interfaces | Flexibility | Single-method preferred |
-| Accept interfaces | Testability | Depend on abstractions |
+| Nil-normalizing constructor | Ergonomics + safety | Optional deps default to inert; required deps stay explicit |
+| Accept interfaces | Flexibility at genuine seams | Concrete types by default |
 | Return structs | Clarity | Don't force type assertions on callers |
-| Interface segregation | Loose coupling | No fat interfaces |
+| Interface segregation | Loose coupling | No fat interfaces; segregate on demand, not upfront |
 | Functional options | Configuration | Flexible, readable constructors |
 | Compile-time check | Safety | `var _ Iface = (*T)(nil)` |
 | io.Reader/Writer | I/O pipelines | Compose with standard library |
 | Embedding | Composition | Promote methods without inheritance |
 | Type assertions | Runtime checks | Always use two-value form |
-| DI via interfaces | Testing | Mock at interface boundary |
+| DI via interfaces | External dependencies | Mock only what crosses a process boundary |

@@ -1,6 +1,6 @@
 ---
 name: lang-html
-description: HTML, HTMX, and CSS best practices following CUBE CSS methodology and Every Layout primitives. Use when working with HTML templates, HTMX interactions, CSS styling, or building server-rendered UI components.
+description: 'HTML, HTMX, and CSS best practices following CUBE CSS methodology and Every Layout primitives. Use when working with HTML templates, HTMX interactions, CSS styling, or building server-rendered UI components. Not for design quality, visual identity, or scoring a screen: use 10x-frontend-design.'
 ---
 
 # lang-html
@@ -16,22 +16,25 @@ Load the relevant reference when the task involves:
 | CUBE CSS | `references/cube-css.md` | writing or reviewing CSS, class naming, cascade decisions |
 | Every Layout | `references/every-layout.md` | layout primitives: stack, cluster, sidebar, grid, center, box |
 | HTMX | `references/htmx.md` | HTMX attributes, partial rendering, swap strategies, events |
+| Accessibility | `references/accessibility.md` | ARIA, focus management, HTMX swap announcements, forms, keyboard support |
+
+For full frontend design work (visual identity, design quality bar, novel components), the `10x-frontend-design` skill complements these rules; this skill owns the HTML/CSS/HTMX mechanics.
 
 ## Core Philosophy
 
 - HTML is the foundation. CSS enhances. HTMX progressively adds interactivity.
 - Prefer semantic HTML over `<div>` soup.
-- The cascade is a feature — use it, don't fight it.
+- The cascade is a feature: use it, don't fight it.
 - Layouts are solved with composable primitives (Every Layout), not one-off utilities.
 
 ## CSS Architecture: CUBE CSS
 
 Structure all CSS in four layers:
 
-1. **Composition** — layout primitives (`.stack`, `.cluster`, `.sidebar`, `.grid`, `.center`, `.box`)
-2. **Utility** — single-purpose design tokens (`.text-step-1`, `.bg-surface`, `.color-accent`)
-3. **Block** — component-scoped styles (`.card`, `.nav`, `.hero`)
-4. **Exception** — overrides using `data-*` attributes (`[data-variant="inverted"]`)
+1. **Composition**: layout primitives (`.stack`, `.cluster`, `.sidebar`, `.grid`, `.center`, `.box`)
+2. **Utility**: single-purpose design tokens (`.text-step-1`, `.bg-surface`, `.color-accent`)
+3. **Block**: component-scoped styles (`.card`, `.nav`, `.hero`)
+4. **Exception**: overrides using `data-*` attributes (`[data-variant="inverted"]`)
 
 Apply classes in that order: composition first, utilities second, blocks third, exceptions last.
 
@@ -58,7 +61,7 @@ See `references/every-layout.md` for CSS implementations.
 - Use semantic HTML elements (`<nav>`, `<main>`, `<article>`, `<section>`, `<aside>`, `<header>`, `<footer>`)
 - Define spacing, color, and typography via custom properties (`--space-s`, `--color-text`, `--step-0`)
 - Use `data-*` attributes for state/variant exceptions, not modifier classes (`card--dark`)
-- Use `hx-boost` on `<a>` and `<form>` elements before reaching for more specific HTMX attributes
+- Use `hx-boost` on a container (`<body>`, `<main>`, `<nav>`) so descendant `<a>`/`<form>` elements inherit it: reach for element-level HTMX attributes only when boosting is not enough
 - Scope block CSS to a single class selector matching the HTML element's role
 - Write layout CSS using `gap`, not `margin` between siblings
 - Validate that HTMX targets exist on the page before wiring `hx-target`
@@ -66,9 +69,9 @@ See `references/every-layout.md` for CSS implementations.
 ## MUST NOT
 
 - Write inline styles (except generated/dynamic values that cannot be in CSS)
-- Use utility classes for layout spacing — use Every Layout primitives instead
+- Use utility classes for layout spacing: use Every Layout primitives instead
 - Nest block selectors more than one level deep
 - Use `!important` except in utility classes (where it is intentional)
-- Use class names that encode visual appearance (`red-text`, `big-button`) — use semantics or tokens
+- Use class names that encode visual appearance (`red-text`, `big-button`): use semantics or tokens
 - Add HTMX attributes without defining a clear fallback for no-JS environments
 - Use `hx-swap="outerHTML"` on the element that triggers the request (causes self-deletion)

@@ -1,0 +1,421 @@
+# golangci-lint config — STRICT tier (golangci-lint v2)
+#
+# The full quality gate for mature services: security, error-wrapping,
+# performance, and complexity linters on top of the standard suite, plus a
+# heavily-configured revive. Adopt this when a codebase is stable enough to pay
+# down complexity debt.
+#
+# RATCHET DISCIPLINE: the complexity gates (gocognit, nestif, funlen) start at a
+# baseline you can pass today and are lowered one rung at a time as offenders are
+# refactored. NEVER raise a gate to make a red build green. Record the current
+# worst offender in a comment next to each gate so the next paydown is obvious.
+#
+# Tier ladder: minimal (./golangci-minimal.yml) -> standard
+#              (../../10x-makefile/references/.golangci.yml) -> strict (this file).
+#              See ../README.md.
+#
+# Pin the golangci-lint binary to the version in ./versions.md.
+
+version: "2"
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+  # descriptions adapted from https://golangci-lint.run/docs/linters/
+    - asasalint        # Check for pass []any as any in variadic func(...any)
+    - bidichk          # Checks for dangerous unicode character sequences
+    - bodyclose        # Checks whether HTTP response body is closed successfully.
+    - contextcheck     # Check whether the function uses a non-inherited context.
+    - durationcheck    # Check for two durations multiplied together.
+    - errname          # Checks `Err-` prefix for var and `-Error` suffix for error type.
+    - errorlint        # Suggests to use `%w` for error-wrapping.
+    - gocritic         # Style, performance, and common-mistake checks
+    - gomoddirectives  # Allow or ban replace directives in go.mod.
+    - gosec            # Security-oriented linter.
+    - nakedret         # Finds naked/bare returns and requires changing them.
+    - nilerr           # Finds `return nil` after checking a non-nil error.
+    - nilnil           # Checks that (nil, nil) is not returned.
+    - noctx            # Finds sending HTTP request without context.Context.
+    - nolintlint       # Forces a comment explaining each //nolint.
+    - prealloc         # Finds slices that could be pre-allocated.
+    - predeclared      # Finds shadowing of Go's predeclared identifiers.
+    - reassign         # Checks that package variables are not reassigned (e.g. io.EOF = nil).
+    - sqlclosecheck    # sql.Rows / sql.Stmt are closed
+    - tparallel        # Correct t.Parallel() usage
+    - unconvert        # Remove unnecessary type conversions
+    - usestdlibvars    # Detect the possibility to use constants from stdlib
+    - wastedassign     # Finds wasted assignment statements
+    - perfsprint       # Suggests faster alternatives to Sprintf where possible
+    - modernize        # Suggests modern language/library simplifications
+    - tagalign         # Check that struct tags are well aligned.
+    - nlreturn         # Enforce a blank line before return for readability
+    - revive           # Complex configurable linter (see settings below)
+    - gocognit         # cognitive complexity - the primary complexity gate
+    - funlen           # function length cap (orthogonal size signal)
+    - nestif           # nesting depth cap (explicit arrow-code gate)
+  disable:
+    - depguard         # import allow/deny lists (configure per-project if needed)
+    - err113           # discourages == on errors; errorlint covers the real cases
+    - exhaustruct      # requires every struct field set; too verbose
+    - gochecknoglobals # blanket ban on globals; too blunt
+    - gocyclo          # simpler than the gocognit gate we already run
+    - lll              # line length
+    - misspell         # spellcheck (enable if desired)
+    - mnd              # magic numbers; needs a huge exception list to be usable
+    - paralleltest     # tests here depend on state; not universally applicable
+    - promlinter       # Prometheus metric naming
+    - tagliatelle      # struct tag naming conventions
+    - testableexamples
+    - thelper
+    - unparam          # params that always take the same value
+    - varnamelen       # verbose-name enforcement; noisy (see settings if enabling)
+    - wrapcheck        # requires wrapping every returned error; too aggressive
+    - wsl              # legacy whitespace linter
+    - wsl_v5           # whitespace rules; too constraining
+    - cyclop           # cyclomatic complexity (gocognit is the chosen gate)
+    - maintidx         # maintainability index (redundant with the gates above)
+
+  exclusions:
+    rules:
+      # Table-driven tests legitimately run long; funlen targets production code.
+      - path: _test\.go
+        linters:
+          - funlen
+      # Tests legitimately use fake credentials, loose temp-file perms, and
+      # variable paths; gosec adds no value there.
+      - path: _test\.go
+        linters:
+          - gosec
+      # G101 fires on fixture/sample credentials; G201/G202 fire on parameterized
+      # IN(...) queries where only "?" placeholders are joined and values are bound.
+      - linters:
+          - gosec
+        text: "G(101|201|202)"
+
+  settings:
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment # useful for micro-optimization but noisy; enable per-package if desired
+    staticcheck:
+      checks:
+        - "all"
+        - "-ST1000"
+        - "-U1000"
+    gocognit:
+      # Ratchet baseline. Set to your current worst offender's score, then pay
+      # down the ladder 25 -> 20 -> 15. Lower one rung as offenders are refactored;
+      # never regress. Record the current worst offender here.
+      min-complexity: 25
+    funlen:
+      lines: 80
+      statements: 60
+    nestif:
+      # Ratchet baseline: set to the current worst nesting depth, target 4.
+      min-complexity: 5
+    tagalign:
+      align: true
+    varnamelen:
+      min-name-length: 2
+      max-distance: 10
+      ignore-names:
+        - i
+    nakedret:
+      max-func-lines: 1 # effectively bans naked returns
+    revive:
+      max-open-files: 2048
+      enable-default-rules: false
+      directives:
+        - name: specify-disable-reason
+          severity: error
+      confidence: 0.8
+      rules:
+        - name: argument-limit
+          disabled: false
+          exclude: [""]
+          arguments: [10]
+        - name: bare-return
+          exclude: [""]
+        - name: blank-imports
+          disabled: false
+          exclude: [""]
+        - name: bool-literal-in-expr
+          disabled: false
+          exclude: [""]
+        - name: call-to-gc
+          disabled: false
+          exclude: [""]
+        - name: comment-spacings
+          disabled: false
+          exclude: [""]
+          arguments:
+            - nolint
+        - name: confusing-naming
+          disabled: false
+          exclude: [""]
+        - name: constant-logical-expr
+          disabled: false
+          exclude: [""]
+        - name: context-as-argument
+          disabled: false
+          exclude: [""]
+          arguments:
+            - allow-types-before: "*testing.T"
+        - name: context-keys-type
+          disabled: false
+          exclude: [""]
+        - name: datarace
+          disabled: false
+          exclude: [""]
+        - name: deep-exit
+          disabled: true
+          exclude: [""]
+        - name: defer
+          disabled: false
+          exclude: [""]
+          arguments: []
+        - name: dot-imports
+          disabled: false
+          exclude: [""]
+          arguments: []
+        - name: duplicated-imports
+          disabled: false
+          exclude: [""]
+        - name: early-return
+          disabled: false
+          exclude: [""]
+          arguments:
+            - "preserve-scope"
+            - "allow-jump"
+        - name: empty-block
+          disabled: false
+          exclude: [""]
+        - name: empty-lines
+          disabled: false
+          exclude: [""]
+        - name: enforce-map-style
+          disabled: false
+          exclude: [""]
+          arguments:
+            - "make"
+        - name: enforce-slice-style
+          disabled: false
+          exclude: [""]
+          arguments:
+            - "literal"
+        - name: enforce-switch-style
+          disabled: false
+          exclude: [""]
+          arguments: []
+        - name: error-naming
+          disabled: false
+          exclude: [""]
+        - name: error-return
+          disabled: false
+          exclude: [""]
+        - name: error-strings
+          disabled: false
+          exclude: [""]
+          arguments:
+            - "xerrors.New"
+        - name: errorf
+          disabled: false
+          exclude: [""]
+        - name: exported
+          disabled: false
+          exclude: [""]
+          arguments:
+            - "say-repetitive-instead-of-stutters"
+            - "check-public-interface"
+            - "disable-checks-on-constants"
+            - "disable-checks-on-types"
+            - "disable-checks-on-variables"
+        - name: filename-format
+          disabled: false
+          exclude: [""]
+        - name: forbidden-call-in-wg-go
+          disabled: false
+          exclude: [""]
+        - name: get-return
+          disabled: true
+          exclude: [""]
+        - name: identical-branches
+          disabled: false
+          exclude: [""]
+        - name: identical-ifelseif-branches
+          disabled: false
+          exclude: [""]
+        - name: identical-ifelseif-conditions
+          disabled: false
+          exclude: [""]
+        - name: identical-switch-branches
+          disabled: false
+          exclude: [""]
+        - name: identical-switch-conditions
+          disabled: false
+          exclude: [""]
+        - name: if-return
+          disabled: false
+          exclude: [""]
+        - name: import-alias-naming
+          disabled: true
+          exclude: [""]
+          arguments: ["^[a-z][a-z0-9_]{0,}$"]
+        - name: import-shadowing
+          disabled: false
+          exclude: [""]
+        - name: increment-decrement
+          disabled: false
+          exclude: [""]
+        - name: indent-error-flow
+          disabled: false
+          exclude: [""]
+          arguments:
+            - "preserve-scope"
+        - name: inefficient-map-lookup
+          disabled: false
+          exclude: [""]
+        - name: max-control-nesting
+          disabled: false
+          exclude: [""]
+          arguments: [5]
+        - name: max-public-structs
+          disabled: true
+          exclude: [""]
+          arguments: [10]
+        - name: modifies-parameter
+          disabled: false
+          exclude: [""]
+        - name: modifies-value-receiver
+          disabled: false
+          exclude: [""]
+        - name: nested-structs
+          disabled: false
+          exclude: [""]
+        - name: optimize-operands-order
+          disabled: false
+          exclude: [""]
+        - name: package-comments
+          disabled: false
+          exclude: [""]
+        - name: package-directory-mismatch
+          disabled: true
+          exclude: [""]
+          arguments: []
+        - name: package-naming
+          disabled: false
+          exclude: [""]
+          arguments: []
+        - name: range
+          disabled: false
+          exclude: [""]
+        - name: receiver-naming
+          disabled: false
+          exclude: [""]
+          arguments:
+            - max-length: 2
+        - name: redefines-builtin-id
+          disabled: false
+          exclude: [""]
+        - name: redundant-build-tag
+          disabled: false
+          exclude: [""]
+        - name: redundant-import-alias
+          disabled: false
+          exclude: [""]
+        - name: redundant-test-main-exit
+          disabled: false
+          exclude: [""]
+        - name: string-format
+          disabled: false
+          exclude: [""]
+          arguments:
+            - - 'fmt.Errorf[0]'
+              - '/(^|[^\.!?])$/'
+              - must not end in punctuation
+        - name: string-of-int
+          disabled: false
+          exclude: [""]
+        - name: superfluous-else
+          disabled: false
+          exclude: [""]
+          arguments:
+            - "preserve-scope"
+        - name: time-date
+          disabled: false
+          exclude: [""]
+        - name: time-equal
+          disabled: false
+          exclude: [""]
+        - name: unchecked-type-assertion
+          disabled: false
+          exclude: [""]
+          arguments:
+            - accept-ignored-assertion-result: true
+        - name: unconditional-recursion
+          disabled: false
+          exclude: [""]
+        - name: unexported-naming
+          disabled: false
+          exclude: [""]
+        - name: unexported-return
+          disabled: false
+          exclude: [""]
+        - name: unhandled-error
+          disabled: false
+          exclude: [""]
+          arguments:
+            - "^fmt.Printf"
+        - name: unnecessary-format
+          disabled: false
+          exclude: [""]
+        - name: unnecessary-if
+          disabled: false
+          exclude: [""]
+        - name: unnecessary-stmt
+          disabled: false
+          exclude: [""]
+        - name: unreachable-code
+          disabled: false
+          exclude: [""]
+        - name: unused-parameter
+          disabled: false
+          exclude: [""]
+          arguments: []
+        - name: unused-receiver
+          disabled: false
+          exclude: [""]
+          arguments: []
+        - name: use-any
+          disabled: false
+          exclude: [""]
+        - name: use-fmt-print
+          disabled: false
+          exclude: [""]
+        - name: use-slices-sort
+          disabled: false
+          exclude: [""]
+        - name: use-waitgroup-go
+          disabled: false
+          exclude: [""]
+        - name: useless-break
+          disabled: false
+          exclude: [""]
+        - name: useless-fallthrough
+          disabled: false
+          exclude: [""]
+        - name: var-declaration
+          disabled: false
+          exclude: [""]
+        - name: var-naming
+          disabled: false
+          exclude: [""]
+          arguments: []
+        - name: waitgroup-by-value
+          disabled: false
+          exclude: [""]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings: {}

@@ -1,5 +1,7 @@
 # Security Testing
 
+Recipes for *writing* security tests. This file covers the test-authoring side only. The reviewer-side OWASP Top 10:2025 walk (detection recipes, default severities) is not part of this plugin: do not duplicate a detection checklist here.
+
 ## Authentication Tests
 
 ```typescript

@@ -101,14 +101,11 @@ func loadTestEnv(t *testing.T) {
 Integration tests require the Docker Compose stack to be running. The convention is:
 
 ```bash
-# Start stack (blocking, with logs)
-make compose_run
-
-# Or detached
-make compose_run_d
+# Start the stack detached (10x-makefile base target)
+make up
 
 # Then run integration tests
-go test -v ./internal/api
+go test -v ./internal/...
 ```
 
 Use `make fulltest` to combine stack startup, health checking, and test execution in one command. See `references/docker-db-testing.md` for the `run_tests.sh` pattern.
@@ -121,5 +118,5 @@ Use `make fulltest` to combine stack startup, health checking, and test executio
 | Reference fixtures | `assets/tests/*.json` |
 | Diff library | `github.com/wI2L/jsondiff` |
 | DB port override | `os.Setenv("DBPORT", "23306")` in test setup |
-| Stack startup | `make compose_run_d` before `go test` |
+| Stack startup | `make up` before `go test` |
 | Auth headers | Pass via `X-Krakend-*` headers in `makeRequest` |

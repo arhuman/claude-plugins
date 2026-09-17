@@ -1,3 +1,8 @@
+---
+description: 'Read-only technical Q&A for architectural guidance, code analysis, and technology decisions. Consultation only; never modifies code. Not for a graded review report: use the built-in /code-review.'
+argument-hint: <question>
+---
+
 ## Usage
 `/tellme <QUESTION>`
 
@@ -44,7 +49,17 @@ Technical Q&A command for architectural guidance, code analysis, and technology 
 **Tools:**
 1. tree_sitter - Analyze complexity and structure
 2. PAL MCP thinkdeep - Systematic investigation
-3. Delegate to review-agent for comprehensive review
+3. Built-in /code-review for comprehensive review
+
+## Verification cascade
+
+Resolve every factual claim cheapest-first, and stop at the first authoritative resolution; route by claim category (the Question Types above are that routing) instead of running every tier:
+
+1. Project memory and docs (mnemos, CLAUDE.md, `.claude/project/`, `docs/adr/`): free, authoritative for project decisions and conventions.
+2. The codebase (Grep, Read, tree_sitter): free, authoritative for what the code does today.
+3. The web (Context7, WebSearch, PAL): metered; only for claims the first two tiers cannot settle (library behavior, versions, ecosystem facts).
+
+An unverified claim is never asserted as fact: label it an assumption and say which tier would settle it.
 
 ## Workflow
 
@@ -74,6 +89,12 @@ Deliver response with:
 - Supporting evidence and examples
 - Alternatives or considerations
 - Relevant file references (file:line format)
+
+Done when:
+
+- Every consequential claim in the answer is either resolved at a named cascade tier or labeled an assumption.
+- Every file:line reference points at code actually read this session.
+- No file was created or modified (working copy is unchanged).
 
 ## Output Format
 

@@ -2,6 +2,7 @@
 name: docker-agent
 description: Use for creating or modifying Dockerfiles and docker-compose files, optimizing builds, setting up development environments, or troubleshooting Docker issues.
 model: sonnet
+effort: low
 color: blue
 skills: 10x-docker
 ---

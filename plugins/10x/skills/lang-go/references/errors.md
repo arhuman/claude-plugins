@@ -2,27 +2,29 @@
 
 ## Philosophy: Errors Are Values
 
-In Go, errors are values. Handle them explicitly at every level; do not use exceptions or panics for recoverable situations. Good error messages enable fast debugging — include the operation name and contextual data.
+In Go, errors are values. Handle them explicitly at every level; do not use exceptions or panics for recoverable situations. Good error messages enable fast debugging: include the operation name and contextual data.
 
-## Tier 1 — Wrapping (always)
+## Tier 1: Wrapping (always)
 
 Wrap errors at every level to preserve the full call chain. Use `fmt.Errorf` with `%w`.
 
 ```go
-// Pattern: "operationName: %w"
+// Pattern: "pkg: operation: %w" (prefix = the current package, lowercase)
+// package store
 func (r *UserRepository) FindByID(ctx context.Context, id string) (*User, error) {
     var user User
     result := r.db.WithContext(ctx).Where("id = ?", id).First(&user)
     if result.Error != nil {
-        return nil, fmt.Errorf("UserRepository.FindByID: %w", result.Error)
+        return nil, fmt.Errorf("store: find user %q: %w", id, result.Error)
     }
     return &user, nil
 }
 
+// package user
 func (s *UserService) GetUser(ctx context.Context, id string) (*User, error) {
     user, err := s.repo.FindByID(ctx, id)
     if err != nil {
-        return nil, fmt.Errorf("UserService.GetUser: %w", err)
+        return nil, fmt.Errorf("user: get %q: %w", id, err)
     }
     return user, nil
 }
@@ -30,25 +32,25 @@ func (s *UserService) GetUser(ctx context.Context, id string) (*User, error) {
 
 This ensures `errors.Is()` and `errors.As()` work correctly up the entire call chain.
 
-## Tier 2 — Sentinel Errors
+## Tier 2: Sentinel Errors
 
 Define sentinel errors when callers need to branch on a specific condition.
 
 ```go
 var (
-    ErrNotFound      = errors.New("not found")
-    ErrAlreadyExists = errors.New("already exists")
-    ErrUnauthorized  = errors.New("unauthorized")
+    ErrNotFound      = errors.New("store: not found")
+    ErrAlreadyExists = errors.New("store: already exists")
+    ErrUnauthorized  = errors.New("auth: unauthorized")
 )
 
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*User, error) {
     var user User
     result := r.db.WithContext(ctx).Where("email = ?", email).First(&user)
     if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-        return nil, fmt.Errorf("FindByEmail %q: %w", email, ErrNotFound)
+        return nil, fmt.Errorf("store: find by email %q: %w", email, ErrNotFound)
     }
     if result.Error != nil {
-        return nil, fmt.Errorf("FindByEmail: %w", result.Error)
+        return nil, fmt.Errorf("store: find by email: %w", result.Error)
     }
     return &user, nil
 }
@@ -60,9 +62,9 @@ if errors.Is(err, ErrNotFound) {
 }
 ```
 
-Use sentinel errors for stable, well-defined outcomes. Do not create a sentinel for every possible error — only when callers need to identify it programmatically.
+Use sentinel errors for stable, well-defined outcomes. Do not create a sentinel for every possible error: only when callers need to identify it programmatically.
 
-## Tier 3 — Custom Error Types
+## Tier 3: Custom Error Types
 
 Use structured error types when callers need to extract machine-readable context.
 
@@ -100,7 +102,7 @@ if errors.As(err, &ve) {
 
 ## errors.Join (Go 1.20+)
 
-Combine multiple errors into one — useful for validation that collects all failures before returning:
+Combine multiple errors into one: useful for validation that collects all failures before returning:
 
 ```go
 // errors.Join wraps multiple errors into one
@@ -113,10 +115,10 @@ if errors.Is(err, ErrNotFound) { ... }
 ## errors.Is vs errors.As
 
 ```go
-// errors.Is — check identity (equality) in the chain
+// errors.Is: check identity (equality) in the chain
 if errors.Is(err, ErrNotFound) { ... }
 
-// errors.As — check type in the chain and extract the value
+// errors.As: check type in the chain and extract the value
 var ve *ValidationError
 if errors.As(err, &ve) {
     fmt.Println("invalid field:", ve.Field)
@@ -152,7 +154,7 @@ This ensures `errors.Is()` and `errors.As()` can traverse the chain.
 All GORM operations must use `WithContext()` to propagate request context:
 
 ```go
-// Always — enables cancellation and timeout propagation
+// Always: enables cancellation and timeout propagation
 result := r.db.WithContext(ctx).Create(entity)
 result := r.db.WithContext(ctx).Where("id = ?", id).First(&entity)
 result := r.db.WithContext(ctx).Save(entity)
@@ -163,18 +165,28 @@ Never call GORM methods without `WithContext(ctx)` in request handlers or servic
 
 ## Error Message Conventions
 
+Prefix every wrapped error with the **package name** (lowercase), then the
+operation, then the cause. Lowercase and no trailing punctuation: Go error
+strings are fragments that get composed, and `revive`'s `error-strings` rule
+(and staticcheck ST1005) reject capitalized or punctuated messages.
+
 ```
-"OperationName: description"          // wrapping another error
-"OperationName: field %q: %w"         // including contextual data
-"OperationName: expected X, got Y"    // descriptive without wrapping
+"pkg: description"              // wrapping another error
+"pkg: operation: field %q: %w" // including contextual data
+"pkg: expected X, got Y"       // descriptive without wrapping
 ```
 
-Examples:
+Examples (from real packages named `memory`, `config`, `ledger`):
 ```go
-fmt.Errorf("CreateUser: %w", err)
-fmt.Errorf("ParseConfig: field %q missing", key)
-fmt.Errorf("UpdateBalance: account %s: insufficient funds, have %d need %d", id, have, need)
+fmt.Errorf("memory: search: %w", err)
+fmt.Errorf("config: parse: field %q missing", key)
+fmt.Errorf("ledger: update balance: account %s: insufficient funds, have %d need %d", id, have, need)
 ```
+
+The package prefix makes a wrapped chain read as a call path
+(`ledger: update balance: store: sql: ...`) and lets a reader locate the origin
+without a stack trace. Keep sentinel-error messages prefixed the same way
+(`errors.New("memory: not found")`).
 
 ## Anti-Patterns to Avoid
 
@@ -188,7 +200,7 @@ if err != nil {
 }
 
 // BAD: losing the original error
-return fmt.Errorf("something went wrong") // no %w — breaks errors.Is/As
+return fmt.Errorf("something went wrong") // no %w: breaks errors.Is/As
 
 // BAD: overly generic messages
 return fmt.Errorf("error occurred")
@@ -197,7 +209,7 @@ return fmt.Errorf("error occurred")
 return errors.New("user " + id + " not found") // allocates; use fmt.Errorf
 
 // GOOD
-return fmt.Errorf("FindUser %q: %w", id, ErrNotFound)
+return fmt.Errorf("user: find %q: %w", id, ErrNotFound)
 ```
 
 ## Logging vs Returning Errors
@@ -209,8 +221,8 @@ return fmt.Errorf("FindUser %q: %w", id, ErrNotFound)
 func (s *Service) Process(ctx context.Context, id string) error {
     err := s.repo.Find(ctx, id)
     if err != nil {
-        s.log.Error("failed to find", zap.Error(err)) // logged here
-        return fmt.Errorf("Process: %w", err)         // and surfaced to caller who also logs
+        s.log.Error("find failed", "error", err) // logged here
+        return fmt.Errorf("service: process: %w", err) // and surfaced to caller who also logs
     }
     return nil
 }
@@ -218,7 +230,7 @@ func (s *Service) Process(ctx context.Context, id string) error {
 // GOOD: return and let the top-level handler log
 func (s *Service) Process(ctx context.Context, id string) error {
     if err := s.repo.Find(ctx, id); err != nil {
-        return fmt.Errorf("Process: %w", err)
+        return fmt.Errorf("service: process: %w", err)
     }
     return nil
 }
@@ -228,7 +240,7 @@ func (s *Service) Process(ctx context.Context, id string) error {
 
 | Scenario | Approach |
 |----------|----------|
-| Always | `fmt.Errorf("Op: %w", err)` |
+| Always | `fmt.Errorf("pkg: op: %w", err)` (lowercase package prefix) |
 | Caller branches on condition | Sentinel: `var ErrX = errors.New(...)` |
 | Caller needs structured data | Custom type with `Error()` + `Unwrap()` |
 | Check sentinel in chain | `errors.Is(err, ErrX)` |

@@ -79,7 +79,7 @@ func processAll(ctx context.Context, items []Item) error {
 }
 ```
 
-`g.Go` blocks until a slot is free when the limit is reached — no separate semaphore needed.
+`g.Go` blocks until a slot is free when the limit is reached: no separate semaphore needed.
 
 ## Worker Pool
 
@@ -95,7 +95,7 @@ type WorkerPool struct {
 func NewWorkerPool(workers int) *WorkerPool {
     wp := &WorkerPool{
         workers: workers,
-        tasks:   make(chan func(), workers*2),
+        tasks:  make(chan func(), workers*2),
     }
     for i := 0; i < workers; i++ {
         wp.wg.Add(1)
@@ -211,7 +211,7 @@ func pipeline(ctx context.Context, input <-chan int) <-chan int {
 
 ### Timeout
 
-Control timeouts via `context.WithTimeout` at the call site — do not hardcode `time.After` inside functions that already accept a context:
+Control timeouts via `context.WithTimeout` at the call site: do not hardcode `time.After` inside functions that already accept a context:
 
 ```go
 func fetchWithTimeout(ctx context.Context, url string) (string, error) {
@@ -313,7 +313,7 @@ _ = shared // true if result was shared with another caller
 ## sync Primitives
 
 ```go
-// Mutex — protect shared mutable state
+// Mutex: protect shared mutable state
 type Counter struct {
     mu    sync.Mutex
     count int
@@ -325,7 +325,7 @@ func (c *Counter) Inc() {
     c.count++
 }
 
-// RWMutex — read-heavy workloads
+// RWMutex: read-heavy workloads
 type Cache struct {
     mu    sync.RWMutex
     items map[string]any
@@ -344,7 +344,7 @@ func (c *Cache) Set(key string, value any) {
     c.items[key] = value
 }
 
-// sync.Once — guaranteed single initialization
+// sync.Once: guaranteed single initialization
 type Service struct {
     once   sync.Once
     config *Config

@@ -1,10 +1,10 @@
 # Oracle docker-compose service
 
-**Oracle DB Service (Architecture-Specific):**
+Image tag verified 2026-07. `gvenzl/oracle-free` is multi-arch (amd64 and arm64/Apple Silicon), so one service definition covers both.
+
 ```yaml
-  # For arm64 (Apple Silicon)
   oracle_db:
-    image: gvenzl/oracle-free:23.26.0
+    image: gvenzl/oracle-free:23-slim
     container_name: oracle-db
     ports:
       - 1521:1521
@@ -17,41 +17,14 @@
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 5s
+      start_period: 30s
     volumes:
       - ./conf/docker/initdb.oracle:/container-entrypoint-initdb.d
     networks:
       - default
-
-  # For amd64 (x86_64)
-  # oracle_db:
-  #   image: oracleinanutshell/oracle-xe-11g:12.4.2
-  #   container_name: oracle-db
-  #   ports:
-  #     - 1521:1521
-  #     - 5500:5500
-  #   volumes:
-  #     - ./conf/docker/initdb.oracle:/docker-entrypoint-initdb.d
 ```
 
-## Healthchecks
-
-Always implement healthchecks for dependencies:
-
-**Oracle:**
-```yaml
-healthcheck:
-  test: ["CMD-SHELL", "export ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe && \
-    export PATH=$ORACLE_HOME/bin:$PATH && \
-    /u01/app/oracle/product/11.2.0/xe/bin/lsnrctl status | grep -qi 'status.*READY' || exit 1"
-  ]
-  start_period: 50s
-  interval: 15s
-  timeout: 5s
-  retries: 30
-```
-
-### Ports
-
-**Standard Port Mappings:**
-- Oracle: `1521:1521`, `5500:5500`
+Notes:
+- `healthcheck.sh` ships inside the gvenzl image; no custom lsnrctl probing needed.
+- Use `23-full` when you need features stripped from `-slim` (Spatial, full APEX); `-slim` starts faster and is sufficient for app testing.
+- Oracle startup is slow: keep `start_period` generous before declaring the container unhealthy.

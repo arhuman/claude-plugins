@@ -74,29 +74,6 @@ test('accessibility compliance', async ({ page }) => {
 | Edge | Latest | Windows | ✓ |
 ```
 
-## Test Design Techniques
-
-### Pairwise Testing
-```typescript
-// Test all parameter pairs efficiently
-const pairwiseTests = [
-  { browser: 'chrome', os: 'windows', lang: 'en' },
-  { browser: 'firefox', os: 'mac', lang: 'es' },
-  { browser: 'safari', os: 'windows', lang: 'fr' },
-  // Covers all pairs with minimal tests
-];
-```
-
-### Risk-Based Testing
-```markdown
-| Risk | Probability | Impact | Priority | Test Effort |
-|------|-------------|--------|----------|-------------|
-| Critical | High | High | P0 | Exhaustive |
-| High | Med-High | High | P1 | Comprehensive |
-| Medium | Low-Med | Med | P2 | Standard |
-| Low | Low | Low | P3 | Smoke only |
-```
-
 ## Defect Management
 
 ### Root Cause Analysis (5 Whys)
@@ -194,14 +171,6 @@ const feedbackCycle = {
 - [ ] Accessibility WCAG AA
 
 **Decision**: GO | NO-GO | GO with exceptions
-```
-
-### Team Education Program
-```markdown
-**Week 1-2**: Test fundamentals
-**Week 3-4**: Automation basics
-**Week 5-6**: Advanced topics (perf, security, API)
-**Ongoing**: Best practices, tool updates
 ```
 
 ## Test Planning

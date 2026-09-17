@@ -24,9 +24,9 @@ Use generics when:
 - Writing reusable data pipeline stages
 
 Prefer plain interfaces when:
-- Behavior (methods) varies by type — use an interface
-- There is only one concrete type in practice — just use that type
-- The function only needs `any` — generics add noise without benefit
+- Behavior (methods) varies by type: use an interface
+- There is only one concrete type in practice: just use that type
+- The function only needs `any`: generics add noise without benefit
 
 ## Basic Type Parameters
 
@@ -48,7 +48,7 @@ func Map[T, U any](slice []T, fn func(T) U) []U {
     return result
 }
 
-// Usage — type inference works in most cases
+// Usage: type inference works in most cases
 maxInt := Max(10, 20)
 maxStr := Max("abc", "xyz")
 doubled := Map([]int{1, 2, 3}, func(n int) int { return n * 2 })
@@ -57,7 +57,7 @@ doubled := Map([]int{1, 2, 3}, func(n int) int { return n * 2 })
 ## Type Constraints
 
 ```go
-import "cmp" // Go 1.21+ — use cmp.Ordered instead of golang.org/x/exp/constraints
+import "cmp" // Go 1.21+: use cmp.Ordered instead of golang.org/x/exp/constraints
 
 // Use the Number constraint (defined below) for numeric sums
 func Sum[T Number](nums []T) T {
@@ -79,7 +79,7 @@ func PrintAll[T Stringer](items []T) {
     }
 }
 
-// Approximate constraint — includes type aliases
+// Approximate constraint: includes type aliases
 type Integer interface {
     ~int | ~int8 | ~int16 | ~int32 | ~int64
 }
@@ -170,7 +170,7 @@ func (s *Set[T]) Len() int           { return len(s.items) }
 ## Generic Utilities
 
 ```go
-// Filter — keep elements matching predicate
+// Filter: keep elements matching predicate
 func Filter[T any](slice []T, predicate func(T) bool) []T {
     result := make([]T, 0, len(slice))
     for _, v := range slice {
@@ -207,7 +207,7 @@ func Values[K comparable, V any](m map[K]V) []V {
     return values
 }
 
-// Contains — works for any comparable type
+// Contains: works for any comparable type
 func Contains[T comparable](slice []T, target T) bool {
     for _, v := range slice {
         if v == target {
@@ -217,7 +217,7 @@ func Contains[T comparable](slice []T, target T) bool {
     return false
 }
 
-// Unique — deduplicate preserving order
+// Unique: deduplicate preserving order
 func Unique[T comparable](slice []T) []T {
     seen := make(map[T]struct{}, len(slice))
     result := make([]T, 0, len(slice))

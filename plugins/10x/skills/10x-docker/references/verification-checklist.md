@@ -9,7 +9,7 @@ Before completing any Docker configuration task, verify:
 - [ ] Environment variables documented in `env.sample`
 - [ ] Volume mounts configured correctly with correct paths
 - [ ] Port mappings non-conflicting (use non-standard external ports: 23306, 25432)
-- [ ] Timezone set (`TZ=Europe/Zurich`)
+- [ ] Timezone set per deployment (`TZ` env var, default `UTC`; never baked into shared images)
 - [ ] `.dockerignore` file present and trimmed
 - [ ] Build optimization (dependency layers before source layers)
 - [ ] No secrets in committed files (use `.env`, not `env.sample`)
