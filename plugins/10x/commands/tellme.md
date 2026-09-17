@@ -1,5 +1,5 @@
 ---
-description: 'Read-only technical Q&A for architectural guidance, code analysis, and technology decisions. Consultation only; never modifies code. Not for a graded review report: use the built-in /code-review.'
+description: 'Read-only technical Q&A for architectural guidance, code analysis, and technology decisions. Consultation only; never modifies code. Not for a graded review report: use the built-in /code-review. Not for comparing multiple models side by side: use /evaluate.'
 argument-hint: <question>
 ---
 

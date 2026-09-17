@@ -10,6 +10,8 @@ disable-model-invocation: true
 ## Description
 Multi-model evaluation command that compares answers from Claude, Gemini, OpenAI and DeepSeek on technical questions or architectural challenges. Synthesizes the best insights from all models into an improved final answer.
 
+Not for a quick single-model technical question: use `/tellme`, which answers directly without the multi-model run and synthesis overhead.
+
 ## Context
 - Technical question or challenge: $ARGUMENTS
 - Relevant files can be referenced with @ syntax

@@ -144,6 +144,10 @@ until the output shows an assertion failing. Otherwise the fix lands, the
 command keeps returning non-zero, and the phase stays red forever or someone
 writes an empty test to move on.
 
+That failing test is the one test this loop writes itself, scoped to the
+phase's `Repro:`. A phase needing a broader test strategy, coverage analysis,
+or a non-bugfix suite delegates to `tester-agent`, which applies `10x-tester`.
+
 Delegate per the user's routing when the phase is large: `coder-agent` for
 non-trivial Go/TypeScript, `fixer-agent` for mechanical fully-specified edits.
 A delegate's claim alone is never evidence, per `coder-agent`'s Delegation

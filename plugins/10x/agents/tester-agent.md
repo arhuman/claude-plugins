@@ -1,6 +1,6 @@
 ---
 name: tester-agent
-description: A specialized agent for all testing tasks. Use for writing tests, analyzing coverage, debugging test failures, and running performance or security audits.
+description: 'A specialized agent for all testing tasks. Use for writing tests, analyzing coverage, debugging test failures, and running performance or security audits. Not for a strict red-green-refactor loop: use the tdd skill. Not for the single inline test a 10x-loop bugfix phase writes: that stays in the phase.'
 model: sonnet
 color: red
 skills: 10x-thinker 10x-tester

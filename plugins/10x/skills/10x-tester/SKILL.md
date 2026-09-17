@@ -1,6 +1,6 @@
 ---
 name: 10x-tester
-description: Comprehensive testing specialist for all levels and types. Use when writing unit, integration, E2E, performance, or security tests; creating test strategies and plans; analyzing test coverage; managing defects; debugging test failures; manual testing (exploratory, usability, accessibility); scaling CI/CD test pipelines. For a strict red-green-refactor loop, use the tdd skill instead.
+description: 'Comprehensive testing specialist for all levels and types. Use when writing unit, integration, E2E, performance, or security tests; creating test strategies and plans; analyzing test coverage; managing defects; debugging test failures; manual testing (exploratory, usability, accessibility); scaling CI/CD test pipelines. Not for a strict red-green-refactor loop: use the tdd skill. Not for the single failing test a 10x-loop bugfix phase writes inline: that stays in the phase.'
 ---
 
 # 10x Tester

@@ -1,6 +1,6 @@
 ---
 name: docker-agent
-description: Use for creating or modifying Dockerfiles and docker-compose files, optimizing builds, setting up development environments, or troubleshooting Docker issues.
+description: 'Use for creating or modifying Dockerfiles and docker-compose files, optimizing builds, setting up development environments, or troubleshooting Docker issues. Not for non-Docker implementation work: use coder-agent or fixer-agent.'
 model: sonnet
 effort: low
 color: blue

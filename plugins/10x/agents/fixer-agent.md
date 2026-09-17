@@ -1,6 +1,6 @@
 ---
 name: fixer-agent
-description: Mechanical, fully-specified code changes in Go and TypeScript. Symbol renames, signature/API updates, applying a decided fix across files, boilerplate. NOT for design decisions or non-trivial logic (route those to coder-agent).
+description: 'Mechanical, fully-specified code changes in Go and TypeScript. Symbol renames, signature/API updates, applying a decided fix across files, boilerplate. Not for design decisions or non-trivial logic: use coder-agent.'
 model: haiku
 effort: low
 color: green

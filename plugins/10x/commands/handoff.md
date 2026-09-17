@@ -12,6 +12,9 @@ next turn needs is in the file. This covers the other case, a phase interrupted
 **in the middle**, where all that survives is a diff and none of the reasoning
 behind it.
 
+Not `/design_handoff`: that command assembles an outbound design brief and
+gates the returned deliverable; it does not save or resume work state.
+
 ## Context
 - Mode: $ARGUMENTS
 - Handoff file: `.claude/handoff.md`, one per repo, rewritten in place, gitignored

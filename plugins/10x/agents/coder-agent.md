@@ -1,6 +1,6 @@
 ---
 name: coder-agent
-description: Senior implementation agent for Go and TypeScript. Non-trivial code, design, and best practices. Detects the project language and applies the appropriate lang-* skill. Route mechanical, fully-specified edits to fixer-agent instead.
+description: 'Senior implementation agent for Go and TypeScript. Non-trivial code, design, and best practices. Detects the project language and applies the appropriate lang-* skill. Not for mechanical, fully-specified edits: use fixer-agent.'
 model: opus
 color: purple
 skills: 10x-thinker lang-go lang-typescript 10x-makefile

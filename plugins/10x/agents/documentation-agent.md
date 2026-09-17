@@ -1,6 +1,6 @@
 ---
 name: documentation-agent
-description: Use when code changes affect public APIs or user-facing functionality, new features need documentation, architectural decisions should be recorded, README files need creating or updating, or the user explicitly asks for documentation work.
+description: 'Use when code changes affect public APIs or user-facing functionality, new features need documentation, architectural decisions should be recorded, README files need creating or updating, or the user explicitly asks for documentation work. Not for code changes: use coder-agent or fixer-agent; this agent writes docs, CHANGELOG, and ADRs only.'
 tools: Glob, Grep, Read, WebFetch, Edit, Write, Bash
 model: sonnet
 color: cyan

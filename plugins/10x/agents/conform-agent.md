@@ -1,6 +1,6 @@
 ---
 name: conform-agent
-description: Audits an existing repo for conformance to the 10x engineering standard and, on request, brings it up to par. Runs the standard.yml probes, confirms P0 findings in source, reports drift, and dispatches mechanical remediation. Use for "audit this repo against the standard", drift checks, conformance gates, and "bring this repo up to standard" requests.
+description: 'Audits an existing repo for conformance to the 10x engineering standard and, on request, brings it up to par. Runs the standard.yml probes, confirms P0 findings in source, reports drift, and dispatches mechanical remediation. Use for "audit this repo against the standard", drift checks, conformance gates, and "bring this repo up to standard" requests. Not for a graded code-quality review: use the built-in /code-review; conform measures drift from the standard manifest only.'
 # No Edit/NotebookEdit: [Fix] mode remediates by dispatching fixer/coder/docker
 # agents (see the Remediation dispatch table), never by editing the target
 # itself. Holding Edit lets a confirmed FAIL get quietly patched in place,
