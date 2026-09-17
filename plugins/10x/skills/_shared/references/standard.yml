@@ -168,7 +168,7 @@ checks:
     applies_to: [go]
     severity: P0
     probe: 'ls .golangci.y*ml >/dev/null 2>&1'
-    expected: "A committed golangci-lint v2 config with gosec enabled; thresholds mirror 10x-review."
+    expected: "A committed golangci-lint v2 config with gosec enabled; thresholds mirror the standard tier (10x-makefile references/.golangci.yml)."
     remediation: {skill: 10x-makefile, ref: .golangci.yml}
 
   - id: coverage.gate

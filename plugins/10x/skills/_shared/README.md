@@ -17,7 +17,7 @@ Skills reference these files with a sibling-relative path, e.g. from
 | `references/skill-standard.md` | How a SKILL.md is written: description clauses, Done-when blocks, one-fact-one-home | every skill, and skill reviews |
 | `references/versions.md` | Pinned Go toolchain, golangci-lint/govulncheck, and GitHub Actions versions | `lang-go`, `10x-makefile`, `10x-ci` |
 | `references/golangci-minimal.yml` | golangci-lint **minimal** tier | `lang-go`, `10x-makefile` |
-| `references/golangci-strict.yml` | golangci-lint **strict** tier (ratchet discipline) | `lang-go`, `10x-makefile`, `10x-review` |
+| `references/golangci-strict.yml` | golangci-lint **strict** tier (ratchet discipline) | `lang-go`, `10x-makefile` |
 
 ## golangci-lint tier ladder
 
@@ -36,6 +36,6 @@ maturity; the binary version is pinned in `references/versions.md`.
    revive, with ratchet-based complexity gates. Mature services paying down
    complexity debt.
 
-The `10x-review` skill keeps its own `references/golangci-review.yml` as the
-fallback config used only when a target repo has no `.golangci.yml`; it encodes
-the same thresholds as the standard tier.
+A review-grading consumer outside this public tree keeps its own fallback
+config for repos with no `.golangci.yml`; it encodes the same thresholds as
+the standard tier.

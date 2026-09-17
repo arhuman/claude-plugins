@@ -29,12 +29,7 @@ jobs:
         run: |
           python3 -m pip install --quiet pyyaml
           sh scripts/check-frontmatter-parses.sh
-      - name: Slop check recipes self-test
-        run: |
-          sudo apt-get update && sudo apt-get install -y ripgrep
-          sh plugins/10x/skills/10x-review/references/slop-checks.sh --self-test
       - name: Validate plugin manifests (strict)
         run: |
           npm install -g @anthropic-ai/claude-code
           claude plugin validate plugins/10x --strict
-          claude plugin validate plugins/introspect --strict

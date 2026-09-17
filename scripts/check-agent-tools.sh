@@ -24,8 +24,7 @@
 set -u
 
 # agent file basename, one per line
-ANALYSIS_AGENTS='review-agent
-conform-agent'
+ANALYSIS_AGENTS='conform-agent'
 
 fail=0
 

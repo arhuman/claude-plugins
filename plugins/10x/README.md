@@ -14,7 +14,6 @@ Plugin to make Claude Code a 10x more efficient
 | Command | `/10x:make_conform` | Apply the standard's remediations and open one PR. Modifies the repo |
 | Command | `/10x:propose_probe` | Turn a confirmed conformance false negative into a draft new check |
 | Command | `/10x:tellme` | Read-only technical Q&A and architectural guidance |
-| Command | `/10x:teachme` | Study session on a code scope (map + quiz + one manual kata); never implements the kata |
 | Command | `/10x:evaluate` | Multi-model comparison of an answer via PAL, synthesized into one doc |
 | Skill | `10x-plan` | Steering documentation: scaffold, execution plan, UX contract, consistency audit, ownership |
 | Skill | `10x-loop` | The work loop and its verification gate (mutation check, dependency surface, goldens) |

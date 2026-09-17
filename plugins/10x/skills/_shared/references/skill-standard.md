@@ -13,7 +13,7 @@ Rules are numbered S1... so 10x-conform (or a manual pass) can cite them per fin
 is the only always-on text; it must say when to fire AND when not to. End every
 description with one anti-trigger clause naming the neighboring skill or command that
 covers the excluded case ("Not for X: use Y"). Overlapping skills without negative
-clauses mis-fire against each other (10x-review vs 10x-conform vs /code-review,
+clauses mis-fire against each other (10x-conform vs /code-review,
 grill-me vs grill-with-docs).
 
 **S2. Done-when blocks: observable exit criteria.** Every procedural phase ends with
@@ -65,9 +65,9 @@ in new skills, and a new skill matching a line's shape should carry it.
 
 - "Ask only questions that can change what gets built." (integrated: grill-with-docs)
 - "Stop when remaining gaps are explicit assumptions, not hidden ambiguity." (integrated: grill-with-docs Done when)
-- "A bare opinion is not a finding: tie each to a checklist item, a threshold row, a duplication site, or a confirmed defect." (integrated: 10x-review Severity rules)
-- "Never record a finding inferred from naming alone: a plausible name is not evidence." (integrated: 10x-review Severity rules; kin to 10x-thinker phantom references)
-- "Unscannable check: mark it Not run with the reason, never invent findings for it." (integrated: 10x-review closed sections and 10x-conform MUST NOT, via S6)
+- "A bare opinion is not a finding: tie each to a checklist item, a threshold row, a duplication site, or a confirmed defect."
+- "Never record a finding inferred from naming alone: a plausible name is not evidence." (kin to 10x-thinker phantom references)
+- "Unscannable check: mark it Not run with the reason, never invent findings for it." (integrated: 10x-conform MUST NOT, via S6)
 - "Never trust a delegate's claim alone: verify with a concrete check." (integrated: coder-agent Delegation)
 - "Honesty over escape: never report done until the success condition genuinely passes." (integrated: coder-agent Workflow)
 - "No silent TODO, skipped test, or placeholder mock: declare anything you bypass." (integrated: coder-agent and fixer-agent)

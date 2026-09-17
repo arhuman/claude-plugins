@@ -23,7 +23,7 @@ Two sections, always in this order.
 Static, identical in any directory. Built from `references/inventory.sh`, which
 reads the frontmatter of every command, skill and agent on disk.
 
-- **Commands**, grouped by use: steering (`plan`), execution (`loop`), conformance (`check_conform`, `make_conform`, `propose_probe`), consultation (`tellme`, `evaluate`), learning (`teachme`), session (`handoff`, `doc`). Each with its argument hint and one line.
+- **Commands**, grouped by use: steering (`plan`), execution (`loop`), conformance (`check_conform`, `make_conform`, `propose_probe`), consultation (`tellme`, `evaluate`), session (`handoff`, `doc`). Each with its argument hint and one line.
 - **Skills**, with the command that exposes them where one does. Most have none: they load by description, which is worth stating explicitly since it is the part users do not expect.
 - **Agents**, with what each is for.
 - **Concepts**, from `references/glossary.md`. Do not paraphrase it: quote the definitions that matter for the question asked, or all of them when the request is open.
@@ -42,12 +42,12 @@ Report only what a command produced this turn:
 
 | What | How |
 |---|---|
-| Ownership and profile | `10x-plan/references/ownership.sh`, `10x-profile:` in `CLAUDE.md` |
+| Ownership and profile | `../10x-plan/references/ownership.sh`, `10x-profile:` in `CLAUDE.md` |
 | Which artifacts exist | `test -f` on the file set below |
-| Plan resolution, phases by status | `10x-plan/references/verify-plan.sh` and the plan itself |
+| Plan resolution, phases by status | `../10x-plan/references/verify-plan.sh` and the plan itself |
 | Next phase the loop would take | first `todo` whose `Depends on` are all `verified` |
 | Contract and decision conformance | `verify-ux.sh`, `verify-adr.sh` |
-| Standard drift | `10x-conform/references/conform.sh`, when asked |
+| Standard drift | `../10x-conform/references/conform.sh`, when asked |
 
 Quote what the scripts print. Never restate a status the conversation happens to
 remember: this section exists because memory of a repo is exactly what goes

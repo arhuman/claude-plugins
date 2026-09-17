@@ -20,9 +20,7 @@ RULES='A plausible name is not evidence|plugins/10x/skills/10x-thinker/
 only when it reduces that amount of context|plugins/10x/skills/10x-thinker/
 does not automatically deserve a package|plugins/10x/skills/10x-thinker/
 inverts a genuine external dependency|plugins/10x/skills/lang-go/
-one line, two at most|plugins/10x/skills/10x-documentation/
-lowest axis + 2|plugins/10x/skills/10x-review/
-Papering over a warning instead of resolving it|plugins/10x/skills/10x-review/'
+one line, two at most|plugins/10x/skills/10x-documentation/'
 
 offenders=$(
   printf '%s\n' "$RULES" | while IFS='|' read -r phrase owner; do

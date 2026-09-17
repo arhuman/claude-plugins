@@ -181,7 +181,7 @@ test-all:
 
 ## Reference Configuration
 
-Use `./references/.golangci.yml` as the **standard** tier golangci-lint v2 configuration for Go projects. It includes the complexity/duplication thresholds from the `10x-review` skill (`gocyclo`, `gocognit`, `funlen`, `nestif`, `dupl`), so projects scaffolded from this template enforce day-to-day what a review measures. The `10x-review` skill's `golangci-review.yml` is only a fallback for repos with no config of their own.
+Use `./references/.golangci.yml` as the **standard** tier golangci-lint v2 configuration for Go projects. It encodes the shared complexity/duplication thresholds of the tier ladder in `../../_shared/README.md` (`gocyclo`, `gocognit`, `funlen`, `nestif`, `dupl`), so projects scaffolded from this template enforce day-to-day what a review measures.
 
 For a lighter or heavier gate, use the other tiers of the shared ladder: `../../_shared/references/golangci-minimal.yml` (small tools/libraries) or `../../_shared/references/golangci-strict.yml` (mature services). See `../../_shared/README.md`.
 

@@ -1,8 +1,8 @@
 version: "2"
 
-# Standard project config. Includes the 10x-review complexity/duplication
-# thresholds (see 10x-review references/thresholds.md) so reviews and daily
-# linting measure the same things.
+# Standard project config. Encodes the shared complexity/duplication
+# thresholds of the tier ladder (see ../../_shared/README.md) so reviews and
+# daily linting measure the same things.
 #
 # gosec is required by the lint.config check in ../../_shared/references/standard.yml
 # ("a golangci-lint v2 config with gosec enabled"). Do not drop it to green a
