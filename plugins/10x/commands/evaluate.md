@@ -63,6 +63,8 @@ Pass identical prompt to ensure fair comparison. Include file paths in `absolute
 - `<task-resume>-openai.md` - OpenAI's response
 - `<task-resume>-deepseek.md` - DeepSeek's response
 
+Pick `<task-resume>` per the slug rule in `skills/_shared/references/artifacts.md`: state it back before writing, and never reuse an existing file's slug for different content.
+
 ## Constraints
 - No code modifications
 - Research and analysis only

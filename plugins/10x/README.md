@@ -34,15 +34,10 @@ Plugin to make Claude Code a 10x more efficient
 disagree, the command is right: this table is prose and drifts, the frontmatter
 does not.
 
-A review produces a dated directory under the target project:
-
-```
-.claude/doc/review_<repo>_<yyyymmdd>/
-  <repo>_review.md      # summary table (six axes + Overall), synthesis, recommendations
-  <repo>_<axis>.md      # per-axis detail (full layout: repo audits, large PRs)
-  scores.json           # machine-readable scores, for trend tracking across reviews
-  findings.csv          # full finding list, uncapped
-```
+Every artifact the plugin writes or reads in a target project (plans, reports,
+briefs, steering docs) is catalogued in
+`skills/_shared/references/artifacts.md`: path, writer, reader, format,
+lifecycle.
 
 ## Prerequisites
 

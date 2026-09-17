@@ -159,6 +159,11 @@ An absent `10x-profile` line means `public`. Adding one is how a repo opts out o
 the checks its audience does not justify, and the diff that adds it is the record
 of that decision.
 
+No 10x component writes this stamp automatically: it is set by hand, or by
+whoever scaffolds the repo, and only read by tooling (`conform.sh`,
+`ownership.sh`). The full writer/reader table is
+`../_shared/references/artifacts.md`.
+
 ## Reachability
 
 Invoke via the `/check_conform` (diagnose), `/make_conform` (fix), or `/propose_probe`

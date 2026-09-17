@@ -17,7 +17,7 @@ gates the returned deliverable; it does not save or resume work state.
 
 ## Context
 - Mode: $ARGUMENTS
-- Handoff file: `.claude/handoff.md`, one per repo, rewritten in place, gitignored
+- Handoff file: `.claude/handoff.md` (lifecycle contract: `skills/_shared/references/artifacts.md`)
 - Plan resolution: explicit path, else `.claude/plan/*.md`, else `PLAN.md`
 - Phase format: `skills/_shared/references/plan-format.md`
 

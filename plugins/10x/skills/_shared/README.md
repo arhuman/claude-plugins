@@ -15,6 +15,7 @@ Skills reference these files with a sibling-relative path, e.g. from
 | `references/ux-contract.md` | `docs/ux.md` shape: screens, components, state rules, `ui_paths` | `10x-plan`, `10x-frontend-design` |
 | `references/standard.yml` | The machine-checkable engineering standard: checks, severities, profiles, probes | `10x-conform` (its runner is a generated view of this file) |
 | `references/skill-standard.md` | How a SKILL.md is written: description clauses, Done-when blocks, one-fact-one-home | every skill, and skill reviews |
+| `references/artifacts.md` | Registry of every artifact 10x writes or reads in a target project: path, writer, reader, format, lifecycle | `10x-plan`, `10x-loop`, `10x-conform`, `10x-tester`, commands |
 | `references/versions.md` | Pinned Go toolchain, golangci-lint/govulncheck, and GitHub Actions versions | `lang-go`, `10x-makefile`, `10x-ci` |
 | `references/golangci-minimal.yml` | golangci-lint **minimal** tier | `lang-go`, `10x-makefile` |
 | `references/golangci-strict.yml` | golangci-lint **strict** tier (ratchet discipline) | `lang-go`, `10x-makefile` |

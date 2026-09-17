@@ -1,5 +1,8 @@
 # Test Reports
 
+Written to `.claude/doc/test-report-<slug>.md` in the target repo; the path
+contract lives in `../../_shared/references/artifacts.md`.
+
 ## Test Report Template
 
 ```markdown
