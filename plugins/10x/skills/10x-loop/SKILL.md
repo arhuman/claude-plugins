@@ -44,6 +44,10 @@ exactly one file was selected.
 ## Invariants
 
 These hold at every turn, and they are not negotiable by the loop itself.
+Running more than one loop concurrently against the same repo additionally
+requires one jj workspace per session, per
+`../_shared/references/concurrency.md`: the claim protocol keeps two sessions
+off the same phase, not off the same working copy.
 
 - **One phase per turn.** Take the first `todo` phase in the plan file, finish it, stop. Never chain two phases in one turn, however small the second looks. Chaining is how a scope grows past the point where a rollback is cheap. The single exception is an explicit `--chain N` (below), which is bounded consent, never a mode.
 - **Never push. Never tag.** The loop commits locally and stops. `jj git push`, `git push`, tags, and `make release` are the user's manual act, and no loop turn may perform them, including to "fix CI".
