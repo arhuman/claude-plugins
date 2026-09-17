@@ -25,13 +25,8 @@ disable-model-invocation: true
 2. Report: the phase closed, the quoted evidence from the gate, the next `todo` phase, and anything recorded as a new phase along the way.
 
 ## Constraints
-- One phase per turn, then stop. Chaining requires an explicit `--chain N`, and stops at the first gate failure, `blocked` phase, or unsatisfied dependency.
-- Never `jj git push`, `git push`, `git tag`, or `make release` - local commits only.
-- Never stub, mock, skip, or lower a threshold to reach green; a blocked verification halts the loop.
-- Two gate failures on the same phase set it to `blocked` and stop the loop.
-- Touch only the current phase's declared scope; defects found elsewhere become new `todo` phases.
-- Add no dependency the phase's `New deps` line did not name, and never import a package only present because another dependency pulled it.
-- Any claim not backed by a command run this turn is prefixed `UNVERIFIED:`.
+- The `10x-loop` skill's Invariants section applies in full (one phase per turn, never push or tag, never widen scope or the dependency surface, never fake a pass, two strikes then halt); this command does not restate it.
+- Chaining requires an explicit `--chain N` and stops at the first gate failure, `blocked` phase, or unsatisfied dependency.
 
 ## Examples
 

@@ -146,8 +146,8 @@ writes an empty test to move on.
 
 Delegate per the user's routing when the phase is large: `coder-agent` for
 non-trivial Go/TypeScript, `fixer-agent` for mechanical fully-specified edits.
-Never trust a delegate's claim alone: verify with the gate below like any other
-work.
+A delegate's claim alone is never evidence, per `coder-agent`'s Delegation
+rule: verify with the gate below like any other work.
 
 **Done when:** `jj diff --stat` lists only files within the phase's declared
 scope, and no file outside it was modified. Two named exceptions, and they are

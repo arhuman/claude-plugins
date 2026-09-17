@@ -29,4 +29,4 @@ automatically.
 ## Constraints
 - Never edit `standard.yml` or `conform.sh` before the proposal is approved.
 - Never propose a check that duplicates an existing one in spirit; fix the existing probe instead and say so.
-- State explicitly which existing check, if any, should have caught this and why it did not - a proposal is a lead, not a verdict.
+- State explicitly which existing check, if any, should have caught this and why it did not, per `10x-conform`'s lead-not-verdict rule.

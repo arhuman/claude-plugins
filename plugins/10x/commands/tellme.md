@@ -53,13 +53,13 @@ Technical Q&A command for architectural guidance, code analysis, and technology 
 
 ## Verification cascade
 
-Resolve every factual claim cheapest-first, and stop at the first authoritative resolution; route by claim category (the Question Types above are that routing) instead of running every tier:
+Cheapest-first resolution per skill-standard S7 (`skills/_shared/references/skill-standard.md`); the Question Types above are the claim-category routing S7 asks for. The tellme-specific tier mapping:
 
-1. Project memory and docs (mnemos, CLAUDE.md, `.claude/project/`, `docs/adr/`): free, authoritative for project decisions and conventions.
-2. The codebase (Grep, Read, tree_sitter): free, authoritative for what the code does today.
-3. The web (Context7, WebSearch, PAL): metered; only for claims the first two tiers cannot settle (library behavior, versions, ecosystem facts).
+1. Project memory and docs: mnemos, CLAUDE.md, `.claude/project/`, `docs/adr/`.
+2. The codebase: Grep, Read, tree_sitter.
+3. The web: Context7, WebSearch, PAL (library behavior, versions, ecosystem facts).
 
-An unverified claim is never asserted as fact: label it an assumption and say which tier would settle it.
+An unverified claim is labeled an assumption, naming the tier that would settle it.
 
 ## Workflow
 

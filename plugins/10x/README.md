@@ -93,8 +93,8 @@ The `/evaluate` command uses three external models alongside Claude (see `comman
 | Model | Provider | Requirement |
 |---|---|---|
 | `google/gemini-3.1-pro-preview` | OpenRouter | `OPENROUTER_API_KEY` in PAL `.env` |
-| `openai/gpt-5.2` | OpenRouter | `OPENROUTER_API_KEY` in PAL `.env` |
-| `deepseek/deepseek-r1-0528` | OpenRouter | `OPENROUTER_API_KEY` in PAL `.env` |
+| `openai/gpt-5.3-codex` | OpenRouter | `OPENROUTER_API_KEY` in PAL `.env` |
+| `deepseek/deepseek-v4-pro-0813` | OpenRouter | `OPENROUTER_API_KEY` in PAL `.env` |
 
 **OpenRouter**: set in `pal-mcp-server/.env`:
 ```bash

@@ -16,21 +16,9 @@ You bring repos into conformance with the 10x engineering standard. Your output 
 
 ## Workflow
 
-1. Resolve the audience profile first (`CONFORM_PROFILE`, then `10x-profile:` in the target's `CLAUDE.md`, then `public`). It is a fact about who consumes the repo, never a dial to turn until the repo passes.
-2. Run the runner: `sh <skill dir>/references/conform.sh <target>` (default `.`). For a `go.work` workspace, run per module and label each run.
-3. For every P0 FAIL, **confirm it in the source** before recording it (a grep miss is a lead, not a verdict). Mark equivalent-but-noncanonical implementations PARTIAL, not FAIL. Example: a CI that runs lint + vuln + cover as separate steps satisfies `ci.audit` in spirit even if it never types `make audit`.
-4. Run the `manual: true` judgment checks yourself (e.g. `docs.no_drift`: cross-read README/CONTRIBUTING/CLAUDE.md against the real Makefile targets).
-5. Write the report per `references/conformance-report.md`: headline score, per-check table with **effective** (post-profile) severities, the profile and where it came from, a "Dropped by profile" list, drift versus the repo's stamped `standard_version`, and remediation grouped by severity. Save to `.claude/doc/conform-<repo>.md`.
-6. In **[Fix]** mode only: dispatch each confirmed FAIL's `remediation` from the manifest, re-run the runner to confirm the fix, and open one PR. Never fix judgment or design deltas silently.
-
-## Remediation dispatch
-
-| remediation.agent | Delegate to | For |
-|-------------------|-------------|-----|
-| docker-agent | `docker-agent` | Dockerfile / compose (nonroot, headers, healthcheck) |
-| coder-agent | `coder-agent` | version stamping, new targets, design deltas |
-| (none) / mechanical | `fixer-agent` | dropping in a template file (ci.yml, dependabot.yml, SECURITY.md) |
-| docs updates after a fix | `documentation-agent` | README / CHANGELOG / ADR |
+1. Resolve the audience profile first, per the `10x-conform` skill's Audience profiles section: it is a fact about who consumes the repo, never a dial to turn until the repo passes.
+2. Run the shared diagnosis steps 1-4 (`../skills/10x-conform/references/diagnose-steps.md`): runner per module on a `go.work` workspace, P0 confirmation per the skill's lead-not-verdict rule, `manual: true` judgment checks, report written to `.claude/doc/conform-<repo>.md`.
+3. In **[Fix]** mode only: dispatch each confirmed FAIL's `remediation` per the skill's Remediation dispatch table, re-run the runner to confirm each fix, and commit per the skill's Commands section. Never push or open a PR: publishing is the operator's call. Never fix judgment or design deltas silently.
 
 ## Self-check before returning
 

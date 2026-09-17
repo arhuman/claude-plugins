@@ -20,6 +20,7 @@ internal consistency against `versions.md`). Conform checks a *real repo*.
 | `../_shared/references/standard.yml` | Authoritative manifest: every check, its `applies_to`, `severity`, `profiles`, `probe`, `expected`, `remediation`, plus the `profiles` block and `default_profile`. Edit here first. |
 | `./references/conform.sh` | Portable POSIX runner (a generated view of the manifest). Global: it lives here in the plugin and runs against any repo via `sh ./references/conform.sh <target>`. It is **not** copied into audited repos. |
 | `./references/conformance-report.md` | The report template the agent fills. |
+| `./references/diagnose-steps.md` | The four shared diagnosis steps `check_conform`, `make_conform`, and `conform-agent` cite instead of restating. |
 | `./references/verify-lockstep.sh` | Fails when `standard.yml` and `conform.sh` diverge (version, check ids, severities). Run it after any manifest edit; `--self-test` proves it catches each drift kind. |
 | `./references/probe-proposal.md` | Template for drafting a candidate new/amended check from a confirmed false negative, before it touches `standard.yml`. |
 
@@ -89,6 +90,15 @@ never touches a target repo at all - it only drafts a change to the standard its
 - **`check_conform`** [Detect, default]: run the runner against the target repo, confirm P0 leads in source, and produce the diagnosis (the report). Read-only: it never modifies the audited repo.
 - **`make_conform`** [Fix]: run the diagnosis, then for each confirmed FAIL dispatch its `remediation` (agent + skill/ref from the manifest) to apply the canonical template, re-run the runner to confirm, and **commit** the result. One atomic commit per dimension fixed, following the repo's commit convention. **Never push, never open a PR**: publishing is the operator's call, made separately and on request. Judgment and design deltas are listed for a human, never auto-applied.
 - **`propose_probe`** [Capture]: turn a confirmed false negative (a check passed, or none existed, while a real incident happened) into a draft addition to `standard.yml`, using `references/probe-proposal.md`. Writes the draft to `.claude/doc/` and stops for review; applying an approved draft follows the same lockstep rule as any other manifest edit (manifest first, then the runner, then the plugin version).
+
+Remediation dispatch for `make_conform` [Fix]:
+
+| remediation.agent | Delegate to | For |
+|-------------------|-------------|-----|
+| docker-agent | `docker-agent` | Dockerfile / compose (nonroot, headers, healthcheck) |
+| coder-agent | `coder-agent` | version stamping, new targets, design deltas |
+| (none) / mechanical | `fixer-agent` | dropping in a template file (ci.yml, dependabot.yml, SECURITY.md) |
+| docs updates after a fix | `documentation-agent` | README / CHANGELOG / ADR |
 
 Done when, per command:
 
