@@ -47,6 +47,8 @@ A bugfix phase carries one extra field, `Repro:` (see below).
 | `Repro` | bugfix only | The observed behaviour, in plain language. |
 | `Accept` | yes | A command that decides the phase, in backticks. |
 | `Status` | yes | One of the legend values. |
+| `Claimed-by` | no | `<session-id>@<ISO-8601 timestamp>`, present only while `Status: doing`. Absent means unclaimed. See Claiming a phase. |
+| `Attempts` | no | Gate failures under the current claim. Absent means zero. Cleared when the phase reaches `verified` or `blocked`. |
 
 An unknown `- Key: value` line is ignored by readers, which is what keeps this
 format forward-compatible: a plan written against a later contract still runs.
@@ -86,9 +88,43 @@ structurally impossible.
 
 - **`todo`**: eligible. The loop takes the first one whose `Depends on` are all `verified`.
 - **`backlog`**: invisible to the loop until promoted. Carries "some day", which order alone cannot express: a phase merely pushed to the end of the file still gets picked eventually, one evening, with nobody deciding.
-- **`doing`**: reserved, never written by the loop. A phase is finished or it is not; the loop handles one per turn.
+- **`doing`**: claimed by exactly one loop turn, identified by its `Claimed-by` field (see Claiming a phase). A claim is a lease, not a lock: a `doing` phase whose stamp is older than the stale window is eligible again. A `doing` phase with no `Claimed-by` predates this contract or was left by a crash; treat it as stale.
 - **`verified`**: closed, with a log line carrying a real change-id.
 - **`blocked`**: the gate failed twice on the same diagnosis, or a hard stop fired (drifted golden, unplanned dependency).
+
+## Claiming a phase
+
+Concurrency is optimistic and file-based: no lock server, no daemon. Two
+sessions racing the same plan file detect the collision on write-back, never
+on read. Run by the loop before any implementation work:
+
+1. Select the first eligible `todo` phase (the ordering rule, unchanged).
+2. Write `Status: doing` and `Claimed-by: <session-id>@<timestamp>` to that
+   phase immediately, then re-read the file and confirm the stamp survived
+   exactly as written. This is the claim.
+3. A different `Claimed-by` on re-read means another session won the race.
+   That is the protocol working, not an error: the loser has touched no other
+   file, so it yields and returns to step 1 for the next eligible phase. Two
+   sessions therefore advance two different phases of one plan concurrently.
+4. Implement and run the gate as normal.
+5. On a gate failure, increment `Attempts` in place, leave `Status: doing`
+   and `Claimed-by` unchanged, stop the turn. At `Attempts: 2` set
+   `Status: blocked` and clear both claim fields instead: the two-strikes
+   count now lives on disk, so it survives a context clear and holds across
+   sessions rather than granting each session its own retry budget.
+6. On success, set `Status: verified`, clear `Claimed-by` and `Attempts`,
+   append the Log line. This is the existing advance write, extended.
+
+**Stale-claim expiry.** A `doing` phase whose `Claimed-by` timestamp is older
+than 2 hours is abandoned (a crashed session, a killed turn) and eligible
+again, exactly like a `todo`; the reclaiming session appends one Log line
+(`reclaimed from stale <session-id>@<timestamp>`) with its own claim. A plan
+may override the window with a `Stale-claim-minutes: <n>` line under its
+title. Two hours comfortably exceeds the slowest observed gate run while
+still recovering same-day from a crash.
+
+Sessions sharing one checkout share one jj working copy, which claiming does
+not protect; physical isolation is `concurrency.md` in this directory.
 
 ## Phase ids
 

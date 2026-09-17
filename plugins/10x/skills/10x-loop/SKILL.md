@@ -50,7 +50,7 @@ These hold at every turn, and they are not negotiable by the loop itself.
 - **Never widen scope.** Touch only the files the current phase names. A defect found elsewhere is recorded as a new `todo` phase in the plan file, never fixed inline. A toolchain, dependency, or architecture change is never a side effect of a phase.
 - **Never widen the dependency surface.** A phase may add a direct dependency only if the plan file names it in that phase's scope. This is separate from file scope above: a loop is a creep machine, because every phase has a locally valid reason to pull one more package and no view of the cumulative surface. An unplanned dependency halts the phase and becomes the user's decision, never a side effect.
 - **Never fake a pass.** No stub, no mock, no skip, no lowered threshold, no deleted assertion to get to green. A blocked verification is reported and the loop halts (`blocked` status); it is never routed around.
-- **Two strikes, then halt.** If the verification gate fails twice on the same phase, set that phase to `blocked` with the failing output quoted, and stop the loop. A third attempt on an unchanged diagnosis is thrashing, not progress.
+- **Two strikes, then halt.** If the verification gate fails twice on the same phase, set that phase to `blocked` with the failing output quoted, and stop the loop. A third attempt on an unchanged diagnosis is thrashing, not progress. Each failure increments the phase's `Attempts` field on disk (per plan-format.md), so the count survives a context clear and holds across sessions instead of granting every session its own retry budget.
 
 ## Loop turn
 
@@ -83,6 +83,12 @@ undescribed change.
 Resolve the plan file per the section above, state the path, then take the first
 phase whose status is `todo`.
 
+Claim it before any other work: write `Status: doing` plus a `Claimed-by`
+stamp and re-read the file to confirm this session's claim survived, per
+`../_shared/references/plan-format.md`'s Claiming a phase section (which also
+owns the stale-claim window and the lost-race rule). A lost race is not an
+error: yield and take the next eligible phase instead.
+
 A phase whose `Depends on` names a phase that is not `verified` is not eligible,
 however early it appears in the file: skip to the next `todo` and state the
 skip. If no phase is eligible, stop and name the blocking dependency; when that
@@ -100,7 +106,9 @@ forks from the work.
 If the plan file does not exist, run the Bootstrap section instead of this turn.
 
 **Done when:** exactly one phase is selected, its id and acceptance command are
-quoted back, and that command string appears verbatim in the plan file.
+quoted back, that command string appears verbatim in the plan file, and this
+session's `Claimed-by` stamp survived the post-write re-read (or the next
+eligible phase was taken after a lost race).
 
 ### 2. Confirm the phase is still real
 
@@ -239,7 +247,8 @@ nothing: a fresh empty change is open on top of the phase commit.
 
 ### 6. Advance state and stop
 
-Set the phase's status to `verified` in the plan file and append a log line
+Set the phase's status to `verified` in the plan file, clear its `Claimed-by`
+and `Attempts` fields, and append a log line
 (`<phase-id> | verified | <commit change-id> | <one-line what> | <refs>`). The
 refs carried over from the phase are what make the log readable as a product
 trace and not only as a technical one. A tracked
