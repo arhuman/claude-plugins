@@ -53,6 +53,12 @@ When the user states how something works, check whether the code agrees. If you 
 
 ### Update CONTEXT.md inline
 
+Resolve ownership before the first write when `10x-plan` is available in the
+session: run `../10x-plan/references/ownership.sh` and, on a `foreign` verdict, write
+the same content to `.claude/project/context.md` instead of a tracked root
+`CONTEXT.md`, per `10x-plan`'s ownership table. Absent `10x-plan`, default to
+root `CONTEXT.md` (the common case) and say so.
+
 When a term is resolved, update `CONTEXT.md` right there. Don't batch these up: capture them as they happen. Use the format in [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md).
 
 `CONTEXT.md` should be totally devoid of implementation details. Do not treat `CONTEXT.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
