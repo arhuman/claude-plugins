@@ -31,6 +31,15 @@ fi
 
 [ -n "$PLAN" ] && [ -f "$PLAN" ] || { echo "PLAN: no plan file (private context, not shared), ok"; exit 0; }
 
+# Steering-document paths come from the shared resolver, which owns the
+# owned/foreign split: on a foreign repo the UX contract is .claude/project/ux.md
+# and decisions are .claude/project/decisions/, so hardcoding docs/ux.md here
+# made this check silently skip the very file 10x-plan had written. An explicit
+# PRD/UX/ADR in the environment still wins; the resolver honours it.
+RESOLVER="$(dirname "$0")/../../_shared/references/resolve-paths.sh"
+if [ -f "$RESOLVER" ]; then
+  eval "$(sh "$RESOLVER" 2>/dev/null)"
+fi
 PRD="${PRD:-.claude/project/prd.md}"
 UX="${UX:-docs/ux.md}"
 ADR="${ADR:-docs/adr}"
