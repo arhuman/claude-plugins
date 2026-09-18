@@ -24,6 +24,8 @@ jobs:
         run: sh scripts/check-dangling-refs.sh
       - name: Artifact registry matches what writers actually produce
         run: sh scripts/check-artifact-registry.sh
+      - name: Generated opencode/ tree in sync and within OpenCode bounds
+        run: sh scripts/check-opencode-sync.sh
       - name: Analysis agents cannot edit the code they analyse
         run: sh scripts/check-agent-tools.sh
       - name: Frontmatter parses as YAML
