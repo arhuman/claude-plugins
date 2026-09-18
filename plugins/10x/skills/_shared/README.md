@@ -11,15 +11,17 @@ Skills reference these files with a sibling-relative path, e.g. from
 
 | File | Owner concept | Consumed by |
 |------|---------------|-------------|
-| `references/plan-format.md` | Plan file and phase shape, `Refs:` grammar, status enum, ordering | `10x-loop`, `10x-plan` |
-| `references/ux-contract.md` | `docs/ux.md` shape: screens, components, state rules, `ui_paths` | `10x-plan`, `10x-frontend-design` |
-| `references/standard.yml` | The machine-checkable engineering standard: checks, severities, profiles, probes | `10x-conform` (its runner is a generated view of this file) |
+| `references/plan-format.md` | Plan file and phase shape, `Refs:` grammar, status enum, ordering | `loop`, `steering` |
+| `references/ux-contract.md` | `docs/ux.md` shape: screens, components, state rules, `ui_paths` | `steering`, `10x-frontend-design` |
+| `references/standard.yml` | The machine-checkable engineering standard: checks, severities, profiles, probes | `conform` (its runner is a generated view of this file) |
 | `references/skill-standard.md` | How a SKILL.md is written: description clauses, Done-when blocks, one-fact-one-home | every skill, and skill reviews |
-| `references/artifacts.md` | Registry of every artifact 10x writes or reads in a target project: path, writer, reader, format, lifecycle | `10x-plan`, `10x-loop`, `10x-conform`, `10x-tester`, commands |
-| `references/concurrency.md` | Multi-session work on one repo: jj workspace isolation plus the plan-file claim protocol | `10x-loop`, `10x-commit`, `plan-format.md` |
-| `references/versions.md` | Pinned Go toolchain, golangci-lint/govulncheck, and GitHub Actions versions | `lang-go`, `10x-makefile`, `10x-ci` |
-| `references/golangci-minimal.yml` | golangci-lint **minimal** tier | `lang-go`, `10x-makefile` |
-| `references/golangci-strict.yml` | golangci-lint **strict** tier (ratchet discipline) | `lang-go`, `10x-makefile` |
+| `references/artifacts.md` | Registry of every artifact 10x writes or reads in a target project: path, writer, reader, format, lifecycle | `steering`, `loop`, `conform`, `testing`, commands |
+| `references/concurrency.md` | Multi-session work on one repo: jj workspace isolation plus the plan-file claim protocol | `loop`, `commit`, `plan-format.md` |
+| `references/claim.sh` | Compare-and-swap phase claiming: mutex + claim token, the mechanism `plan-format.md` specifies | `loop` |
+| `references/resolve-paths.sh` | Steering-document paths for a repo, owned/foreign resolved once | `loop`, `verify-plan.sh`, `steering` |
+| `references/versions.md` | Pinned Go toolchain, golangci-lint/govulncheck, and GitHub Actions versions | `lang-go`, `makefile`, `ci` |
+| `references/golangci-minimal.yml` | golangci-lint **minimal** tier | `lang-go`, `makefile` |
+| `references/golangci-strict.yml` | golangci-lint **strict** tier (ratchet discipline) | `lang-go`, `makefile` |
 
 ## golangci-lint tier ladder
 

@@ -12,9 +12,10 @@ two different spellings of the same artifact.
 |---|---|---|---|---|
 | `.claude/plan/<slug>.md` or `PLAN.md` | 10x-plan, 10x-loop (bootstrap, status advance) | 10x-loop, 10x-plan, /handoff | `plan-format.md` | Durable; archived to `.claude/project/archives/` by `plan done` |
 | `.claude/project/archives/<plan>.md` | 10x-plan (`done`) | 10x-plan (phase-id allocation), `verify-plan.sh` | frozen `plan-format.md` shape | Permanent archive |
+| `<plan>.claimlock/` | _shared (`claim.sh`, called by 10x-loop) | `claim.sh` only | directory as mutex, `plan-format.md` | Transient, milliseconds; broken after 60s as a crash residue |
 | `.claude/project/prd.md` | 10x-plan (`init`) | `verify-plan.sh` (R-refs), humans | `10x-plan/references/prd.md` | Durable steering doc |
 | `.claude/project/tech.md` | 10x-plan (`init`, `rule`) | humans, /tellme tier 1 | `10x-plan/references/tech.md` | Durable steering doc |
-| `docs/ux.md` (foreign repo: `.claude/project/ux.md`) | 10x-plan (`init`, `rule`), 10x-loop (new screen rows) | 10x-loop gate, /design_handoff, `verify-ux.sh` | `ux-contract.md` | Durable, tracked |
+| `docs/ux.md` (foreign repo: `.claude/project/ux.md`) | 10x-plan (`init`, `rule`), 10x-loop (new screen rows) | 10x-loop gate, /design_handoff, `verify-ux.sh` | `ux-contract.md` | Durable, tracked. Both spellings resolve through `resolve-paths.sh`; never hardcode either |
 | `docs/adr/NNNN-<slug>.md` | grill-with-docs, 10x-plan (`rule`) | 10x-loop (Refs), `verify-adr.sh` | `../../grill-with-docs/ADR-FORMAT.md` | Durable; superseded, never deleted |
 | `CONTEXT.md` (foreign repo: `.claude/project/context.md`) | grill-with-docs | grill-with-docs, 10x-plan (`rule`) | `../../grill-with-docs/CONTEXT-FORMAT.md` | Durable domain glossary |
 | `.claude/handoff.md` | /handoff (write mode) | /handoff (`--resume`) | inline in `commands/handoff.md` | Ephemeral, one per repo, rewritten in place, gitignored |

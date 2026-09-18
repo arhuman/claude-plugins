@@ -1,7 +1,7 @@
 # Plan format (contract v1)
 
-The authoritative shape of a plan file. Consumed by `10x-loop` (which executes
-phases) and `10x-plan` (which writes and audits them). Neither carries its own
+The authoritative shape of a plan file. Consumed by `loop` (which executes
+phases) and `steering` (which writes and audits them). Neither carries its own
 copy: a format described in two places drifts in two directions.
 
 ## File resolution
@@ -94,26 +94,42 @@ structurally impossible.
 
 ## Claiming a phase
 
-Concurrency is optimistic and file-based: no lock server, no daemon. Two
-sessions racing the same plan file detect the collision on write-back, never
-on read. Run by the loop before any implementation work:
+Concurrency is file-based: no lock server, no daemon. Claiming goes through
+`claim.sh` in this directory, which owns the mechanism; the steps below are the
+contract it implements.
+
+    token=$(claim.sh acquire <plan> <phase-id> <session-id>)   # exit 1: lost
+    claim.sh renew   <plan> <phase-id> "$token"                # at gate start
+    claim.sh verify  <plan> <phase-id> "$token"                # before closing
+    claim.sh release <plan> <phase-id> "$token"                # back to todo
 
 1. Select the first eligible `todo` phase (the ordering rule, unchanged).
-2. Write `Status: doing` and `Claimed-by: <session-id>@<timestamp>` to that
-   phase immediately, then re-read the file and confirm the stamp survived
-   exactly as written. This is the claim.
-3. A different `Claimed-by` on re-read means another session won the race.
-   That is the protocol working, not an error: the loser has touched no other
-   file, so it yields and returns to step 1 for the next eligible phase. Two
-   sessions therefore advance two different phases of one plan concurrently.
-4. Implement and run the gate as normal.
+2. `acquire` it. The read-modify-write runs under a mutex, so exactly one
+   session can observe the phase as claimable; it prints an opaque **claim
+   token** and writes `Claimed-by: <session-id>#<token>@<timestamp>`.
+3. A non-zero exit means another session won the race. That is the protocol
+   working, not an error: the loser has touched no other file, so it yields
+   and returns to step 1 for the next eligible phase. Two sessions therefore
+   advance two different phases of one plan concurrently.
+4. Implement and run the gate as normal, calling `renew` once at the start of
+   the gate (the long step) to refresh the lease.
 5. On a gate failure, increment `Attempts` in place, leave `Status: doing`
    and `Claimed-by` unchanged, stop the turn. At `Attempts: 2` set
    `Status: blocked` and clear both claim fields instead: the two-strikes
    count now lives on disk, so it survives a context clear and holds across
    sessions rather than granting each session its own retry budget.
-6. On success, set `Status: verified`, clear `Claimed-by` and `Attempts`,
-   append the Log line. This is the existing advance write, extended.
+6. On success, `verify` the token **before** writing: only then set
+   `Status: verified`, clear `Claimed-by` and `Attempts`, append the Log line.
+
+**Why a token and a mutex, not a re-read.** Writing the claim and re-reading it
+confirms only that nobody has overwritten you *yet*, which is not exclusivity.
+Two sessions interleave as: A reads `todo`, B reads `todo`, A writes claim A, A
+re-reads and proceeds, B writes claim B, B re-reads and proceeds. Both then
+implement the same phase. The mutex closes that window by making the whole
+read-modify-write atomic. The token closes a second, independent one: a session
+whose lease expired and was reclaimed would otherwise still mark the phase
+`verified`, closing work another session now owns. Step 6's `verify` is what
+turns that silent corruption into a loud refusal.
 
 **Stale-claim expiry.** A `doing` phase whose `Claimed-by` timestamp is older
 than 2 hours is abandoned (a crashed session, a killed turn) and eligible
@@ -121,7 +137,12 @@ again, exactly like a `todo`; the reclaiming session appends one Log line
 (`reclaimed from stale <session-id>@<timestamp>`) with its own claim. A plan
 may override the window with a `Stale-claim-minutes: <n>` line under its
 title. Two hours comfortably exceeds the slowest observed gate run while
-still recovering same-day from a crash.
+still recovering same-day from a crash, and `renew` at the gate extends it for
+a phase that genuinely runs longer.
+
+A `doing` phase with no `Claimed-by`, or one carrying a bare
+`<session-id>@<timestamp>` with no `#<token>`, predates this contract: treat it
+as stale rather than as claimable-by-anyone.
 
 Sessions sharing one checkout share one jj working copy, which claiming does
 not protect; physical isolation is `concurrency.md` in this directory.

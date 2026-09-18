@@ -1,6 +1,6 @@
 ---
-name: 10x-loop
-description: 'Autonomous plan-driven work loop: read the plan file (an explicit path, else .claude/plan/*.md, else PLAN.md), take the first todo phase, implement it, prove it with a mutation-checked verification gate, commit atomically, stop. State lives on disk (plan file + repo), never in the conversation, so the loop survives a context clear and resumes on the next turn. Use when running unattended or resumable multi-phase work, when asked "what is next" against a plan, or to bootstrap a plan from an existing roadmap. Not for a one-shot implementation with no plan file: implement directly and use 10x-commit.'
+name: loop
+description: 'Autonomous plan-driven work loop: read the plan file (an explicit path, else .claude/plan/*.md, else PLAN.md), take the first todo phase, implement it, prove it with a mutation-checked verification gate, commit atomically, stop. State lives on disk (plan file + repo), never in the conversation, so the loop survives a context clear and resumes on the next turn. Use when running unattended or resumable multi-phase work, when asked "what is next" against a plan, or to bootstrap a plan from an existing roadmap. Not for a one-shot implementation with no plan file: implement directly and use the `commit` skill.'
 ---
 
 # 10x Loop
@@ -87,11 +87,17 @@ undescribed change.
 Resolve the plan file per the section above, state the path, then take the first
 phase whose status is `todo`.
 
-Claim it before any other work: write `Status: doing` plus a `Claimed-by`
-stamp and re-read the file to confirm this session's claim survived, per
-`../_shared/references/plan-format.md`'s Claiming a phase section (which also
-owns the stale-claim window and the lost-race rule). A lost race is not an
-error: yield and take the next eligible phase instead.
+Claim it before any other work:
+
+```sh
+token=$(../_shared/references/claim.sh acquire <plan> <phase-id> "$SESSION")
+```
+
+A non-zero exit means another session holds it. That is not an error: yield and
+take the next eligible phase instead. **Keep `$token` for the rest of the turn**;
+the gate renews with it and step 6 refuses to close the phase without it. The
+protocol, the stale-claim window and the lost-race rule live in
+`../_shared/references/plan-format.md`'s Claiming a phase section.
 
 A phase whose `Depends on` names a phase that is not `verified` is not eligible,
 however early it appears in the file: skip to the next `todo` and state the
@@ -110,8 +116,8 @@ forks from the work.
 If the plan file does not exist, run the Bootstrap section instead of this turn.
 
 **Done when:** exactly one phase is selected, its id and acceptance command are
-quoted back, that command string appears verbatim in the plan file, and this
-session's `Claimed-by` stamp survived the post-write re-read (or the next
+quoted back, that command string appears verbatim in the plan file, and
+`claim.sh acquire` exited 0 with its token held for the turn (or the next
 eligible phase was taken after a lost race).
 
 ### 2. Confirm the phase is still real
@@ -158,7 +164,7 @@ writes an empty test to move on.
 
 That failing test is the one test this loop writes itself, scoped to the
 phase's `Repro:`. A phase needing a broader test strategy, coverage analysis,
-or a non-bugfix suite delegates to `tester-agent`, which applies `10x-tester`.
+or a non-bugfix suite delegates to `tester-agent`, which applies `testing`.
 
 Delegate per the user's routing when the phase is large: `coder-agent` for
 non-trivial Go/TypeScript, `fixer-agent` for mechanical fully-specified edits.
@@ -177,6 +183,12 @@ exceptions, not a general loosening:
 This is the stop criterion. It is a gate, not a report: the loop may not
 advance until every item below produced real output.
 
+Renew the claim first: `../_shared/references/claim.sh renew <plan> <phase-id>
+"$token"`. The gate is the long step, and a lease that expires mid-run hands the
+phase to another session while this one is still working. A non-zero exit means
+the claim was already lost: stop the turn and report it rather than gating work
+that is no longer ours.
+
 1. **Clean first, then measure.** Remove stale artifacts before any count or benchmark (`go clean -cache` where relevant, `find . -name '*.pyc' -delete`, regenerate goldens). A number measured over stale artifacts is not a number.
 2. **Run the phase's acceptance command**, then the repo's full check (`make ci` where it exists, else `make fulltest`, else the project's test+lint command). Paste the real output. Never predict output, never summarize a run that was not executed. **The full check runs here, once, at the gate, never inside the red/green iteration**: while iterating on the implementation, use the targeted test and `make test` (short units, seconds). Measured on a real repo, a full check run per iteration cost 300s a time for 36s of tests, dozens of times a night.
 3. **Mutation check.** For any phase whose acceptance rests on a test: break the fix deliberately, re-run that test, confirm it goes red, restore. A test that stays green against a broken fix is vacuous and proves nothing. Quote both runs.
@@ -185,7 +197,7 @@ advance until every item below produced real output.
 6. **A touched migration chain replays from zero.** If `jj diff --stat` lists a file under the repo's migration directory, apply the *whole* chain to an empty volume and restart the stack, quoting both. The full check does not cover this: it builds its test database by replaying every migration in the new order onto nothing, which succeeds, while what breaks is an existing volume replaying only the tail. A constraint added before the rename or backfill it depends on passes here and breaks every deployed database, so a failure is a hard stop that marks the phase `blocked`, never a reordering waved through on the argument that a fresh build was green.
 7. **Dependency surface unchanged, or planned.** A non-empty `jj diff go.mod go.sum` (or the ecosystem's manifest) in a phase whose scope did not name that dependency is a hard stop, like a drifted golden: mark the phase `blocked` and report the added module. Then run the promotion check below; it must print nothing.
 8. **Label what you could not verify.** Any claim not backed by a command executed this turn is prefixed `UNVERIFIED:`. Never argue for a position that was not tested.
-9. **References resolve, and the UI contract holds.** Run `../10x-plan/references/verify-plan.sh` on the resolved plan: every id in the phase's `Refs` line must point at a real target, and an id naming a `deprecated` or `superseded` ADR is a hard stop, like a drifted golden, because it means the phase implements a decision that has been replaced. If the phase's `Scope` intersects the `ui_paths` declared in `docs/ux.md`, also run `../10x-plan/references/verify-ux.sh`: it must exit 0, and the phase must carry a `UX:` ref (a screen id, or `system` for a cross-cutting change). A repo with no `docs/ux.md` skips this second half entirely.
+9. **References resolve, and the UI contract holds.** Run `../10x-plan/references/verify-plan.sh` on the resolved plan: every id in the phase's `Refs` line must point at a real target, and an id naming a `deprecated` or `superseded` ADR is a hard stop, like a drifted golden, because it means the phase implements a decision that has been replaced. If the phase's `Scope` intersects the `ui_paths` declared in the UX contract, also run `../10x-plan/references/verify-ux.sh "$UX"`: it must exit 0, and the phase must carry a `UX:` ref (a screen id, or `system` for a cross-cutting change). Resolve `$UX` with `eval "$(../_shared/references/resolve-paths.sh)"` rather than assuming `docs/ux.md`: on a foreign repo the contract is at `.claude/project/ux.md`, and testing the tracked path there skips the check while reporting a pass. A repo whose resolved `$UX` does not exist skips this second half entirely.
 
 The promotion check catches the one move that lengthens the chain under your own
 roof: a package present only because something else pulled it (structural,
@@ -234,7 +246,7 @@ leftover deliberate breakage (`jj diff` shows only the intended change).
 
 ### 5. Commit
 
-Apply the `10x-commit` skill in full: it owns jj mechanics, message composition,
+Apply the `commit` skill in full: it owns jj mechanics, message composition,
 the `--stdin` heredoc rule, and the tracked-`CHANGELOG.md` obligation for
 `feat`/`fix`/`perf`. Do not restate or re-derive those rules here.
 
@@ -245,14 +257,21 @@ The commit step ends with `jj new`, never with the describe: a described `@`
 left as the working copy silently absorbs the next turn's first edit (see
 step 0). A turn that stops before `jj new` has not finished committing.
 
-**Done when:** `10x-commit`'s own Done-when block passes, no push or tag
+**Done when:** `commit`'s own Done-when block passes, no push or tag
 command was run this turn, and `jj log -r @ --no-graph -T description` prints
 nothing: a fresh empty change is open on top of the phase commit.
 
 ### 6. Advance state and stop
 
-Set the phase's status to `verified` in the plan file, clear its `Claimed-by`
-and `Attempts` fields, and append a log line
+Confirm the claim is still ours before touching the plan:
+`../_shared/references/claim.sh verify <plan> <phase-id> "$token"`. A non-zero
+exit means the lease expired and another session reclaimed the phase; writing
+`verified` then would close *their* phase against *our* commit. Stop and report
+instead: the commit already exists and is not lost, but the plan entry belongs
+to whoever holds the claim.
+
+Then set the phase's status to `verified` in the plan file, clear its
+`Claimed-by` and `Attempts` fields, and append a log line
 (`<phase-id> | verified | <commit change-id> | <one-line what> | <refs>`). The
 refs carried over from the phase are what make the log readable as a product
 trace and not only as a technical one. A tracked
@@ -275,12 +294,12 @@ way.
 
 ## Bootstrap (no plan file yet)
 
-Scaffolding a project and writing its first plan belongs to `10x-plan`: run
+Scaffolding a project and writing its first plan belongs to `steering`: run
 `/10x:plan init`, which creates the context scaffold, the UX contract when the
 repo serves an interface, and an empty plan, then stops for approval. This skill
 executes phases; it does not own the documents they cite.
 
-When invoked with no plan and `10x-plan` is unavailable, mine what already
+When invoked with no plan and `steering` is unavailable, mine what already
 exists rather than inventing a roadmap: existing plan docs, `.claude/project/`,
 `docs/adr/`, TODOs, failing tests, open conformance findings. Write to
 `.claude/plan/<slug>.md` by default, or to the explicit path when one was given;
