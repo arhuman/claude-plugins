@@ -6,7 +6,7 @@ Plugin to make Claude Code a 10x more efficient
 
 | Type | Name | What it does |
 |---|---|---|
-| Command | `/10x:doc` | What the plugin offers and where this project stands. Derives its catalogue from the files, so it cannot drift from this table |
+| Command | `/10x:manual` | What the plugin offers and where this project stands. Derives its catalogue from the files, so it cannot drift from this table |
 | Command | `/10x:plan` | Steering documents: `init`, `status`, `add`, `rule`, `check`, `done`. Writes plans and contracts, never executes a phase |
 | Command | `/10x:loop` | One plan-driven work turn: take a phase, implement, prove it with a mutation-checked gate, commit, stop. Never pushes |
 | Command | `/10x:handoff` | Save or restore the thread of a phase interrupted mid-way (`--resume` to read it back) |
@@ -30,7 +30,7 @@ Plugin to make Claude Code a 10x more efficient
 | Agent | `coder-agent`, `fixer-agent` | Non-trivial implementation; mechanical fully-specified edits |
 | Agent | `tester-agent`, `docker-agent`, `documentation-agent` | Testing, Docker, and documentation delegates |
 
-`/10x:doc` prints this catalogue from the plugin files themselves. When the two
+`/10x:manual` prints this catalogue from the plugin files themselves. When the two
 disagree, the command is right: this table is prose and drifts, the frontmatter
 does not.
 
