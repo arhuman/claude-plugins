@@ -41,11 +41,15 @@ LDFLAGS := -s -w \
 When copying, replace `progname` (and `MAIN_PACKAGE` if the entry point differs)
 with the project's real names: the finished Makefile must not contain `progname`.
 
-These three lines are only half the contract: `go install <module>@latest`
-applies no ldflags at all, so the package they target must fall back to
-`debug.ReadBuildInfo()` or a tagged release installed that way reports itself as
-`dev (unknown, unknown)`. See `./version-go.md` for the package this stamps, and
-keep the `v` prefix equal across the Makefile, goreleaser and the module version.
+These three lines are only half the contract: they stamp the two build paths
+that run a linker, and the package they target has to cover the third on its
+own. `./version-go.md` owns that half, with the per-path table and the fallback
+it requires; a Makefile merged without it stamps correctly and still ships a
+binary that misreports its own version.
+
+`VERSION` needs nothing extra for the `v` prefix: `git describe` already emits
+it. Only goreleaser strips it and has to put it back, which is why that rule
+lives with the goreleaser config rather than here.
 
 Add the Go targets to `.PHONY` when merging into the base skeleton:
 
