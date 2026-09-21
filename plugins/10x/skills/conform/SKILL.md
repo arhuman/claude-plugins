@@ -21,7 +21,7 @@ internal consistency against `versions.md`). Conform checks a *real repo*.
 | `./references/conform.sh` | Portable POSIX runner (a generated view of the manifest). Global: it lives here in the plugin and runs against any repo via `sh ./references/conform.sh <target>`. It is **not** copied into audited repos. |
 | `./references/conformance-report.md` | The report template the agent fills. |
 | `./references/diagnose-steps.md` | The four shared diagnosis steps `check_conform`, `make_conform`, and `conform-agent` cite instead of restating. |
-| `./references/verify-lockstep.sh` | Fails when `standard.yml` and `conform.sh` diverge (version, check ids, severities). Run it after any manifest edit; `--self-test` proves it catches each drift kind. |
+| `./references/verify-lockstep.sh` | Fails when `standard.yml` and `conform.sh` diverge (version, check ids, severities, and the probe strings themselves). Run it after any manifest edit; `--self-test` proves it catches each drift kind. |
 | `./references/probe-proposal.md` | Template for drafting a candidate new/amended check from a confirmed false negative, before it touches `standard.yml`. |
 
 ## Audience profiles

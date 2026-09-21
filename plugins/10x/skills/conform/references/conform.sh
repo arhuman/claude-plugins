@@ -138,7 +138,7 @@ governance.codeowners|all|P2|private=NA,internal=P1,public=P2|test -f CODEOWNERS
 governance.changelog_root|all|P2|private=P2,internal=P2,public=P1|test -f CHANGELOG.md
 ui.cube_layers|web-app|P2||_ui_layers
 ui.color_literals|web-app|P2||_ui_no_color_literals
-ui.contract|web-app|P2||test -f docs/ux.md -o -f .claude/project/ux.md
+ui.contract|web-app|P2||test -f docs/ux.md || test -f .claude/project/ux.md
 commit.ci_check|all|P2|private=P2,internal=P1,public=P1|grep -rqsE "commitlint" .github/workflows
 supply_chain.sign_sbom|go-service,go-cli|P2|private=NA,internal=P2,public=P1|grep -qsE "sboms:|signs:" .goreleaser.y*ml
 supply_chain.scan|go-service,web-app|P2|private=P2,internal=P1,public=P1|grep -rqsE "trivy|grype|codeql" .github/workflows
