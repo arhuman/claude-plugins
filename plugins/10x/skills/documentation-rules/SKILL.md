@@ -1,6 +1,6 @@
 ---
 name: documentation-rules
-description: 'Rules for writing and updating documentation. Use for any non-trivial documentation task in README.md, markdown files, text files, and code comments. Not for blog posts, essays, or newsletters: that lives in the private 10x-authoring plugin.'
+description: 'Rules for writing and updating documentation. Use for any non-trivial documentation task in README.md, markdown files, text files, and code comments. Not for blog posts, essays, or newsletters: those are prose for readers, not project documentation, and this skill does not cover them.'
 ---
 
 # 10x Documentation

@@ -9,11 +9,27 @@
 # either the component came back public (remove it from NAMES) or the mention
 # is stale (fix it). Design records under .claude/ legitimately keep the
 # names and are not scanned.
+#
+# Names are matched literally and unanchored, so only names specific enough to
+# be unambiguous belong here. The private skills rating, reporting, explaining,
+# blogging, duowriting and teaching are listed in their qualified
+# <plugin>/skills form instead of bare: bare "rating" also matches
+# "integrating", and "reporting"/"explaining" occur as ordinary English
+# throughout the skills. A bare entry that fires on prose gets silenced by
+# deleting it, which is how a guard dies.
 set -u
 
 NAMES='10x-review
+10x-authoring
+10x-learn
+10x-introspect
 teachme
-introspect'
+introspect
+review-agent
+10x-authoring/skills
+10x-learn/skills
+10x-review/skills
+10x-introspect/skills'
 
 offenders=$(
   printf '%s\n' "$NAMES" | while read -r name; do
