@@ -265,19 +265,16 @@ go tool cover -func=coverage.out        # per-function summary
 ```
 
 Use `-covermode=atomic` (required for correct counts under `-race`). Gate the
-total in CI and the Makefile rather than eyeballing it: the `make cover` target
-extracts the total and fails below a floor:
+total in the Makefile rather than eyeballing it: the `make cover` target
+extracts the total and fails below `COVER_MIN`. The target's shell, the default
+floor, and the ratchet rule (raise as coverage improves, never lower to green a
+build) live in `../../makefile/references/makefile-go.md`; do not restate them
+here, and do not hand-write a second gate beside it.
 
-```bash
-total=$(go tool cover -func=coverage.out | awk '/^total:/ {print $3}' | tr -d '%')
-awk -v t="$total" -v min="$COVER_MIN" 'BEGIN { exit (t+0 < min+0) }' \
-    || { echo "coverage $total% < $COVER_MIN%"; exit 1; }
-```
-
-Target 80%+ for business-logic packages. Coverage is a floor, not a goal, and a
-ratchet: raise `COVER_MIN` as coverage improves, never lower it to green a build.
-To measure the production code a test *exercises* (not just the package it lives
-in), pass `-coverpkg=./...`. No package should sit at 0% in a final report.
+Two rules this file does own, because they are Go-toolchain facts rather than
+Makefile mechanics: to measure the production code a test *exercises* (not just
+the package it lives in), pass `-coverpkg=./...`; and no package should sit at
+0% in a final report.
 
 ## Golden Files
 

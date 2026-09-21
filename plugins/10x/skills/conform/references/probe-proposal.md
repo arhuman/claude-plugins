@@ -35,7 +35,7 @@ say so instead of filling in the section below.>
 ## Status
 
 - [ ] Reviewed by a human
-- [ ] Added to `../_shared/references/standard.yml` (`standard_version` bumped, dated comment added at the top per the existing convention)
+- [ ] Added to `../../_shared/references/standard.yml` (`standard_version` bumped, dated comment added at the top per the existing convention)
 - [ ] Matching pipe-delimited line added to `conform.sh` in the same position/format
 - [ ] Plugin version bumped (`plugins/10x/.claude-plugin/plugin.json`)
 

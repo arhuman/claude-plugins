@@ -150,7 +150,7 @@ retract v1.0.1 // Contains critical bug
 The `go` and `toolchain` lines answer different questions: compatibility floor
 versus build compiler: so they are allowed to differ. If a reviewer might read
 the gap as a mistake, note it in the repo. Keep both in sync with
-`../_shared/references/versions.md`.
+`../../_shared/references/versions.md`.
 
 Prefer the standard library and lean, well-justified dependencies: `log/slog`
 for logging, `database/sql` with a pure-Go driver (e.g. `modernc.org/sqlite`)
