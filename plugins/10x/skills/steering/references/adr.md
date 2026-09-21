@@ -28,5 +28,5 @@ ADR Contract v1: one decision per file, docs/adr/NNNN-slug.md.
 - Never append to a monolithic store (docs/ADR.md, IN-FLIGHT.md). Never mirror
   non-conformant existing ADRs: write the canonical form and warn.
 - Write one only when the decision is hard to reverse, surprising without
-  context, and the result of a real trade-off (see grill-with-docs ADR-FORMAT.md).
+  context, and the result of a real trade-off (see ADR-FORMAT.md).
 -->

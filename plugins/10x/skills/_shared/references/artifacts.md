@@ -16,8 +16,8 @@ two different spellings of the same artifact.
 | `.claude/project/prd.md` | steering (`init`) | `verify-plan.sh` (R-refs), humans | `steering/references/prd.md` | Durable steering doc |
 | `.claude/project/tech.md` | steering (`init`, `rule`) | humans, /tellme tier 1 | `steering/references/tech.md` | Durable steering doc |
 | `docs/ux.md` (foreign repo: `.claude/project/ux.md`) | steering (`init`, `rule`), loop (new screen rows) | loop gate, /design_handoff, `verify-ux.sh` | `ux-contract.md` | Durable, tracked. Both spellings resolve through `resolve-paths.sh`; never hardcode either |
-| `docs/adr/NNNN-<slug>.md` | grill-with-docs, steering (`rule`) | loop (Refs), `verify-adr.sh` | `../../grill-with-docs/ADR-FORMAT.md` | Durable; superseded, never deleted |
-| `CONTEXT.md` (foreign repo: `.claude/project/context.md`) | grill-with-docs | grill-with-docs, steering (`rule`) | `../../grill-with-docs/CONTEXT-FORMAT.md` | Durable domain glossary |
+| `docs/adr/NNNN-<slug>.md` | steering (`rule`) | loop (Refs), `verify-adr.sh` | `../../steering/references/ADR-FORMAT.md` | Durable; superseded, never deleted |
+| `CONTEXT.md` (foreign repo: `.claude/project/context.md`) | steering (`rule`) | steering (`rule`) | `../../steering/references/CONTEXT-FORMAT.md` | Durable domain glossary |
 | `.claude/handoff.md` | /handoff (write mode) | /handoff (`--resume`) | inline in `commands/handoff.md` | Ephemeral, one per repo, rewritten in place, gitignored |
 | `.claude/doc/conform-<repo>.md` | /check_conform, /make_conform, conform-agent (via `diagnose-steps.md`) | humans | `../../conform/references/conformance-report.md` | Snapshot, regenerated per run, never re-read |
 | `.claude/doc/probe-proposal-<slug>.md` | /propose_probe | humans (approval gate) | `../../conform/references/probe-proposal.md` | Draft until approved into `standard.yml` |

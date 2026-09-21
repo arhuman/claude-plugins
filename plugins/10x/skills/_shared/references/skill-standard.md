@@ -14,7 +14,7 @@ is the only always-on text; it must say when to fire AND when not to. End every
 description with one anti-trigger clause naming the neighboring skill or command that
 covers the excluded case ("Not for X: use Y"). Overlapping skills without negative
 clauses mis-fire against each other (conform vs /code-review,
-grill-me vs grill-with-docs).
+steering vs loop).
 
 **S2. Done-when blocks: observable exit criteria.** Every procedural phase ends with
 a short "Done when" list of postconditions an agent can check, runnable commands
@@ -63,8 +63,8 @@ each earns its place by forcing a behavior a softer phrasing loses. Every line b
 is integrated where noted (2026-08-29); the bank stays the quotable home for reuse
 in new skills, and a new skill matching a line's shape should carry it.
 
-- "Ask only questions that can change what gets built." (integrated: grill-with-docs)
-- "Stop when remaining gaps are explicit assumptions, not hidden ambiguity." (integrated: grill-with-docs Done when)
+- "Ask only questions that can change what gets built." (integrated: steering rule)
+- "Stop when remaining gaps are explicit assumptions, not hidden ambiguity." (integrated: steering rule)
 - "A bare opinion is not a finding: tie each to a checklist item, a threshold row, a duplication site, or a confirmed defect."
 - "Never record a finding inferred from naming alone: a plausible name is not evidence." (kin to thinking phantom references)
 - "Unscannable check: mark it Not run with the reason, never invent findings for it." (integrated: conform MUST NOT, via S6)
@@ -72,7 +72,7 @@ in new skills, and a new skill matching a line's shape should carry it.
 - "Honesty over escape: never report done until the success condition genuinely passes." (integrated: coder-agent Workflow)
 - "No silent TODO, skipped test, or placeholder mock: declare anything you bypass." (integrated: coder-agent and fixer-agent)
 - "empty, duplicate, concurrent, stale, missing, hostile, partial" (integrated: testing MUST DO)
-- "Use premortem for risk: shipped, failed, why?" (integrated: grill-with-docs)
+- "Use premortem for risk: shipped, failed, why?" (available for reuse)
 - "Code silent on a line is not code that contradicts it." (integrated: steering init)
 - "Points to the code over a copy. Names a tech without its version." (integrated: steering init)
 - "A hook that rejects the commit is not this skill's job: report which hook and why, then stop." (integrated: commit MUST DO)

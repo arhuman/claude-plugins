@@ -60,7 +60,7 @@ phases point at nothing.
 accepted. Offered only through a three-part gate: hard to reverse, surprising
 without context, the result of a real trade-off. A decision that changes is
 superseded by a new file, never amended. Contract v1 in
-`grill-with-docs/ADR-FORMAT.md`.
+`steering/references/ADR-FORMAT.md`.
 
 **UX contract.** `docs/ux.md`, tracked. Screens (template, dominant action,
 tension relieved), component registry, state rules, invariants. It exists
@@ -68,8 +68,9 @@ because `design-system` requires a screen table and a component registry
 without ever saying where they live, so the CSS layer had twelve audits and the
 intent layer had nothing.
 
-**Glossary.** `CONTEXT.md`, tracked, owned by `grill-with-docs`. The language of
+**Glossary.** `CONTEXT.md`, tracked, owned by `steering`. The language of
 the domain and nothing else: no implementation detail, no spec, no scratchpad.
+Shape in `steering/references/CONTEXT-FORMAT.md`.
 
 **Invariant.** A rule in the UX contract that keeps features consistent with
 each other ("create and edit render the same form partial"). Distinct from an

@@ -51,7 +51,7 @@ rewrite_paths() {
   sed -E \
     -e 's,`\.\./skills/,`~/.config/opencode/skills/,g' \
     -e 's,`\.\./_shared/,`~/.config/opencode/skills/_shared/,g' \
-    -e 's,([ `(])skills/(10x-|lang-|grill|_shared),\1~/.config/opencode/skills/\2,g'
+    -e 's,([ `(])skills/(10x-|lang-|_shared),\1~/.config/opencode/skills/\2,g'
 }
 
 # Fail when a description exceeds OpenCode's 1024-char cap. Truncation at a
@@ -124,7 +124,7 @@ for f in "$SRC"/agents/*.md; do
 done
 
 # Self-check: no plugin-tree path reference survived the rewrite.
-leftover=$(grep -rn '[ `(]skills/\(10x-\|lang-\|grill\|_shared\)\|`\.\./skills/\|`\.\./_shared/' "$OUT" || true)
+leftover=$(grep -rn '[ `(]skills/\(10x-\|lang-\|_shared\)\|`\.\./skills/\|`\.\./_shared/' "$OUT" || true)
 if [ -n "$leftover" ]; then
   echo "unrewritten plugin-tree path reference in generated output:" >&2
   echo "$leftover" >&2

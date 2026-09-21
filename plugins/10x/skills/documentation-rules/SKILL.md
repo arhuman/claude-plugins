@@ -185,7 +185,7 @@ This section is the authoritative ADR convention for every 10x skill and agent.
 
 - Location: `docs/adr/NNNN-slug.md`, one committed file per decision, numbered sequentially (scan `docs/adr/` for the highest number, increment by one).
 - Create `docs/adr/` lazily, when the first ADR is written.
-- An ADR can be a single paragraph: context, decision, why. Add `Status`, `Considered Options`, or `Consequences` only when they add real value (full rules in the grill-with-docs skill's `ADR-FORMAT.md`).
+- An ADR can be a single paragraph: context, decision, why. Add `Status`, `Considered Options`, or `Consequences` only when they add real value (full rules in `../steering/references/ADR-FORMAT.md`).
 - Status values when used: `proposed` | `accepted` | `deprecated` | `superseded by ADR-NNNN`. Update a superseded ADR's status; never delete it.
 - Link related ADRs when a decision builds on or contradicts a previous one.
 - Do not keep a private single-file ADR log (`.claude/ADR.md` or `.claude/doc/ADR.md`): decisions belong in the repo, where future readers look.

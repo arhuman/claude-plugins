@@ -5,12 +5,12 @@ description: 'Steering documentation for agentic development: initialize the pro
 
 # 10x Plan
 
-Four artifacts already existed and none of them talked to each other: a scaffold
-that creates empty files and decides nothing, a grilling session that ends at
-the decision, a loop that executes a flat plan, and a design skill that defends
-CSS with machinery and intent with nothing. The gap between them is where the
-work actually goes wrong: a phase can go green while violating an accepted ADR,
-because nothing ties a phase to what justifies it.
+Three artifacts already existed and none of them talked to each other: a scaffold
+that creates empty files and decides nothing, a loop that executes a flat plan,
+and a design skill that defends CSS with machinery and intent with nothing. The
+gap between them is where the work actually goes wrong: a phase can go green
+while violating an accepted ADR, because nothing ties a phase to what justifies
+it.
 
 This skill owns the steering documents and the plan. It never executes a phase.
 
@@ -26,7 +26,7 @@ three are contracts the code must honour.
 | `.claude/plan/<slug>.md` | Execution: phases, statuses, log | no |
 | `docs/adr/NNNN-slug.md` | Decisions that are hard to reverse | **yes** |
 | `docs/ux.md` | Interface contract: screens, components, state rules | **yes** |
-| `CONTEXT.md` | Domain glossary, and nothing else (owned by `grill-with-docs`) | **yes** |
+| `CONTEXT.md` | Domain glossary, and nothing else | **yes** |
 
 The three tracked paths hold only on a repo that is ours; see Ownership below.
 
@@ -69,7 +69,7 @@ under `.claude/`, which is gitignored and therefore invisible in a diff:
 | UX contract | `docs/ux.md` | `.claude/project/ux.md` |
 | Decisions | `docs/adr/NNNN-*.md` | `.claude/project/decisions/NNNN-*.md` |
 | `CONTRIBUTING.md`, `SECURITY.md` | created if missing | **never** |
-| `CONTEXT.md` | as `grill-with-docs` decides | `.claude/project/context.md` |
+| `CONTEXT.md` | root `CONTEXT.md` | `.claude/project/context.md` |
 
 `verify-ux.sh` already takes a path argument, so it works on the relocated file
 with no change.
@@ -88,7 +88,8 @@ Both are shared contracts, held once and referenced, never copied:
 
 - Plan and phase shape: `../_shared/references/plan-format.md`
 - UX contract shape: `../_shared/references/ux-contract.md`
-- ADR shape: `../grill-with-docs/ADR-FORMAT.md` (ADR Contract v1)
+- ADR shape: `references/ADR-FORMAT.md` (ADR Contract v1)
+- Glossary shape: `references/CONTEXT-FORMAT.md`
 
 Read the relevant one before writing; do not re-derive a format from an example.
 
@@ -97,7 +98,7 @@ Read the relevant one before writing; do not re-derive a format from an example.
 Bootstraps the chain. Creates what is missing, fills nothing.
 
 0. **Resolve ownership first** (see above) and state the verdict. Everything below assumes `owned`; on `foreign`, the tracked artifacts move under `.claude/` and the root governance files are skipped entirely.
-1. Create the scaffold: `.claude/project/{prd.md,tech.md}`, `.claude/project/issues/`, `.claude/project/archives/`, `.claude/CHANGELOG.md`, and, **on an `owned` repo only**, `CONTRIBUTING.md` / `SECURITY.md` at the root when absent. Templates in `references/`. `docs/adr/` is created lazily, on the first ADR, never seeded empty.
+1. Create the scaffold: `.claude/project/{prd.md,tech.md}`, `.claude/project/issues/`, `.claude/project/archives/`, `.claude/CHANGELOG.md`, and, **on an `owned` repo only**, `CONTRIBUTING.md` / `SECURITY.md` at the root when absent. Each comes from the template of the same name in `references/`: `prd.md`, `tech.md`, `changelog.md`, `contributing.md`, `security.md`. `docs/adr/` is created lazily, on the first ADR, from `references/adr.md`, never seeded empty.
 2. Normalize the Requirements table to `R<n>` ids if it uses bare numbers, **with explicit agreement**. A bare `3` is not greppable; `R3` is. This is what makes `Refs:` resolvable at all.
 3. Create `docs/ux.md` from `references/ux.md` **if the repo serves an interface**. That is a test, not an opinion: the repo holds at least one `.html`, `.templ`, `.tmpl` or `.css` file outside dependency directories. Write the answer into `ui_paths` so the question is settled once and never guessed again. If the test is ambiguous, ask.
 4. Create `.claude/plan/<slug>.md` with its title and status legend, **with no phase**.
@@ -186,14 +187,14 @@ plan. Without it, `docs/ux.md` is filled at `init` and dies: a cross-cutting
 rule stated six weeks later has no way in, since `init` does not know it, `add`
 creates phases, and the loop only writes statuses.
 
-This is a **short session**, not a write. It borrows the method of
-`grill-with-docs` (one question at a time, only those that change the outcome,
-depth calibrated to the density of the input) without invoking that skill: you
-do not interrogate a decision already made, you file it.
+This is a **short session**, not a write. It borrows the grilling method (one
+question at a time, only those that change the outcome, depth calibrated to the
+density of the input) without running a full interrogation: you do not
+interrogate a decision already made, you file it.
 
 Five steps, in this order, because each can make the next moot:
 
-1. **Conflict.** Does this contradict a rule already written? Highest-value step, because the user does not remember everything the files hold. Same move `grill-with-docs` makes against the glossary: "the contract already says lists sort by creation date, do you replace it or do both stand?"
+1. **Conflict.** Does this contradict a rule already written? Highest-value step, because the user does not remember everything the files hold. The same move applies against the glossary: "the contract already says lists sort by creation date, do you replace it or do both stand?"
 2. **Ambiguity.** Does "every list" mean every `<ul>` or every paginated data list? Does "sortable" mean server-side ordering or client-side reordering? The destination **follows** from this: server-side sorting is pagination, so `tech.md` or an ADR; client reordering is purely UX.
 3. **Destination**, only if still open after step 2. Proposed with its criterion, never as a neutral menu.
 4. **Rewording.** A rule is written as a verifiable imperative. "Lists should be sortable" becomes "Every data list exposes a sort on name": a conditional is not a rule, and no check can act on one.
@@ -215,15 +216,16 @@ not guess: the act is rare, one more question costs nothing, and getting it
 wrong is expensive (a bogus ADR pollutes an immutable series; a structural
 decision buried in `tech.md` is invisible).
 
-The fourth destination is the only one where `grill-with-docs` remains the right
-tool: defining a term needs interrogation, and that is its job.
+The fifth destination is the one that still needs a real interrogation: defining
+a domain term is a grilling job, so reach for the `grill-me` skill there and
+write the result in the `references/CONTEXT-FORMAT.md` shape.
 
 **Zero questions when nothing is at stake.** This is the indispensable
 counterpart to being interactive: with no conflict detected, an obvious
 destination and an already-imperative wording, write and report. Five questions
-to file "delete buttons are red" is the moment the verb stops being used. The
-stop criterion is `grill-with-docs`'s own: stop when the remaining gaps are
-explicit assumptions, not when the questions run out.
+to file "delete buttons are red" is the moment the verb stops being used. Stop
+when the remaining gaps are explicit assumptions, not when the questions run
+out.
 
 ### rule in bulk: `--from`
 

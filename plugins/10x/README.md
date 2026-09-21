@@ -25,7 +25,6 @@ Plugin to make Claude Code a 10x more efficient
 | Skill | `thinking` | Thinking guidelines to reduce common coding mistakes |
 | Skill | `docker`, `makefile`, `documentation-rules`, `testing` | Domain best practices (Docker, Makefiles, docs, testing) |
 | Skill | `lang-go`, `lang-typescript`, `lang-html`, `lang-sql` | Per-language coding standards |
-| Skill | `grill-with-docs` | Plan stress-testing against the documented domain model |
 | Agent | `conform-agent` | Audits a repo against the standard and dispatches remediation |
 | Agent | `coder-agent`, `fixer-agent` | Non-trivial implementation; mechanical fully-specified edits |
 | Agent | `tester-agent`, `docker-agent`, `documentation-agent` | Testing, Docker, and documentation delegates |
