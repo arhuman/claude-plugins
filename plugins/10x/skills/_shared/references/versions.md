@@ -14,8 +14,8 @@ config identical.
 
 | Field | Value | Rule |
 |-------|-------|------|
-| `go` (go.mod) | project floor, e.g. `1.25.x` | The minimum version a module *consumer* must have. Set to the oldest release you still support; raise deliberately. |
-| `toolchain` (go.mod) | latest patch, e.g. `go1.26.4` | The toolchain used to *build/test*. Track the latest patch for stdlib security fixes. May legitimately be newer than the `go` line. |
+| `go` (go.mod) | project floor, e.g. `1.25.0` | The minimum version a module *consumer* must have. Set to the oldest release you still support; raise deliberately. |
+| `toolchain` (go.mod) | latest patch, e.g. `go1.26.6` | The toolchain used to *build/test*. Track the latest patch for stdlib security fixes. May legitimately be newer than the `go` line. |
 
 The `go` and `toolchain` lines differ on purpose: the first is a compatibility
 floor for people importing your module, the second is the compiler you build
@@ -26,7 +26,7 @@ with. Document the gap in-repo if a reviewer might mistake it for a mistake.
 | Tool | Version | Install |
 |------|---------|---------|
 | golangci-lint | `v2.13.2` | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2` |
-| govulncheck | `v1.1.4` | `go install golang.org/x/vuln/cmd/govulncheck@v1.1.4` |
+| govulncheck | `v1.7.0` | `go install golang.org/x/vuln/cmd/govulncheck@v1.7.0` |
 
 The golangci-lint version pinned here MUST equal the `version:` field passed to
 `golangci/golangci-lint-action` in CI. Config format is golangci-lint schema
@@ -39,14 +39,17 @@ The golangci-lint version pinned here MUST equal the `version:` field passed to
 | `actions/checkout` | `v7` | `fetch-depth: 0` in release workflows (needs tags/history for changelogs). |
 | `actions/setup-go` | `v7` | Prefer `go-version-file: go.mod`; use `check-latest: true` with a matrix. Handles module + build caching. v7.0.0 is an ESM/dependency migration: no input or behavior change from v6. |
 | `golangci/golangci-lint-action` | `v8` | Set `version: v2.13.2` to match the pin above. |
-| `goreleaser/goreleaser-action` | `v6` | `version: "~> v2"`, `args: release --clean`. Release workflow only. |
-| `sigstore/cosign-installer` | `v3` | Release workflow only; needed when `goreleaser.yaml` has `signs:` (cosign keyless). |
-| `anchore/sbom-action/download-syft` | `v0` | Release workflow only; needed when `goreleaser.yaml` has `sboms:` (syft). |
-| `actions/upload-artifact` | `v4` | Coverage/report artifacts; use `if: always()`. |
+| `goreleaser/goreleaser-action` | `v7` | `version: "~> v2"`, `args: release --clean`. Release workflow only. |
+| `sigstore/cosign-installer` | `v4` | Release workflow only; needed when `goreleaser.yaml` has `signs:` (cosign keyless). |
+| `anchore/sbom-action/download-syft` | `v0` | Release workflow only; needed when `goreleaser.yaml` has `sboms:` (syft). Upstream has no major above v0. |
+| `actions/upload-artifact` | `v7` | Coverage/report artifacts; use `if: always()`. |
+| `actions/download-artifact` | `v4` | Pairs with upload-artifact across jobs (e.g. build → publish). Not observed in the resync repos; pinned to the value in `ci/references/release-python.yml`. |
 | `docker/setup-buildx-action` | `v3` | Image build jobs only. Pinned to the version in production use; upstream is already on v4. |
 | `docker/build-push-action` | `v6` | Image build jobs only; pair with buildx above. Pinned to the version in production use; upstream is already on v7. |
 | `aquasecurity/trivy-action` | `v0.36.0` | Image scan. The tag IS `v`-prefixed: an unprefixed `0.x.y` fails at "Set up job" with `unable to find version`, before any step runs. |
 | `github/codeql-action/*` | `v3` | SAST. `init` + `autobuild` + `analyze` must all be the same major. Needs `security-events: write`. |
+| `actions/setup-python` | `v7` | Only on repos that ship a Python artifact (e.g. a PyPI wheel beside the Go binary). |
+| `pypa/gh-action-pypi-publish` | `v1.14.2` | PyPI/TestPyPI publish only. Trusted publishing; no API token in secrets. |
 
 ## Reconciled drift (why these values)
 
@@ -64,5 +67,39 @@ Observed across the reference repos before this baseline was set:
   invented `0.28.0`, a tag that does not exist → **v0.36.0**, pinned here and
   templated in `ci/references/ci.yml` so nobody has to guess again.
 
+### 2026-09-21 resync (ansible-static-lint, autopost)
+
+- govulncheck: `v1.1.4` (autopost Makefile) vs `v1.7.0` (ansible-static-lint
+  Makefile) → **v1.7.0**. The previous "no drift" line above is now historical:
+  the two repos disagree, and v1.7.0 is the newer of the two. Upstream is
+  already on v1.8.0, so this pin is deliberately the newest *observed*, not the
+  newest *available*.
+- golangci-lint: `v2.13.2` (autopost) vs `v2.13.1` (ansible-static-lint) →
+  **v2.13.2** held. ansible-static-lint is one patch behind and should move up;
+  it also installs the pin inline in `ci.yml` rather than via the action.
+- `goreleaser/goreleaser-action`: v6 (autopost) vs v7.2.3 (ansible-static-lint)
+  → **v7**.
+- `sigstore/cosign-installer`: v4.1.2 observed → **v4** (table said v3).
+- `actions/upload-artifact`: v7 observed in autopost → **v7** (table said v4).
+- `actions/setup-go`: v7 in autopost `ci.yml` but **v6 in its `release.yml`**:
+  an intra-repo split, not just cross-repo drift. → **v7**; autopost's release
+  workflow is the one to fix.
+- Go toolchain: floor `1.25.0` with `toolchain go1.26.6` (autopost) vs a bare
+  `go 1.26.6` and no toolchain line (ansible-static-lint). The example values
+  in the toolchain table now match autopost, which models the intended
+  floor/toolchain split.
+- Neither repo uses `golangci/golangci-lint-action`, `docker/*`, or
+  `github/codeql-action/*`, so those rows are unchanged and unverified by this
+  resync.
+- New rows from ansible-static-lint, which ships a PyPI wheel beside the Go
+  binary: `actions/setup-python` **v7**, `pypa/gh-action-pypi-publish`
+  **v1.14.2**.
+
 Pick the newest observed and move every repo to it; do not leave two workflows
 on different majors.
+
+Both repos pin actions by commit SHA with the tag in a trailing comment
+(`actions/checkout@3d3c42e5… # v7.0.1`); ansible-static-lint does this
+throughout, autopost uses bare tags. The majors above are what this table
+governs: SHA-pinning is a separate hardening choice, and where a repo uses it
+the comment must agree with the major pinned here.

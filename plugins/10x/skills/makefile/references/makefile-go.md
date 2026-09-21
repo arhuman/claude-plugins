@@ -23,7 +23,7 @@ LINE_LIMIT ?= 500
 
 # Pinned tool versions: must match ../../_shared/references/versions.md
 GOLANGCI_VERSION    ?= v2.13.2
-GOVULNCHECK_VERSION ?= v1.1.4
+GOVULNCHECK_VERSION ?= v1.7.0
 
 # Version metadata injected via ldflags. VERSION_PKG is the package that declares
 # the Version/GitCommit/BuildDate vars (e.g. main, or internal/version).
@@ -135,7 +135,7 @@ tools:
 
 ## Release automation
 
-`make release` delegates to `scripts/release.sh` (template: `./references/release.sh`)
+`make release` delegates to `scripts/release.sh` (template: `release.sh`, beside this file)
 rather than re-running `test build audit`, which the gate below already covers.
 Copy the reference verbatim into the repo and mark it executable:
 
@@ -181,7 +181,7 @@ test-all:
 
 ## Reference Configuration
 
-Use `./references/.golangci.yml` as the **standard** tier golangci-lint v2 configuration for Go projects. It encodes the shared complexity/duplication thresholds of the tier ladder in `../../_shared/README.md` (`gocyclo`, `gocognit`, `funlen`, `nestif`, `dupl`), so projects scaffolded from this template enforce day-to-day what a review measures.
+Use `.golangci.yml` (beside this file) as the **standard** tier golangci-lint v2 configuration for Go projects. It encodes the shared complexity/duplication thresholds of the tier ladder in `../../_shared/README.md` (`gocyclo`, `gocognit`, `funlen`, `nestif`, `dupl`), so projects scaffolded from this template enforce day-to-day what a review measures.
 
 For a lighter or heavier gate, use the other tiers of the shared ladder: `../../_shared/references/golangci-minimal.yml` (small tools/libraries) or `../../_shared/references/golangci-strict.yml` (mature services). See `../../_shared/README.md`.
 

@@ -87,7 +87,10 @@ entry with matching health options:
 ## Inline coverage-gate fallback
 
 `ci.yml` gates coverage through `make audit` (which depends on `make cover`). If
-a repo has no such target, gate inline in the test job:
+a repo has no such target, gate inline in the test job. The `80` below is the
+`COVER_MIN` default from `../../makefile/references/makefile-go.md`, restated
+here only because there is no Makefile to read it from; keep the two equal, and
+prefer the `make cover` path so the number lives in one place.
 
 ```yaml
       - name: Test (race + coverage)
@@ -107,7 +110,7 @@ artifact for inspection:
 ```yaml
       - name: Publish coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage.html
