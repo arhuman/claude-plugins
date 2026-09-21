@@ -1,28 +1,20 @@
 # Base Makefile Template
 
-Universal Makefile skeleton applicable to any language. Merge with a language-specific template (e.g., `makefile-go.md`) to produce the final Makefile.
+Merge this skeleton with requested language-specific targets.
 
 ```makefile
 .DEFAULT_GOAL := help
 
-# ==================================================================================== #
 # VARIABLES
-# ==================================================================================== #
 
-# Host port the local stack publishes; override per run: `make local API_PORT=9090`.
-# Exported so `docker compose` interpolation (${API_PORT:-8080}) resolves to the
-# same value `make local` prints.
+# Export so Compose and the printed URL use the same overridable port.
 API_PORT ?= 8080
 export API_PORT
 
-# ==================================================================================== #
 # PHONY DECLARATIONS (in alphabetical order)
-# ==================================================================================== #
 .PHONY: confirm down help local up
 
-# ==================================================================================== #
 # STANDARD TARGETS (in alphabetical order)
-# ==================================================================================== #
 
 ## down: stop the docker compose stack
 down:
@@ -42,9 +34,7 @@ local: down
 up: down
 	docker compose up -d --build
 
-# ==================================================================================== #
 # UTILITY TARGETS
-# ==================================================================================== #
 
 ## confirm: prompt for user confirmation before proceeding
 confirm:
@@ -53,25 +43,8 @@ confirm:
 
 ## Composing with Language Templates
 
-1. Start from this base skeleton
-2. Merge targets from the relevant language template (e.g., `makefile-go.md`)
-3. Add merged targets to the `.PHONY` declaration in alphabetical order
-4. Add project-specific targets in a dedicated section at the end
+Merge language targets alphabetically and update `.PHONY`.
 
 ## Adding Project-Specific Targets
 
-Add a `PROJECT-SPECIFIC TARGETS` section at the end. Custom targets must be:
-- Alphabetically ordered within the section
-- Added to the `.PHONY` declaration
-- Documented with a `## target: description` comment
-
-Example:
-```makefile
-# ==================================================================================== #
-# PROJECT-SPECIFIC TARGETS
-# ==================================================================================== #
-
-## deploy_test: deploy to test environment
-deploy_test: confirm
-	docker compose -f docker-compose-test.yml up -d
-```
+Append a `PROJECT-SPECIFIC TARGETS` section: alphabetized targets, `.PHONY` declarations and `## target: description` comments. Gate destructive actions on `confirm`.

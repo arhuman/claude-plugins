@@ -2,155 +2,24 @@
 
 ## Docker Compose Setup
 
-Integration tests run against real database containers. Define services with healthchecks so dependent containers wait until the DB is actually ready.
+Use real DB containers with healthchecks and `depends_on: condition: service_healthy`, not merely container start. For service definitions consult Docker's [MariaDB](../../docker/references/mariadb-docker-compose-service.md) or [Oracle](../../docker/references/oracle-docker-compose-service.md) references when using those databases.
 
-The authoritative service definitions live in the docker skill (`references/mariadb-docker-compose-service.md` and friends); the excerpt below shows the healthcheck wiring that matters for tests.
-
-```yaml
-# docker-compose.yml
-services:
-  app_db:
-    image: mariadb:11
-    environment:
-      MARIADB_ROOT_PASSWORD: rootpass
-      MARIADB_DATABASE: appdb
-      MARIADB_USER: appuser
-      MARIADB_PASSWORD: apppass
-    volumes:
-      - ./conf/docker/initdb:/docker-entrypoint-initdb.d   # SQL init scripts run on first start
-      - ./conf/docker/mariadb.cnf:/etc/mysql/mariadb.cnf
-    ports:
-      - "23306:3306"   # non-standard port avoids collision with local MySQL
-    healthcheck:
-      test: mysqladmin ping -h 127.0.0.1 -u root --password=rootpass
-      start_period: 5s
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  app_api:
-    image: app-api
-    build: .
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./env.sample:/app/.env
-    depends_on:
-      app_db:
-        condition: service_healthy   # wait for healthcheck, not just container start
-```
-
-For multi-database projects (MariaDB + Oracle + MSSQL), add each as a separate service with its own healthcheck. Oracle needs a longer `start_period` (40-60s) due to slow initialization.
+Give each database its own service/healthcheck in multi-DB projects (including MSSQL). Reference MariaDB readiness values: 5s start period, interval and timeout; 10 retries. Oracle start period: 40-60s. Nonstandard host ports avoid local collisions, e.g. `23306:3306`.
 
 ## Database Initialization Scripts
 
-Place SQL scripts in the volume mounted to `docker-entrypoint-initdb.d/`. They run alphabetically on first container start.
-
-```
-conf/docker/initdb/
-  01_schema.sql      # DDL: CREATE TABLE ...
-  02_fixtures.sql    # DML: INSERT INTO ... (test data)
-```
-
-For Oracle, use shell scripts that run `sqlplus` because Oracle's entrypoint does not natively support `.sql` files:
-
-```bash
-#!/bin/bash
-# conf/docker/initdb.oracle/01_init.sh
-$ORACLE_HOME/bin/sqlplus system/oracle@XE @/docker-entrypoint-initdb.d/schema.sql
-```
+Mount `conf/docker/initdb/` at `docker-entrypoint-initdb.d/`; scripts run alphabetically on first start, schema before fixture data (`01_schema.sql`, `02_fixtures.sql`). Oracle needs a shell wrapper invoking `sqlplus` for SQL files rather than assuming native `.sql` entrypoint support.
 
 ## run_tests.sh Pattern
 
-The standard script to start the stack, wait for the server to be ready, run tests, and clean up. Use the HTTP health endpoint check (more reliable than port polling).
+Start with `make up`; poll the HTTP health endpoint, not just an open port. Reference contract: `/healthcheck`, HTTP 200, 3s polling, retry limit 25. Tolerate transient curl failures during readiness. On exhaustion print error and Compose logs, stop stack, exit 1.
 
-```bash
-#!/bin/bash
-set -e
-
-make up
-echo "Waiting for server..."
-
-MAX_RETRIES=25
-CPT=0
-
-while true; do
-    sleep 3
-    CPT=$((CPT + 1))
-
-    if [ "$CPT" -ge "$MAX_RETRIES" ]; then
-        echo "ERROR: server did not start after $MAX_RETRIES attempts"
-        docker compose logs
-        docker compose stop
-        exit 1
-    fi
-
-    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/healthcheck || true)
-
-    if [ "$HTTP_CODE" -eq 200 ]; then
-        echo "Server ready."
-        break
-    fi
-
-    echo "  attempt $CPT: HTTP $HTTP_CODE"
-done
-
-go test -v ./internal/...
-RC=$?
-
-docker compose stop
-exit $RC
-```
-
-Always stop the stack on exit, even on failure. `set -e` is fine here because the `|| true` on the `curl` call prevents false exits during the health check loop.
+Once ready, run integration packages (`./internal/...` in the reference project) with Go race detection. Always stop the stack on exit, including test/startup failure; preserve test exit status. Use cleanup that survives `set -e`, rather than relying on commands after a failed test.
 
 ## Makefile Targets
 
-Targets come from the makefile skill (single source of truth): `up`/`down` from `makefile-base.md`, `test`/`fulltest`/`cover`/`audit`/`ci` from `makefile-go.md`. The only test-specific wiring is pointing `fulltest` at the script above:
-
-```makefile
-## fulltest: start the Docker stack and run integration tests
-fulltest:
-	./run_tests.sh
-```
+When wiring targets, consult [makefile base](../../makefile/references/makefile-base.md) for up/down and [Go targets](../../makefile/references/makefile-go.md) for test/fulltest/cover/audit/ci. Test-specific wiring: `fulltest` invokes `./run_tests.sh`; `make ci` is the full pipeline.
 
 ## Test Environment Configuration
 
-Tests override the DB connection to target the Docker Compose containers. Never use a production connection string in tests.
-
-```go
-// internal/api/testutil.go
-func LoadTestEnv(t *testing.T) {
-    t.Helper()
-    root := findProjectRoot(t)
-
-    if err := godotenv.Load(root + ".env"); err != nil {
-        if err := godotenv.Load(root + "env.sample"); err != nil {
-            t.Fatal("no .env or env.sample found")
-        }
-    }
-
-    // Override to Docker Compose ports
-    os.Setenv("DBHOST", "localhost")
-    os.Setenv("DBPORT", "23306")
-}
-
-func findProjectRoot(t *testing.T) string {
-    t.Helper()
-    pwd, _ := os.Getwd()
-    // Strip internal package path to reach project root
-    return filepath.ToSlash(pwd) + "/"
-}
-```
-
-## Quick Reference
-
-| Pattern | Detail |
-|---------|--------|
-| DB init scripts | `conf/docker/initdb/` mounted to `docker-entrypoint-initdb.d/` |
-| Non-standard port | `23306:3306` avoids collision with local MySQL |
-| Health check | `depends_on: condition: service_healthy` |
-| Server readiness | Poll `/healthcheck` with `curl`, not just port with `nc` |
-| Test env setup | `godotenv.Load` + override DBHOST/DBPORT |
-| Test target | `go test -v ./internal/...` (or the project's integration packages) |
-| Full pipeline | `make ci` (see makefile `makefile-go.md`) |
+Follow [integration environment setup](integration-testing.md#environment-setup-for-tests) for env fallback and DB overrides. Resolve the actual project root in test helpers; never use production connection strings.

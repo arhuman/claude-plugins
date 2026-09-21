@@ -1,77 +1,34 @@
 ---
 name: lang-html
-description: 'HTML, HTMX, and CSS best practices following CUBE CSS methodology and Every Layout primitives. Use when working with HTML templates, HTMX interactions, CSS styling, or building server-rendered UI components. Not for design quality, visual identity, or scoring a screen: use the `design-system` skill.'
+description: 'HTML, HTMX and CSS mechanics using CUBE CSS and Every Layout. Use for templates, partial updates, styles and server-rendered components. For visual identity and screen quality use `design-system`.'
 ---
-
 # lang-html
-
-This skill defines rules for writing maintainable, progressively enhanced HTML with CUBE CSS and Every Layout.
 
 ## Reference Guide
 
-Load the relevant reference when the task involves:
-
-| Topic | File | Load When |
-|-------|------|-----------|
-| CUBE CSS | `references/cube-css.md` | writing or reviewing CSS, class naming, cascade decisions |
-| Every Layout | `references/every-layout.md` | layout primitives: stack, cluster, sidebar, grid, center, box |
-| HTMX | `references/htmx.md` | HTMX attributes, partial rendering, swap strategies, events |
-| Accessibility | `references/accessibility.md` | ARIA, focus management, HTMX swap announcements, forms, keyboard support |
-
-For full frontend design work (visual identity, design quality bar, novel components), the `design-system` skill complements these rules; this skill owns the HTML/CSS/HTMX mechanics.
+Load by task: `references/cube-css.md` for CSS/cascade/naming; `references/every-layout.md` for layout; `references/htmx.md` for partial requests/swaps/events; `references/accessibility.md` for ARIA/forms/keyboard/focus.
 
 ## Core Philosophy
 
-- HTML is the foundation. CSS enhances. HTMX progressively adds interactivity.
-- Prefer semantic HTML over `<div>` soup.
-- The cascade is a feature: use it, don't fight it.
-- Layouts are solved with composable primitives (Every Layout), not one-off utilities.
+Semantic HTML first, CSS enhancement, HTMX progressive interaction with no-JS fallbacks. Use the cascade and composable layout primitives.
 
 ## CSS Architecture: CUBE CSS
 
-Structure all CSS in four layers:
-
-1. **Composition**: layout primitives (`.stack`, `.cluster`, `.sidebar`, `.grid`, `.center`, `.box`)
-2. **Utility**: single-purpose design tokens (`.text-step-1`, `.bg-surface`, `.color-accent`)
-3. **Block**: component-scoped styles (`.card`, `.nav`, `.hero`)
-4. **Exception**: overrides using `data-*` attributes (`[data-variant="inverted"]`)
-
-Apply classes in that order: composition first, utilities second, blocks third, exceptions last.
+Classes in order: composition (layout), utility (one token), block (component), exception (`data-*` variant). For design-system projects load its CSS contract for file order, tokens and native/ARIA state precedence.
 
 ## Every Layout: Use These Primitives
 
-Do not write ad-hoc layout CSS. Use these intrinsic primitives:
-
-| Primitive | Use for |
-|-----------|---------|
-| `.stack` | Vertical spacing between siblings |
-| `.box` | Padding + optional border for a contained region |
-| `.center` | Horizontal centering with max-width |
-| `.cluster` | Wrapping flex groups (tags, buttons, nav items) |
-| `.sidebar` | Two-column layout with one fixed-width side |
-| `.grid` | Auto-responsive grid without media queries |
-| `.frame` | Fixed aspect-ratio media containers |
-| `.reel` | Horizontal scrolling rows |
-| `.icon` | Inline SVG icon with text sizing |
-
-See `references/every-layout.md` for CSS implementations.
+Use the reference implementations, not ad-hoc layout: `.stack` vertical flow; `.box` padded region; `.center` bounded centering; `.cluster` wrapping groups; `.sidebar` fixed/fluid columns; `.grid` intrinsic grid; `.frame` aspect ratio; `.reel` horizontal scroll; `.icon` SVG/text sizing.
 
 ## MUST DO
 
-- Use semantic HTML elements (`<nav>`, `<main>`, `<article>`, `<section>`, `<aside>`, `<header>`, `<footer>`)
-- Define spacing, color, and typography via custom properties (`--space-s`, `--color-text`, `--step-0`)
-- Use `data-*` attributes for state/variant exceptions, not modifier classes (`card--dark`)
-- Use `hx-boost` on a container (`<body>`, `<main>`, `<nav>`) so descendant `<a>`/`<form>` elements inherit it: reach for element-level HTMX attributes only when boosting is not enough
-- Scope block CSS to a single class selector matching the HTML element's role
-- Write layout CSS using `gap`, not `margin` between siblings
-- Validate that HTMX targets exist on the page before wiring `hx-target`
+- Semantic landmarks; custom-property spacing/color/type.
+- Block CSS scoped to one role class; variants via `data-*`, not `card--dark`.
+- Prefer `gap` for sibling spacing; compose Every Layout in HTML.
+- Start with container `hx-boost` for descendant links/forms; add element attributes only when needed. Verify every `hx-target` exists.
 
 ## MUST NOT
 
-- Write inline styles (except generated/dynamic values that cannot be in CSS)
-- Use utility classes for layout spacing: use Every Layout primitives instead
-- Nest block selectors more than one level deep
-- Use `!important` except in utility classes (where it is intentional)
-- Use class names that encode visual appearance (`red-text`, `big-button`): use semantics or tokens
-- Add HTMX attributes without defining a clear fallback for no-JS environments
-- Use `hx-swap="outerHTML"` on the element that triggers the request (causes self-deletion)
+- Inline styles except generated/dynamic values unavailable in CSS.
+- Layout-spacing utilities, block nesting beyond one level, or `!important` outside intentional utilities.
+- Appearance-encoded names (`red-text`, `big-button`), HTMX without no-JS fallback, or `outerHTML` swapping the request trigger.

@@ -1,25 +1,12 @@
 # Design Handoff
 
-How to delegate design work to any generator that does not load this skill: a
-fresh Claude session, a design agent, an artifact builder, or a scratch
-workspace like `.claude/claude_design/`. The rules do not travel by hope; they
-travel as a brief pasted verbatim, and conformance is verified mechanically on
-return. The generator is untrusted by construction: acceptance never depends on
-it having read anything.
+For generators that do not load this skill, send the directive verbatim and audit the return.
 
 ## Protocol
 
-1. **Fill the brief.** Copy the directive below, complete the three PROJECT
-   blocks (tokens, screens, components). Everything else is fixed.
-2. **Hand it over verbatim**, prepended to the design request. Never summarize
-   it: every paraphrase so far has dropped the constraint that mattered.
-3. **Gate the result on return.** Run `audit-ui.sh all` (same directory) on the
-   returned CSS, score the screen against the quality grid (>= 4/4/4 with the
-   dominant action named), and check the layer order. A deliverable that fails
-   the audit goes back with the audit output, not with prose feedback.
-
-The gate is the contract. A generator that saw the brief and a generator that
-ignored it are indistinguishable and equally acceptable if the audit passes.
+1. Fill only the three PROJECT blocks (tokens/screens/components).
+2. Prepend the unchanged directive to the request.
+3. On return, check layer order, ≥ 4/4/4 and named dominant action; run `audit-ui.sh all`. Return failures with audit output. Acceptance depends on the gate, not claimed compliance.
 
 ## The directive (copy from here)
 
@@ -85,8 +72,8 @@ component must render correctly with no theme attribute set.
 - No visible string hardcoded in markup: everything through the project's i18n
   mechanism.
 
-**Quality bar.** Before delivering, score each screen 1 to 5 on: Lisibilité
-(understood in 5 seconds?), Action (one dominant action, named), Soulagement
+**Quality bar.** Before delivering, score each screen 1 to 5 on: Readability
+(understood in 5 seconds?), Action (one dominant action, named), Relief
 (reduces mental load?). Deliver only at 4/4/4 or better, and state the scores
 and the dominant action with the deliverable.
 
@@ -118,10 +105,7 @@ with a one-line justification each.
 
 ## After the handoff
 
-- `audit-ui.sh all <css-dir>` on the returned files. Fail = bounce with output.
-- Diff the token names against the canonical vocabulary; a parallel dialect
-  (`--color-bg` next to `--bg-base`) is a rejection even if the audit passes,
-  because it is the drift the vocabulary exists to prevent.
-- New blocks land as files under `blocks/`, never appended to an existing one.
-- The screen table (`docs/ux.md`) gains a row per new screen in the same
-  change; `verify-ux.sh` checks it.
+- Run `audit-ui.sh all <css-dir>`; return failures with output.
+- Reject parallel token dialects even if audits pass.
+- New blocks get their own `blocks/` files.
+- Add `docs/ux.md` rows for new screens in the same change; run `verify-ux.sh`.

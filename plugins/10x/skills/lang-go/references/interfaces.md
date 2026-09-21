@@ -2,348 +2,64 @@
 
 ## Core Principle: Accept Interfaces, Return Structs
 
-Functions should accept interfaces (enabling flexibility and testability) and return concrete types (making the API clear to callers).
-
-```go
-// Good: accepts io.Reader, returns *ProcessedData (concrete)
-func Parse(r io.Reader) (*ProcessedData, error) { ... }
-
-// Bad: returning an interface forces callers to type-assert
-func Parse(r io.Reader) (Processor, error) { ... }
-```
+Default to concrete types. At a genuine behavioral seam, accept the needed interface and return concrete types so callers retain the full API without assertions.
 
 ## Small, Focused Interfaces
 
-Go interfaces work best when they are small: ideally one method.
-
-```go
-// Single-method interfaces (idiomatic Go)
-type Reader interface {
-    Read(p []byte) (n int, err error)
-}
-
-type Writer interface {
-    Write(p []byte) (n int, err error)
-}
-
-type Closer interface {
-    Close() error
-}
-
-// Compose only what you need
-type ReadCloser interface {
-    Reader
-    Closer
-}
-
-type ReadWriteCloser interface {
-    Reader
-    Writer
-    Closer
-}
-```
+Prefer one-method interfaces; compose only needed capabilities (`io.Reader`, `io.Writer`, `io.Closer`, `io.ReadCloser`, `io.ReadWriteCloser`).
 
 ## Interface Segregation
 
-Split fat interfaces into focused ones; compose at the call site. The segregated form below is the target once multiple consumers with different needs exist. Do not pre-split a repository into five single-method interfaces at the provider: each consumer declares the narrow interface it needs, when it needs it.
-
-```go
-// Bad: fat repository interface forces full implementation for every consumer
-type Repository interface {
-    Create(item Item) error
-    Read(id string) (Item, error)
-    Update(item Item) error
-    Delete(id string) error
-    List() ([]Item, error)
-    Search(query string) ([]Item, error)
-    Count() (int, error)
-}
-
-// Good: segregated: each consumer declares only what it needs
-type ItemCreator interface { Create(item Item) error }
-type ItemReader  interface { Read(id string) (Item, error) }
-type ItemUpdater interface { Update(item Item) error }
-type ItemDeleter interface { Delete(id string) error }
-type ItemLister  interface { List() ([]Item, error) }
-
-// Compose for services that need multiple operations
-type ItemRepository interface {
-    ItemCreator
-    ItemReader
-    ItemUpdater
-    ItemDeleter
-}
-```
+Split fat interfaces when actual consumers have differing needs. Each consumer declares its narrow interface then composes locally; never pre-split a provider repository into speculative CRUD interfaces.
 
 ## Functional Options Pattern
 
-Preferred over large constructor argument lists.
+Prefer functional options to large constructor lists; initialize defaults before applying options:
 
 ```go
-type Server struct {
-    host     string
-    port     int
-    timeout  time.Duration
-    maxConns int
-    logger   *zap.Logger
-}
-
 type Option func(*Server)
-
-func WithHost(host string) Option {
-    return func(s *Server) { s.host = host }
-}
-
-func WithPort(port int) Option {
-    return func(s *Server) { s.port = port }
-}
 
 func WithTimeout(d time.Duration) Option {
     return func(s *Server) { s.timeout = d }
 }
 
 func NewServer(opts ...Option) *Server {
-    s := &Server{ // defaults
-        host:    "localhost",
-        port:    8080,
-        timeout: 30 * time.Second,
-        maxConns: 100,
-    }
+    s := &Server{host: "localhost", port: 8080, timeout: 30 * time.Second, maxConns: 100}
     for _, opt := range opts {
         opt(s)
     }
     return s
 }
-
-// Usage:
-// srv := NewServer(WithPort(9000), WithTimeout(60*time.Second))
 ```
 
 ## Compile-Time Interface Verification
 
-Catch missing method implementations at compile time, not at runtime.
-
-```go
-// Asserts that *MyReader satisfies io.Reader at compile time
-var _ io.Reader = (*MyReader)(nil)
-var _ io.Writer = (*MyWriter)(nil)
-
-// Useful for interface verification in tests
-var _ UserRepository = (*mockUserRepo)(nil)
-```
+Assert implementations and mocks statically: `var _ io.Reader = (*MyReader)(nil)` or `var _ UserRepository = (*mockUserRepo)(nil)`.
 
 ## io.Reader / io.Writer Patterns
 
-```go
-// Custom Reader
-type UppercaseReader struct{ src io.Reader }
-
-func (u *UppercaseReader) Read(p []byte) (n int, err error) {
-    n, err = u.src.Read(p)
-    for i := range p[:n] {
-        if p[i] >= 'a' && p[i] <= 'z' {
-            p[i] -= 32
-        }
-    }
-    return n, err
-}
-
-// Custom Writer (e.g., counting bytes written)
-type CountingWriter struct {
-    w     io.Writer
-    count int64
-}
-
-func (cw *CountingWriter) Write(p []byte) (n int, err error) {
-    n, err = cw.w.Write(p)
-    cw.count += int64(n)
-    return n, err
-}
-
-func (cw *CountingWriter) BytesWritten() int64 { return cw.count }
-
-// Composing standard library helpers
-combined := io.MultiReader(r1, r2)        // reads r1 then r2
-tee := io.TeeReader(r, w)                 // reads r, copies to w
-limited := io.LimitReader(r, maxBytes)    // cap how much is read
-```
+Reader decorators transform only `p[:n]` and preserve `(n, err)`; counting writers count bytes actually written. Compose sequential input with `io.MultiReader`, copy while reading with `io.TeeReader`. Bounded-read/truncation rules belong to [memory](memory.md#http-body-lifecycle).
 
 ## Embedding for Composition
 
-```go
-// Embed a struct to inherit its methods
-type SafeMap struct {
-    sync.RWMutex
-    m map[string]string
-}
-
-func (s *SafeMap) Get(key string) (string, bool) {
-    s.RLock()
-    defer s.RUnlock()
-    v, ok := s.m[key]
-    return v, ok
-}
-
-// Embed an interface to provide a default no-op implementation
-type Logger interface{ Log(msg string) }
-type NoOpLogger struct{}
-func (NoOpLogger) Log(_ string) {}
-
-type Service struct {
-    Logger // callers can override; default is NoOpLogger
-}
-
-func NewService(logger Logger) *Service {
-    if logger == nil {
-        logger = NoOpLogger{}
-    }
-    return &Service{Logger: logger}
-}
-```
+Embed to promote methods, not simulate inheritance. A map wrapper may embed `sync.RWMutex`; an overridable logger may embed its interface with a default no-op implementation. Follow [concurrency](concurrency.md#sync-primitives) for locking.
 
 ## Type Assertions and Type Switches
 
-```go
-// Safe two-value assertion: prefer over panicking single-value form
-if str, ok := v.(string); ok {
-    fmt.Println("string:", str)
-}
-
-// Type switch for multiple types
-func describe(v any) string {
-    switch val := v.(type) {
-    case int:
-        return fmt.Sprintf("int(%d)", val)
-    case string:
-        return fmt.Sprintf("string(%q)", val)
-    case bool:
-        return fmt.Sprintf("bool(%v)", val)
-    default:
-        return fmt.Sprintf("unknown(%T)", val)
-    }
-}
-
-// Check for optional interface capability
-type Flusher interface{ Flush() error }
-
-func writeAndFlush(w io.Writer, data []byte) error {
-    if _, err := w.Write(data); err != nil {
-        return fmt.Errorf("writeAndFlush: write: %w", err)
-    }
-    if flusher, ok := w.(Flusher); ok {
-        if err := flusher.Flush(); err != nil {
-            return fmt.Errorf("writeAndFlush: flush: %w", err)
-        }
-    }
-    return nil
-}
-```
+Use safe two-value assertions (`v, ok := x.(T)`), never a potentially panicking single-value assertion. For several types, use a type switch instead of repeated assertions. Detect optional capabilities such as `Flush() error` after successful `Write`, handling both errors.
 
 ## Dependency Injection via Interfaces
 
-**Convention:** Define interfaces in the **consuming** package, not the providing package. This avoids circular imports and keeps abstractions close to where they are used.
-
-```go
-// Good: service package defines only what it needs
-// package service
-type UserRepository interface {
-    Get(ctx context.Context, id string) (*User, error)
-}
-
-// Bad: repository package defines its own interface and service imports it
-```
-
-```go
-// Define interfaces for dependencies (in the consuming package)
-type UserRepository interface {
-    Get(ctx context.Context, id string) (*User, error)
-    Save(ctx context.Context, user *User) error
-}
-
-type EmailSender interface {
-    Send(ctx context.Context, to, subject, body string) error
-}
-
-// Service receives interfaces: easy to test with mocks
-type UserService struct {
-    repo   UserRepository
-    mailer EmailSender
-    log    *zap.Logger
-}
-
-func NewUserService(repo UserRepository, mailer EmailSender, log *zap.Logger) *UserService {
-    return &UserService{repo: repo, mailer: mailer, log: log}
-}
-
-func (s *UserService) Register(ctx context.Context, email string) error {
-    user := &User{Email: email}
-    if err := s.repo.Save(ctx, user); err != nil {
-        return fmt.Errorf("Register: save: %w", err)
-    }
-    return s.mailer.Send(ctx, email, "Welcome", "Thanks for registering!")
-}
-```
+Declare interfaces in the consuming package, not the provider. Inject DB/network/filesystem/clock/process dependencies at consumption; [project structure](project-structure.md#composition-root-internalapp) owns process wiring.
 
 ## Constructors Normalize Nil Dependencies
 
-A `New*` constructor substitutes a safe default for a nil dependency rather than
-storing the nil and letting a later method panic. This keeps callers (and tests)
-from having to wire every optional collaborator, and turns "forgot to pass a
-logger" into a no-op instead of a crash.
-
-```go
-type Service struct {
-    repo Repository
-    log  *slog.Logger
-    scan SecretScanner
-}
-
-// NewService normalizes nil deps: a nil logger discards, a nil scanner uses the
-// default regex scanner. repo is required and is the caller's responsibility.
-func NewService(repo Repository, log *slog.Logger, scan SecretScanner) *Service {
-    if log == nil {
-        log = slog.New(slog.DiscardHandler) // Go 1.24+
-    }
-    if scan == nil {
-        scan = defaultScanner{}
-    }
-    return &Service{repo: repo, log: log, scan: scan}
-}
-```
-
-Rules:
-- Normalize **optional** collaborators (logger, metrics, clock, feature-flag
-  scanner). Do **not** silently fabricate a required dependency like a database
-  handle: return an error or document it as a hard precondition.
-- Return the concrete `*Service`, not an interface: let callers keep the full
-  type and pick which behavior interface they depend on (`unexported-return` /
-  "accept interfaces, return structs").
-- A normalized default must be inert: `slog.DiscardHandler` logs nothing, an
-  empty config yields zero-value behavior. Never make the default do surprising
-  I/O.
+`New*` normalizes optional logger, metrics, clock, config or scanner dependencies to safe defaults. Required dependencies such as a DB must produce an error or have a documented hard precondition; never fabricate them. Defaults must be inert, with no surprising I/O: nil logger uses `slog.New(slog.DiscardHandler)` (Go 1.24+), nil config yields zero-value behavior; a scanner may use the default regex scanner. Return the concrete service.
 
 ## When NOT to Define an Interface
 
-Concrete types are the default; an interface is a cost the reader pays on every call site. An interface with a single implementation is justified only when it inverts a genuine external dependency (DB, network, filesystem, clock, another process). Otherwise:
-
-- **No interface for testability alone.** A concrete type with injected values (a `*Service` built from real structs, an in-memory `*sql.DB`, a fixed `time.Time`) is already testable. Mock only what crosses a process boundary.
-- **No provider-side interface.** Declare the interface at the point of consumption, narrow to what that consumer calls; the provider keeps returning its concrete type.
-- **No speculative seam.** A second implementation that might exist someday is not a reason. Introduce the interface in the change that brings the second implementation or the external dependency.
-
-Before writing `type X interface`, name what the reader gains at the call site. If the answer is only "it can be mocked", keep the concrete type.
+For a single implementation, require a genuine external dependency inversion. Testability alone is insufficient: concrete structs, an in-memory DB or fixed time can be injected. Mock only process-boundary dependencies. Do not add seams for hypothetical implementations; introduce them with the actual second implementation or dependency.
 
 ## Quick Reference
 
-| Pattern | Use Case | Key Principle |
-|---------|----------|---------------|
-| Small interfaces | Flexibility | Single-method preferred |
-| Nil-normalizing constructor | Ergonomics + safety | Optional deps default to inert; required deps stay explicit |
-| Accept interfaces | Flexibility at genuine seams | Concrete types by default |
-| Return structs | Clarity | Don't force type assertions on callers |
-| Interface segregation | Loose coupling | No fat interfaces; segregate on demand, not upfront |
-| Functional options | Configuration | Flexible, readable constructors |
-| Compile-time check | Safety | `var _ Iface = (*T)(nil)` |
-| io.Reader/Writer | I/O pipelines | Compose with standard library |
-| Embedding | Composition | Promote methods without inheritance |
-| Type assertions | Runtime checks | Always use two-value form |
-| DI via interfaces | External dependencies | Mock only what crosses a process boundary |
+Before `type X interface`, name the caller benefit beyond mocking. Gate: concrete default, consumer ownership, only needed methods, compile-time conformance, and explicit optional/required constructor behavior.

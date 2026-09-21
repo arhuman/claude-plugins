@@ -22,14 +22,6 @@ Vertical spacing between siblings. The most-used primitive.
 }
 ```
 
-```html
-<div class="stack">
-  <h2>Title</h2>
-  <p>Body text</p>
-  <a href="#">Read more</a>
-</div>
-```
-
 Customize space per instance: `style="--stack-space: var(--space-l)"` or via `data-space`.
 
 ---
@@ -107,13 +99,6 @@ Two-column layout where one side has a fixed/content-based width, the other fill
   flex-grow: 1;
   flex-basis: var(--sidebar-width, 20rem);
 }
-```
-
-```html
-<div class="sidebar">
-  <aside><!-- fixed width side --></aside>
-  <main><!-- grows to fill --></main>
-</div>
 ```
 
 ---
@@ -204,26 +189,4 @@ Inline SVG icon sized to the current font.
 
 ## Composition Decisions
 
-| Problem | Primitive to use |
-|---------|-----------------|
-| Vertical spacing between any elements | Stack |
-| Centered page content | Center |
-| Card or panel with padding | Box |
-| Tags, buttons, nav items on one line | Cluster |
-| Content + sidebar / nav | Sidebar |
-| Card grid that reflows | Grid |
-| Image or video with fixed ratio | Frame |
-| Horizontal scroll carousel | Reel |
-| Text label with icon | Icon |
-
-Do **not** combine primitives by nesting their CSS: compose them in HTML.
-
-```html
-<!-- Correct: compose in HTML -->
-<div class="sidebar">
-  <nav class="stack">...</nav>
-  <main class="stack">
-    <div class="grid">...</div>
-  </main>
-</div>
-```
+Compose primitives in HTML (e.g. sidebar containing stack/grid), never by nesting their CSS. The Stack's sibling-margin implementation is an exception to the default `gap` preference. For design-system projects, load its CSS contract: move Box color/border chrome outside the pure composition layer and map local tokens through aliases.

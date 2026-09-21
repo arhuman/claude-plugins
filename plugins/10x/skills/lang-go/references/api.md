@@ -2,171 +2,72 @@
 
 ## Directory Layout
 
-- `cmd/api/` - Main application entry point
-- `docs/` - Documentation repository
-- `internal/api/` - HTTP handlers
-- `internal/api/routes.go` - routes setup
-- `internal/api/server.go` - server setup
-- `internal/models/` - Data models and structures
-- `internal/middlewares/` - JWT authentication, logging, authorization
-- `internal/<domain_entity>/repository.go` - Gorm repository for <domain_entity> 
-- `internal/<domain_entity>/service.go` - Service with business logic for <domain_entity>
-- `internal/tools/tools.go` - Blank import of tools used in makefile to have version pinned in go.mod
-- `pkg/` - Reusable/shareable modules
-- `pkg/utils/` - Shared utilities (config, database, logging, auth)
+Apply the [layout ceiling and ownership rules](project-structure.md): `cmd/api/` entry, `docs/` documentation, `internal/api/{routes,server}.go` transport setup, `internal/middlewares/` auth/logging, `internal/<domain_entity>/{repository,service}.go` GORM/business logic, `internal/tools/tools.go` pinned tool imports. `internal/models/` only for genuine shared vocabulary; `pkg/` (including utilities) only for intentionally public capabilities.
 
 ## Server/Dependency Injection Pattern
 
-In internal/api/server.go
-
-- Use a Server struct to hold all application dependencies (repositories, services, logger, database, router, etc.)
-- Initialize all dependencies in a NewServer() constructor function
-- Pass dependencies as parameters to NewServer() to enable testing with mocks
-- Example pattern:
-```go
-type Server struct {
-    Repository    domain.Repository
-    Service       *DomainService
-    DB            *gorm.DB
-    Router        *gin.Engine
-    Log           *zap.Logger
-    ctx           context.Context
-    cancel        context.CancelFunc
-    wg            sync.WaitGroup
-}
-
-func NewServer(db *gorm.DB, router *gin.Engine, log *zap.Logger) *Server {
-    ctx, cancel := context.WithCancel(context.Background())
-    repository := domain.NewRepository(db, log)
-    service := NewService(repository, log)
-
-    return &Server{
-        Repository: repository,
-        Service:    service,
-        DB:         db,
-        Router:     router,
-        Log:        log,
-        ctx:        ctx,
-        cancel:     cancel,
-    }
-}
-```
+Use `Server` in `internal/api/server.go` to hold the router, services/repositories, DB, logger and any server context/cancel/WaitGroup. `NewServer` receives dependencies for isolated tests and initializes server-specific state. Process dependency construction belongs to [internal/app](project-structure.md#composition-root-internalapp), not duplicate DB/logger/service wiring in adapters. Apply [constructor defaults](interfaces.md#constructors-normalize-nil-dependencies).
 
 ## Preferred modules
 
+Choose modules only for needed capabilities; the entry skill's minimal-dependency policy applies.
+
 ### Web Framework
-- `github.com/gin-gonic/gin` - HTTP web framework
-- `github.com/gin-contrib/cors` - CORS middleware
-- `github.com/gin-contrib/pprof` - Profiling middleware
+
+`github.com/gin-gonic/gin`; `github.com/gin-contrib/cors`; `github.com/gin-contrib/pprof`.
 
 ### Database/ORM
-- `gorm.io/gorm` - ORM for database operations
-- `gorm.io/driver/mysql` - MySQL driver (or other GORM drivers as needed)
+
+`gorm.io/gorm`; `gorm.io/driver/mysql` or the required GORM dialect driver. [errors](errors.md#repository-context-pattern-gorm) owns context binding.
 
 ### API Documentation
-- `github.com/swaggo/swag` - Swagger/OpenAPI documentation generator
-- `github.com/swaggo/gin-swagger` - Gin integration for Swagger
-- `github.com/swaggo/files` - Static file serving for Swagger UI
+
+Use the modules and generation contract in [OpenAPI](openapi.md).
 
 ### Authentication/Authorization
-- `github.com/golang-jwt/jwt/v5` - JWT token handling
+
+`github.com/golang-jwt/jwt/v5`.
 
 ### Configuration
-- `github.com/joho/godotenv` - Load environment variables from .env files
+
+`github.com/joho/godotenv`.
 
 ### Utilities
-- `github.com/google/uuid` - UUID generation
-- `github.com/patrickmn/go-cache` - In-memory caching
+
+`github.com/google/uuid`; `github.com/patrickmn/go-cache`.
 
 ### gRPC (when needed)
-- `google.golang.org/grpc` - gRPC framework
-- `google.golang.org/protobuf` - Protocol Buffers support
+
+`google.golang.org/grpc`; `google.golang.org/protobuf`.
 
 ## Configuration Pattern
 
-See `resources/project-structure.md` for the full configuration pattern (Config struct, `os.LookupEnv`, fail-fast validation).
-
-API-specific: load `.env` at startup before accessing any env vars:
-
-```go
-if err := godotenv.Load(".env"); err != nil {
-    log.Info("no .env file, using environment variables")
-}
-```
+Use [typed config and fail-fast validation](project-structure.md#configuration-management). Before accessing environment variables at API startup, call `godotenv.Load(".env")`; if absent, log that environment variables are being used.
 
 ## Request Body Handling
 
-Apply `http.MaxBytesReader` before decoding, then drain and close in a deferred function. Without draining, the server cannot reuse the TCP connection.
-
-```go
-func (s *Server) createUser(w http.ResponseWriter, r *http.Request) {
-    r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MB limit
-    defer func() {
-        io.Copy(io.Discard, r.Body)
-        r.Body.Close()
-    }()
-
-    var req CreateUserRequest
-    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        var maxErr *http.MaxBytesError
-        if errors.As(err, &maxErr) {
-            http.Error(w, "request too large", http.StatusRequestEntityTooLarge)
-            return
-        }
-        http.Error(w, "invalid JSON", http.StatusBadRequest)
-        return
-    }
-    // ...
-}
-```
-
-Gin binds the body automatically but does not limit it. Apply the limit in a middleware or explicitly per handler when processing large uploads.
+Apply [memory's handler body lifecycle](memory.md#request-body-handlers); this is also required with Gin binding.
 
 ## Middleware Ordering
 
-Apply middleware in this order (order matters in Gin):
-
-1. Recovery (panic → 500)
-2. CORS
-3. Request ID / tracing
-4. Logger
-5. Rate limiter
-6. Authentication (JWT)
-7. Authorization
-8. Business routes
+Register in order: Recovery (panic to 500), CORS, request ID/tracing, logger, rate limiter, JWT authentication, authorization, business routes.
 
 ## Standard JSON Error Envelope
 
-```go
-type ErrorResponse struct {
-    Code    string `json:"code"`
-    Message string `json:"message"`
-}
-
-// Success: { "data": ... }
-// Error:   { "error": { "code": "NOT_FOUND", "message": "user not found" } }
-```
+Success uses `{ "data": ... }`; errors use `{ "error": { "code": "NOT_FOUND", "message": "user not found" } }`. Define the response wrappers once and reference those concrete types in OpenAPI.
 
 ## Graceful HTTP Server Shutdown
 
-```go
-srv := &http.Server{Addr: ":8080", Handler: router}
-go srv.ListenAndServe()
-
-quit := make(chan os.Signal, 1)
-signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-<-quit
-
-ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-defer cancel()
-srv.Shutdown(ctx)
-```
+Serve with `http.Server`; on SIGINT/SIGTERM call `Shutdown` using a fresh bounded context (e.g. five seconds), defer its cancel and handle server/shutdown errors. Do not abandon inflight requests on signal receipt.
 
 ## Zap Logger Configuration
 
+For existing Zap projects (new logger selection is in [slog](slog.md)):
+
 ### Production Logger Setup
-- Use JSON encoding for structured logging in production
-- Custom encoder configuration for standard field names:
+
+Use JSON and this encoder configuration:
+
 ```go
 encoderCfg := zap.NewProductionEncoderConfig()
 encoderCfg.TimeKey = "timegenerated"
@@ -176,45 +77,19 @@ encoderCfg.EncodeLevel = zapcore.CapitalLevelEncoder
 ```
 
 ### Dynamic Log Level
-- Use `zap.AtomicLevel` to allow runtime log level changes
-- Read initial level from environment variable (e.g., `API_LOG_LEVEL`)
-- Support levels: debug, info, warn, error, fatal
-- Pattern:
-```go
-level := zap.InfoLevel
-if os.Getenv("API_LOG_LEVEL") == "debug" {
-    level = zap.DebugLevel
-}
-atomicLevel := zap.NewAtomicLevelAt(level)
-config := zap.Config{
-    Level: atomicLevel,
-    // ... other config
-}
-logger := zap.Must(config.Build())
-```
+
+Use `zap.AtomicLevel`; initialize from environment (e.g. `API_LOG_LEVEL`), supporting debug/info/warn/error/fatal and runtime changes. Logging level/event rules are owned by [slog](slog.md#slog-the-default-logger).
 
 ### Logger Configuration Fields
-- Set `Development: false` for production
-- Set `DisableCaller: true` to omit caller info (reduce noise)
-- Set `DisableStacktrace: false` to include stack traces on errors
-- Output to stderr: `OutputPaths: []string{"stderr"}`
-- Error output to stderr: `ErrorOutputPaths: []string{"stderr"}`
+
+Production: `Development: false`, `DisableCaller: true`, `DisableStacktrace: false`, `OutputPaths: []string{"stderr"}`, `ErrorOutputPaths: []string{"stderr"}`.
 
 ## CORS Configuration
 
 ### Standard CORS Setup for APIs
-- Use `github.com/gin-contrib/cors` middleware
-- Apply CORS middleware to router before defining routes
-- Pattern:
-```go
-config := cors.DefaultConfig()
-config.AllowOrigins = []string{"*"}  // Or specific origins in production
-config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
-config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
-config.AllowCredentials = true
-router.Use(cors.New(config))
-```
+
+Use gin-contrib/cors before routes. Methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. Headers: Origin, Content-Length, Content-Type, Authorization.
 
 ### Production Considerations
-- Replace `AllowOrigins: []string{"*"}` with specific allowed origins for production
-- Set `AllowCredentials: true` when using authentication cookies or Authorization headers
+
+Use explicit production origins rather than `*`; enable `AllowCredentials` when using authentication cookies or Authorization headers. Gate: middleware order, origins/credentials, body handling, one response contract and bounded shutdown match the actual server.

@@ -1,69 +1,36 @@
 # CONTEXT.md Format
 
-The paths below assume an owned repo. On a `foreign` repo (per `steering`'s
-ownership table), the file lives at `.claude/project/context.md` instead; the
-shape is identical.
+Owned paths below; foreign repos use `.claude/project/context.md` per steering, same shape.
 
 ## Structure
 
 ```md
 # {Context Name}
 
-{One or two sentence description of what this context is and why it exists.}
+{One or two sentences: what this context is and why it exists.}
 
 ## Language
 
 **Order**:
-{A one or two sentence description of the term}
+{One or two sentences defining the term.}
 _Avoid_: Purchase, transaction
-
-**Invoice**:
-A request for payment sent to a customer after delivery.
-_Avoid_: Bill, payment request
-
-**Customer**:
-A person or organization that places orders.
-_Avoid_: Client, buyer, account
-
-<!-- Fill every {placeholder} with real content (braces removed), then delete this line. -->
 ```
+
+Replace all braced placeholders with real content, removing braces/instructions.
 
 ## Rules
 
-- **Be opinionated.** When multiple words exist for the same concept, pick the best one and list the others as aliases to avoid.
-- **Flag conflicts explicitly.** If a term is used ambiguously, call it out in "Flagged ambiguities" with a clear resolution.
-- **Keep definitions tight.** One or two sentences max. Define what it IS, not what it does.
-- **Show relationships.** Use bold term names and express cardinality where obvious.
-- **Only include terms specific to this project's context.** General programming concepts (timeouts, error types, utility patterns) don't belong even if the project uses them extensively. Before adding a term, ask: is this a concept unique to this context, or a general programming concept? Only the former belongs.
-- **Group terms under subheadings** when natural clusters emerge. If all terms belong to a single cohesive area, a flat list is fine.
-- **Write an example dialogue.** A conversation between a dev and a domain expert that demonstrates how the terms interact naturally and clarifies boundaries between related concepts.
+- Pick one preferred name; list rejected aliases under `_Avoid_`.
+- Record ambiguous usage and a clear resolution in "Flagged ambiguities".
+- Define what a term IS in at most two sentences. Use bold term names and obvious cardinalities to express relationships.
+- Only project-context-specific domain concepts, never general programming concepts (timeouts, error types, utility patterns). Check this distinction before adding a term.
+- Group natural clusters under subheadings; a cohesive context may remain flat.
+- Include dev/domain-expert example dialogue showing natural interactions and boundaries.
 
 ## Single vs multi-context repos
 
-**Single context (most repos):** One `CONTEXT.md` at the repo root.
+- Existing `CONTEXT-MAP.md`: read it to locate contexts. Root map lists context names linked to their CONTEXT.md paths and responsibilities, then Relationships with direction, integration mechanism/events or shared types.
+- Only root `CONTEXT.md`: single context.
+- Neither: create root CONTEXT.md lazily on first resolved term.
 
-**Multiple contexts:** A `CONTEXT-MAP.md` at the repo root lists the contexts, where they live, and how they relate to each other:
-
-```md
-# Context Map
-
-## Contexts
-
-- [Ordering](./src/ordering/CONTEXT.md): receives and tracks customer orders
-- [Billing](./src/billing/CONTEXT.md): generates invoices and processes payments
-- [Fulfillment](./src/fulfillment/CONTEXT.md): manages warehouse picking and shipping
-
-## Relationships
-
-- **Ordering → Fulfillment**: Ordering emits `OrderPlaced` events; Fulfillment consumes them to start picking
-- **Fulfillment → Billing**: Fulfillment emits `ShipmentDispatched` events; Billing consumes them to generate invoices
-- **Ordering ↔ Billing**: Shared types for `CustomerId` and `Money`
-```
-
-The skill infers which structure applies:
-
-- If `CONTEXT-MAP.md` exists, read it to find contexts
-- If only a root `CONTEXT.md` exists, single context
-- If neither exists, create a root `CONTEXT.md` lazily when the first term is resolved
-
-When multiple contexts exist, infer which one the current topic relates to. If unclear, ask.
+For multiple contexts, infer the relevant context from the topic; ask when unclear.

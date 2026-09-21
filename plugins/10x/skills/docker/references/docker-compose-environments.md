@@ -12,12 +12,10 @@ The base defines services, images, healthchecks, `depends_on`, and named volumes
 routing**. Those belong to overlays, so the base can be composed into any
 environment without editing.
 
-Config comes from a single `.env` file that the user derives from a committed
-`env.sample`. Compose loads `./.env` **automatically** for `${VAR}` interpolation
-: so there is **no `env_file:` directive**. Containers receive exactly the
-variables they need through an explicit `environment:` map that interpolates from
-that auto-loaded `.env`. This keeps the container's environment intentional
-(only what the service reads) rather than dumping the whole `.env` into it.
+Config comes from a single auto-loaded `.env`, surfaced to containers through an
+explicit `environment:` map and never an `env_file:` directive. The full rule,
+including per-environment handling and the Makefile consequence, is in *Rules*
+below; the base file below shows the shape.
 
 ```yaml
 services:
@@ -153,6 +151,12 @@ services:
 Run the test stack under its own project name so its network and volumes are
 namespaced and can run alongside local: `docker compose -p app-test -f
 docker-compose.yml -f docker-compose.test.yml up -d`.
+
+The literal ports above are the one deliberate exception to the
+`${VAR:-default}` rule: the test stack is disposable and must not collide with
+the local one, so its ports are fixed rather than overridable. The skill's
+"every published port is a `${VAR:-default}`" check therefore excludes
+`docker-compose.test.yml`.
 
 ## Rules
 

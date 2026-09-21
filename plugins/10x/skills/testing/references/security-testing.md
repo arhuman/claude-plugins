@@ -1,129 +1,19 @@
 # Security Testing
 
-Recipes for *writing* security tests. This file covers the test-authoring side only. The reviewer-side OWASP Top 10:2025 walk (detection recipes, default severities) is not part of this plugin: do not duplicate a detection checklist here.
+Author tests, not a duplicate reviewer OWASP Top 10:2025 detection/severity checklist; that reviewer walk is outside this plugin. Use actual project contracts; the HTTP outcomes below preserve the reference recipes.
 
 ## Authentication Tests
 
-```typescript
-describe('Authentication Security', () => {
-  it('rejects invalid credentials', async () => {
-    await request(app)
-      .post('/api/login')
-      .send({ email: 'user@test.com', password: 'wrong' })
-      .expect(401);
-  });
-
-  it('rejects expired tokens', async () => {
-    const expiredToken = createExpiredToken();
-    await request(app)
-      .get('/api/protected')
-      .set('Authorization', `Bearer ${expiredToken}`)
-      .expect(401);
-  });
-
-  it('rejects tampered tokens', async () => {
-    const tamperedToken = validToken.slice(0, -5) + 'xxxxx';
-    await request(app)
-      .get('/api/protected')
-      .set('Authorization', `Bearer ${tamperedToken}`)
-      .expect(401);
-  });
-
-  it('enforces rate limiting on login', async () => {
-    for (let i = 0; i < 6; i++) {
-      await request(app)
-        .post('/api/login')
-        .send({ email: 'user@test.com', password: 'wrong' });
-    }
-
-    await request(app)
-      .post('/api/login')
-      .send({ email: 'user@test.com', password: 'correct' })
-      .expect(429);
-  });
-});
-```
+Reject invalid credentials, expired/tampered tokens with 401; cover missing auth. Exercise login brute-force/API-abuse rate limits (reference: six failed logins, next request returns 429 even with correct credentials).
 
 ## Authorization Tests
 
-```typescript
-describe('Authorization', () => {
-  it('denies access to other users resources', async () => {
-    await request(app)
-      .get('/api/users/other-user-id/data')
-      .set('Authorization', `Bearer ${userAToken}`)
-      .expect(403);
-  });
-
-  it('denies admin routes to regular users', async () => {
-    await request(app)
-      .delete('/api/admin/users/123')
-      .set('Authorization', `Bearer ${regularUserToken}`)
-      .expect(403);
-  });
-});
-```
+Cover IDOR and privilege escalation: another user's resources and admin routes accessed by regular users return 403. Exercise missing/invalid CSRF tokens.
 
 ## Input Validation Tests
 
-```typescript
-describe('Input Validation', () => {
-  it('rejects SQL injection attempts', async () => {
-    await request(app)
-      .get('/api/users')
-      .query({ search: "'; DROP TABLE users; --" })
-      .expect(400);
-  });
-
-  it('rejects XSS in input fields', async () => {
-    const response = await request(app)
-      .post('/api/posts')
-      .send({ title: '<script>alert("xss")</script>' })
-      .expect(201);
-
-    expect(response.body.title).not.toContain('<script>');
-  });
-
-  it('validates file upload types', async () => {
-    await request(app)
-      .post('/api/upload')
-      .attach('file', 'malicious.exe')
-      .expect(400);
-  });
-});
-```
+Exercise SQL injection (reference hostile query returns 400), command injection, XSS (reference accepted post returns 201 but no `<script>` in title), and forbidden upload types (executable returns 400).
 
 ## Security Headers Test
 
-```typescript
-describe('Security Headers', () => {
-  it('sets security headers', async () => {
-    const response = await request(app).get('/');
-
-    expect(response.headers['x-content-type-options']).toBe('nosniff');
-    expect(response.headers['x-frame-options']).toBe('DENY');
-    expect(response.headers['strict-transport-security']).toBeDefined();
-  });
-});
-```
-
-## Security Test Checklist
-
-| Category | Tests |
-|----------|-------|
-| **Auth** | Invalid creds, token expiry, tampering |
-| **Input** | SQL injection, XSS, command injection |
-| **Access** | IDOR, privilege escalation |
-| **Rate Limit** | Brute force, API abuse |
-| **Headers** | CSP, HSTS, X-Frame-Options |
-| **Data** | PII exposure, error messages |
-
-## Quick Reference
-
-| Vulnerability | Test Approach |
-|---------------|---------------|
-| SQL Injection | `'; DROP TABLE--` in inputs |
-| XSS | `<script>alert(1)</script>` |
-| IDOR | Access other user's resources |
-| CSRF | Missing/invalid tokens |
-| Auth Bypass | Missing auth, expired tokens |
+Assert `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, HSTS present, and applicable CSP. Test PII exposure and information leaked through error messages.

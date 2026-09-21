@@ -7,7 +7,7 @@ Image tag verified 2026-07. `gvenzl/oracle-free` is multi-arch (amd64 and arm64/
     image: gvenzl/oracle-free:23-slim
     container_name: oracle-db
     ports:
-      - 1521:1521
+      - "${ORACLE_PORT:-1521}:1521"
     environment:
       ORACLE_PASSWORD: oracle
       APP_USER: TEST

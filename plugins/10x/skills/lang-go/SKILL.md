@@ -5,134 +5,77 @@ description: 'Go coding best practices and patterns. Use when working with Go or
 
 # 10x Go
 
-This skill defines rules to write robust, maintainable, and idiomatic production Go code.
-
 ## Reference Guide
 
-Load the relevant reference when the task involves:
+Load the owner for each changed concern; apply its gates:
 
-| Topic | File | Load When |
-|-------|------|-----------|
-| Concurrency | `references/concurrency.md` | goroutines, channels, context, sync primitives, worker pools |
-| Generics | `references/generics.md` | type parameters, constraints, generic data structures |
-| Interface Design | `references/interfaces.md` | interface composition, functional options, io patterns, DI |
-| Testing | `references/testing.md` | tests, benchmarks, fuzzing, mocking, coverage |
-| Project Structure | `references/project-structure.md` | module layout, go.mod, Makefile, Dockerfile, monorepo |
-| Error Handling | `references/errors.md` | sentinel errors, wrapping, custom types, GORM context |
-| API Projects | `references/api.md` | gin, GORM, JWT, swagger, CORS |
-| OpenAPI / Swagger | `references/openapi.md` | swaggo annotations, spec generation, Swagger UI, security schemes |
-| CLI Projects | `references/cli.md` | cobra, CLI directory layout |
-| REST Patterns | `references/rest-patterns.md` | URI patterns, HTTP status code, naming conventions |
-| Memory & Resources | `references/memory.md` | request/response body lifecycle, goroutine limits, heap escape, sync.Pool |
-| Logging & Iterators | `references/slog.md` | slog structured logging, log levels, range-over-func iterators (Go 1.23+) |
-| Linting Config | `../_shared/references/golangci-minimal.yml`, `../_shared/references/golangci-strict.yml` | choosing/authoring a `.golangci.yml`; the minimal and strict tiers of the shared ladder |
-| Pinned Versions | `../_shared/references/versions.md` | Go toolchain, golangci-lint, govulncheck, and GitHub Actions versions (single source of truth) |
+| Concern | Owner |
+|---------|-------|
+| Context, goroutine lifecycle/caps, channels, sync | [concurrency](references/concurrency.md) |
+| Type parameters, constraints, collections | [generics](references/generics.md) |
+| Interfaces, DI, nil defaults, options, io | [interfaces](references/interfaces.md) |
+| Test contracts, coverage, benchmarks, fuzzing | [testing](references/testing.md) |
+| Packages, composition root, config, modules/builds | [project structure](references/project-structure.md) |
+| Wrapping, sentinels, custom errors, GORM context | [errors](references/errors.md) |
+| Gin, GORM, JWT, CORS, server setup | [API](references/api.md) |
+| swaggo annotations, generation, UI, security | [OpenAPI](references/openapi.md) |
+| Cobra, CLI layout/output | [CLI](references/cli.md) |
+| URIs, HTTP semantics, status, caching | [REST](references/rest-patterns.md) |
+| HTTP bodies, allocation, pooling | [memory](references/memory.md) |
+| Structured logging, Go 1.23+ iterators | [slog](references/slog.md) |
 
 ## Architecture Principles
 
-- Favor simplicity. Do not over-engineer the design.
-- Depend on concrete types by default. Define an interface at the consumer, only when it inverts a genuine external dependency (DB, network, clock, filesystem); keep it small (ISP). Each function/type has one responsibility (SRP). See `references/interfaces.md`.
-- Favor generic functions over specific ones (`hasRole(string)` instead of `hasAdminRole()` and `hasWriterRole()`).
-- ALWAYS make small, atomic, incremental changes rather than big-bang rewrites.
-- **Fewer packages, more files.** A package is justified by what importing it buys the caller (an independently useful capability), not by what concept it represents. Divide packages by what they provide, files by what they import. Use functions to express generalisation, files to express separation, packages to express independence. See `references/project-structure.md`.
-- The reader's context budget and the materialization ladder are owned by `thinking` Simplicity First; apply them before creating any new file, type, interface, or package.
-- **One verb layer, thin adapters.** Put business logic in a single service layer (`internal/<domain>`); make each entry point (CLI, HTTP, MCP, gRPC) a thin adapter that translates transport to a call on that layer. Surfaces then cannot drift in semantics. See `references/project-structure.md`.
-- **Composition root, not globals.** Assemble process-wide dependencies (config, `*slog.Logger`, `*sql.DB`) once into an `App`/`Store` struct in `internal/app`; hand the built value to commands. Do not reach for package-level globals or `init()` for wiring.
-- **Constructors normalize nil dependencies.** `New*` substitutes a safe default for a nil dependency (nil logger → `slog.New(slog.DiscardHandler)`, nil config → empty) instead of panicking or deferring a nil-pointer crash. See `references/interfaces.md`.
-
-## MUST DO
-
-- Run `gofmt` and `golangci-lint` on all generated code
-- Run `go vet ./...` on all generated code (catches common correctness issues gofmt misses)
-- Pass `context.Context` as the first argument to all blocking or I/O-bound functions
-- Handle all errors explicitly: no naked `_` discards without justification
-- Wrap errors with a package-name prefix: `fmt.Errorf("pkg: operation: %w", err)`: the prefix is the current package, lowercase, no trailing punctuation (`errorlint` enforces `%w`; `revive`/`error-strings` enforce the message shape). See `references/errors.md`
-- Name sentinel errors `Err*` with a package-prefixed message (`var ErrNotFound = errors.New("memory: not found")`) and compare with `errors.Is`; `errname` enforces the `Err-` prefix / `-Error` suffix
-- Write table-driven tests with `t.Run` subtests for all non-trivial functions
-- Document all exported functions, types, and constants with a docstring
-- Run tests with `-race` flag: `go test -race ./...`
-- Always apply `http.MaxBytesReader`, drain, and close `r.Body` in HTTP handlers
-- Always limit, drain, and close `resp.Body` in HTTP clients: use `io.LimitedReader{R: resp.Body, N: limit+1}` and check `limited.N == 0` to detect (and error on) overflow; never use bare `io.ReadAll(resp.Body)`
-- Always close `resp.Body` on `client.Do()` error: if `resp != nil { resp.Body.Close() }` before returning
-- Compile regular expressions once at package level (`var re = regexp.MustCompile(...)`): never inside functions called per request
-- Cap goroutine counts with `errgroup.SetLimit` or `semaphore.NewWeighted`: never spawn unbounded goroutines over user-supplied input
-- Pre-allocate slices and maps when final size is known: `make([]T, 0, n)`
-- Use `errors.Is()` and `errors.As()` for error inspection
-- Use `any` instead of `interface{}`
-- Use type switches instead of repeated type assertions
-
-## MUST NOT DO
-
-- Use `panic` for recoverable errors
-- Use `http.Get`, `http.Post`, or `http.DefaultClient` in production code: always create a dedicated `*http.Client` with an explicit `Timeout`
-- Use `io.LimitReader` when you need truncation detection: use `io.LimitedReader{N: limit+1}` and check `N==0` instead; `io.LimitReader` silently truncates
-- Create goroutines without a clear termination strategy (WaitGroup, errgroup, or channel signaling)
-- Ignore context cancellation in long-running operations
-- Hardcode configuration values: use environment variables or functional options
-- Use reflection without measurable performance justification
-- Return errors without wrapping context (`return err` alone loses the call site)
-- Log AND return the same error at the same level: choose one
-- Box value types into `any`/`interface{}` on hot paths without profiling justification
-- Use `fmt.Sprintf` for string building in loops: use `strings.Builder` instead
-- Store pointers to pooled objects outside the `sync.Pool` scope
+- Make small, atomic, incremental changes. Keep functions/types focused, small and testable; avoid over-engineering.
+- Prefer parameterized behavior (`hasRole(string)`) over role-specific copies.
+- Before adding files, types, interfaces or packages, apply `thinking` Simplicity First and its materialization ladder. Package boundaries and interfaces are governed by the references above.
+- Prefer standard library (`log/slog`, `database/sql`, `crypto/*`, `net/http`) and pure-Go drivers; justify every added dependency.
+- Profile with pprof before optimizing. Reflection requires measurable performance justification.
 
 ## Coding Style
 
-- Use PascalCase for exported types/methods, camelCase for variables
-- Group imports: standard library, then third-party, then project-specific
-- Package names and all exported entities must have docstrings
-- Code must be self-documenting with clear, consistent naming
-- Comments: default to none inside function bodies, and follow the `documentation-rules` Code Comments section. It is canonical; do not restate its rules here.
-- **Keep the happy path left.** Guard clauses first: preconditions read as one paragraph of early returns, then the operation. The success flow reads top to bottom at indent zero.
-- **Initialize once.** A variable acquires its identity at declaration: `customer := resolveCustomer(...)`, not `var customer Customer` followed by if/else assignment.
-- **Domain ID types.** Be suspicious of functions taking several arguments of the same type. When raw string/int IDs cross function boundaries, introduce `type UserID string` style types: extra typing, no extra architecture.
+- PascalCase exports, camelCase variables; clear, consistent names. Imports: standard library, third-party, project.
+- Document packages and every exported function, type, method and constant. Function-body comments default to none; `documentation-rules` Code Comments is canonical.
+- Guard clauses first; keep the success path unindented. Initialize a variable's identity at declaration rather than later if/else assignment.
+- Use domain ID types (`type UserID string`) when raw string/int IDs cross function boundaries, especially several same-type parameters.
+- Use `any`, not `interface{}`. Assertion rules belong to [interfaces](references/interfaces.md#type-assertions-and-type-switches).
 
 ## Quality Standards
 
-- `go.mod` sets a deliberate `go` floor and a pinned `toolchain`; the two may legitimately differ. Values and rationale live in `../_shared/references/versions.md`.
-- Functions must be small, focused, and easily testable.
-- Every new package ships at least one `_test.go` file covering its exported surface before work is reported complete.
-- **Enforce a numeric coverage gate**, not a vibe: `make cover` fails below `COVER_MIN`; the target mechanics, the default floor, and the ratchet rule (raise, never lower) live in `makefile`. As a secondary rule, no package may sit at 0% coverage in a final report; if coverage is genuinely impossible (e.g., a thin `main` package), say so explicitly.
-- Dependencies must be minimal and well-justified; prefer the standard library (`log/slog`, `database/sql`, `crypto/*`, `net/http`) and pure-Go drivers before pulling a new module.
-- Performance optimizations must be measured, not assumed. Profile with pprof before optimizing.
-- Log at Debug level by default; log at Info level for one-time or important events (initialization, configuration).
-- Never log secrets, tokens, or PII: scrub before logging.
-- Use parameterized GORM queries; never concatenate user input into raw SQL.
-- Run `govulncheck ./...` in CI to detect known vulnerabilities in dependencies: see the `ci` skill for the workflow that runs it (via `make audit`).
+- Pin a deliberate `go` floor and `toolchain` per [versions](../_shared/references/versions.md); they may differ.
+- Run `gofmt` and `golangci-lint` on generated code.
+- Use parameterized GORM queries, never user-input concatenation.
+- CI must run `govulncheck ./...` through `make audit`; load [ci](../ci/SKILL.md) for workflow changes.
 
 ### Linting configuration
 
-- Every Go project ships a committed `.golangci.yml` (schema `version: "2"`). Do not rely on golangci-lint defaults.
-- Pick a tier from the shared ladder (`../_shared/README.md`):
-  - **minimal** (`../_shared/references/golangci-minimal.yml`): small tools, libraries, early-stage code.
-  - **standard** (`../makefile/references/.golangci.yml`): default; encodes the shared complexity/duplication thresholds so daily linting matches what a review measures.
-  - **strict** (`../_shared/references/golangci-strict.yml`): mature services; security + error-wrapping + performance linters and ratchet-based complexity gates. Never raise a complexity gate to green a build; lower it one rung as offenders are refactored.
-- Pin the golangci-lint and govulncheck versions to `../_shared/references/versions.md`; the same versions must appear in the Makefile `tools` target and the CI `lint` job so the three never drift.
+Commit `.golangci.yml`, schema `version: "2"`; never rely on defaults. Select from the [shared ladder](../_shared/README.md):
+- [minimal](../_shared/references/golangci-minimal.yml): small tools, libraries, early-stage code.
+- [standard](../makefile/references/.golangci.yml): default; shared complexity/duplication thresholds.
+- [strict](../_shared/references/golangci-strict.yml): mature services; security, wrapping, performance and ratcheted complexity. Never raise a complexity gate to pass; lower a rung as offenders are refactored.
+
+Pin golangci-lint/govulncheck to [versions](../_shared/references/versions.md); Makefile `tools` and CI `lint` must agree with it.
 
 ## Module Preferences
 
--  Use `slog` for structured logging, if no existing logging framework is in place
-- `github.com/stretchr/testify` and its submodules (`require`, `assert`, `suite`) for testing
+Logging is owned by [slog](references/slog.md); testify (`require`, `assert`, `suite`) by [testing](references/testing.md).
 
 ## Tests
 
-Tests are contracts with the user. See `references/testing.md` for full guidance. Key rules are in **MUST DO** above.
+Load [testing](references/testing.md) before adding/changing tests, including its user-approval and exact TODO-marker requirements. It owns new-package tests, coverage and exceptions.
 
 ## Definition of Done
 
-Before reporting work complete, all four must pass **in the working tree** (not just in-IDE diagnostics):
+Require working-tree results, not IDE diagnostics or inference:
+1. After import changes: `go mod tidy`.
+2. `go build ./...` with no compile errors.
+3. `go vet ./...` with no findings.
+4. `go test -race ./...` with all tests passing.
 
-1. `go mod tidy`: after any import change.
-2. `go build ./...`: no compile errors.
-3. `go vet ./...`: no findings.
-4. `go test -race ./...`: all tests pass.
-
-In-IDE compilation, partial builds, or "it should work" inference do not count as verification. If the environment prevents running these commands, say so explicitly instead of assuming success.
+If blocked by the environment, report the unrun command explicitly.
 
 ## Agent Behavior
 
-- Reduce redundancy: use tree-sitter (if available) to identify similar code patterns before generating new code.
-- Use tree-sitter (if available) to analyze function complexity before refactoring.
-- **Preserve test intent**: you may refactor test structure and helpers freely, but you MUST ASK for confirmation before changing test assertions, removing test cases, or altering expected behavior. Full rules, including the exact `// TODO:` marker for new cases, in `references/testing.md`.
-- **Layer-dependency direction.** Before importing another internal package, ask whether it sits upstream or downstream of yours in the data flow. Upstream-to-downstream imports are fine; downstream-to-upstream creates a wrong-direction dependency even when no compile cycle results. When tempted to import sideways for a shared type, remember types live in the package that owns their lifecycle (`storage.Document`, `search.Result`): write a narrow conversion in the downstream package instead of importing sideways. Promote a type to an upstream package only when it is genuinely shared vocabulary of the data flow; never create a generic `model/`, `types/`, or ontology package as a reflex.
-- **No silent design deviation.** If a stated design constraint (CONTEXT.md, an ADR, a ticket spec, an interface comment) proves hard or inconvenient to honor during implementation, STOP and surface the conflict to the caller before deviating. Silently weakening a constraint and documenting the deviation only after shipping is the worst pattern: the design loses authority, and future readers cannot distinguish intent from accident.
+- If tree-sitter is available, find similar patterns before generating code and analyze complexity before refactoring.
+- Before internal imports, check data-flow direction: upstream may import downstream, never reverse, even without a compile cycle. Types belong to their lifecycle owner (`storage.Document`, `search.Result`); use narrow downstream conversions instead of sideways imports. Promote only genuinely shared upstream vocabulary; no reflexive `model/`, `types/` or ontology package.
+- If CONTEXT.md, an ADR, ticket or interface constraint is difficult to honor, STOP and surface the conflict before deviating. Do not weaken it silently and disclose only afterward.

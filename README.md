@@ -28,7 +28,7 @@ sh scripts/install-opencode.sh
 ```
 
 This symlinks into `~/.config/opencode/`: the 11 commands (as `/10x-<name>`),
-the 6 agents, and the 17 skills plus their shared `_shared` references.
+the 6 agents, and the 16 skills plus their shared `_shared` references.
 `sh scripts/install-opencode.sh --uninstall` reverses it, removing only
 symlinks that point into this repo.
 

@@ -2,54 +2,14 @@
 
 ## slog: the default logger
 
-Use `log/slog` when no logging framework is already in place (SKILL.md Module Preferences).
-
-```go
-// Setup once in main: JSON handler, level from config
-level := new(slog.LevelVar) // dynamic; level.Set(slog.LevelDebug) to change at runtime
-logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: level}))
-slog.SetDefault(logger)
-
-// Structured fields, never Sprintf into the message
-slog.Info("request handled", "method", r.Method, "path", r.URL.Path, "duration", elapsed)
-
-// Type-safe attrs on hot paths (avoids any-boxing of the key)
-slog.LogAttrs(ctx, slog.LevelInfo, "request handled",
-    slog.String("method", r.Method), slog.Duration("duration", elapsed))
-
-// Component loggers: attach stable fields once
-dbLog := slog.Default().With("component", "store")
-```
-
-Rules (align with SKILL.md Quality Standards):
-- Debug by default; Info for one-time or important events (startup, config).
-- Pass `ctx` variants (`InfoContext`, `LogAttrs`) inside request paths so handlers can pick up trace IDs.
-- Never log secrets, tokens, or PII; log identifiers, not whole structs, on hot paths.
-- Wrap a third-party logger only behind `slog.Handler`, not a custom interface.
+- Use `log/slog` unless a logging framework already exists. Configure once in the composition root: JSON handler to stderr, config-driven `slog.LevelVar` for runtime changes; inject the logger.
+- Use structured fields, never Sprintf messages. Attach stable component fields with `logger.With("component", "store")`; prefer typed `LogAttrs` on hot paths.
+- Debug by default; Info for one-time/important startup/config events. In request paths use context variants (`InfoContext`, `LogAttrs`) for trace propagation.
+- Scrub secrets, tokens and PII; log safe identifiers rather than whole structs on hot paths.
+- Adapt third-party loggers through `slog.Handler`, never a custom logger interface. Error log/return policy is in [errors](errors.md#logging-vs-returning-errors).
 
 ## Range-over-func iterators (Go 1.23+)
 
-The `iter` package defines `Seq[V]` and `Seq2[K, V]`; `for range` accepts them.
+Use `iter.Seq[V]`/`iter.Seq2[K,V]` instead of giant slices when callers may stop early or data exceeds memory. Producers must stop when `yield` returns false and close owned resources even on early exit. With DB rows, propagate query/scan/iteration errors. Consumers check errors before processing records.
 
-```go
-// Producer: yield returns false when the consumer breaks
-func (s *Store) Records(ctx context.Context) iter.Seq2[Record, error] {
-    return func(yield func(Record, error) bool) {
-        rows, err := s.db.QueryContext(ctx, query)
-        if err != nil { yield(Record{}, err); return }
-        defer rows.Close()
-        for rows.Next() {
-            var r Record
-            if !yield(r, rows.Scan(&r.ID, &r.Name)) { return }
-        }
-    }
-}
-
-// Consumer
-for rec, err := range store.Records(ctx) {
-    if err != nil { return err }
-    process(rec)
-}
-```
-
-Use iterators instead of returning giant slices when the caller may stop early or the data does not fit in memory. Prefer the stdlib helpers: `slices.Values`, `slices.Collect`, `maps.Keys`, `maps.Values` (all iterator-based since Go 1.23).
+Prefer `slices.Values`, `slices.Collect`, `maps.Keys`, `maps.Values` (Go 1.23 iterator helpers). Gate: early break terminates production and frees resources; logs retain fields/context without sensitive values.

@@ -6,44 +6,24 @@ description: 'TypeScript and Angular coding best practices. Use when working wit
 
 ## Core Principles
 
-- Prefer explicit types over `any`. If you need `any`, use `unknown` and narrow it.
-- Favor `interface` for object shapes, `type` for unions, intersections, and mapped types.
-- Keep functions pure where possible. Isolate side effects at the edges.
-- Angular: keep components thin. Business logic belongs in services, not templates or components.
-- Angular: standalone components and signals are the default; NgModules and imperative subscriptions are legacy patterns to migrate away from, not to extend.
+- Keep functions pure where possible; isolate side effects at edges. Never mutate inputs or arguments.
+- Use `const` unless reassignment is necessary; `readonly` for immutable properties.
+- Explicitly type parameters and returns. Replace `any` with a proper type or narrowed `unknown`.
+- Prefer `interface` for object shapes; `type` for unions, intersections, mapped types.
+- Require an explanatory comment with `@ts-ignore`. Comments otherwise follow `documentation-rules` Code Comments.
+- New Angular DI uses field-initializer `inject()`; retain constructor injection consistency in existing files.
 
 ## Reference
 
-| Resource | When to use |
-|----------|-------------|
-| `./references/types.md` | Type system patterns: generics, utility types, type guards, narrowing |
-| `./references/errors.md` | Error handling: typed errors, Result pattern, RxJS error streams |
-| `./references/async.md` | Async patterns: Promises, async/await, RxJS Observables |
-| `./references/project-structure.md` | Angular and Node project layouts |
+Load for the changed concern; these files own its rules:
 
-## MUST DO
-
-- Enable `strict: true` in `tsconfig.json`
-- Type all function parameters and return values explicitly
-- Use `readonly` on properties that should not be mutated
-- Unsubscribe from Observables in Angular components (use `takeUntilDestroyed` or `DestroyRef`)
-- Use the `inject()` function for dependency injection in new Angular code (field initializers); keep constructor injection consistent within files that already use it
-- Prefer signals (`signal`, `computed`, `input()`) for component state; use RxJS for event streams and async composition: see `./references/async.md`
-- Use `satisfies` over a widening type annotation for config objects and lookup tables: see `./references/types.md`
-- Use `const` by default; `let` only when reassignment is necessary
-- Comments: default to none inside function bodies, and follow the `documentation-rules` Code Comments section. It is canonical; do not restate its rules here.
-
-## MUST NOT
-
-- Use `any`: use `unknown` and narrow, or define a proper type
-- Subscribe inside a subscribe (use `switchMap`, `mergeMap`, etc.)
-- Mutate objects passed as inputs or function arguments
-- Use `@ts-ignore` without a comment explaining why
-- Use `setTimeout` for async coordination: use Promises or Observables instead
+| Concern | Reference |
+|---------|-----------|
+| Generics, narrowing, utility types, `satisfies` | [types](references/types.md) |
+| Typed errors, Result, error streams | [errors](references/errors.md) |
+| Promises, signals, RxJS, teardown | [async](references/async.md) |
+| Angular/Node layout, compiler settings | [project structure](references/project-structure.md) |
 
 ## Agent Behavior
 
-- Before creating a new service or component, use tree-sitter `find_similar_code` to detect existing patterns that could be reused or extended.
-- Use tree-sitter `find_usage: subscribe` to locate all Observable subscriptions and verify each has a corresponding `takeUntilDestroyed` or `DestroyRef` teardown.
-- Use tree-sitter `find_usage: any` for a targeted audit of `any` type usages before enforcing strict types.
-- Use tree-sitter `get_symbols(symbol_types: ["functions", "classes"])` to map a module's public surface before modifying its interface.
+Before adding services/components, run tree-sitter `find_similar_code` for reuse. Before changing a public interface, map it with `get_symbols(symbol_types: ["functions", "classes"])`. Before strict-type enforcement, audit `find_usage: any`. For component subscription changes, audit `find_usage: subscribe` against the lifecycle gate in [async](references/async.md#angular-component-lifecycle).

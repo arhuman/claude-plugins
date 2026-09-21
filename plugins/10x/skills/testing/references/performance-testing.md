@@ -1,118 +1,30 @@
 # Performance Testing
 
+Select load for expected traffic, stress for breaking point, spike for sudden surge, soak for long-duration stability. Use k6 where applicable; bind gates to the project's SLA, distinguishing example targets from measured results.
+
 ## k6 Load Test
 
-```javascript
-import http from 'k6/http';
-import { check, sleep } from 'k6';
-
-export const options = {
-  stages: [
-    { duration: '30s', target: 20 },   // Ramp up to 20 users
-    { duration: '1m', target: 20 },    // Stay at 20 users
-    { duration: '30s', target: 0 },    // Ramp down
-  ],
-  thresholds: {
-    http_req_duration: ['p(95)<500'],  // 95% requests under 500ms
-    http_req_failed: ['rate<0.01'],    // <1% errors
-  },
-};
-
-export default function () {
-  const res = http.get('http://localhost:3000/api/users');
-
-  check(res, {
-    'status is 200': (r) => r.status === 200,
-    'response time < 200ms': (r) => r.timings.duration < 200,
-  });
-
-  sleep(1);
-}
-```
+Reference stages (`duration: target users`): `30s:20`, `1m:20`, `30s:0`. Check HTTP 200 and individual response time <200ms, with 1s iteration sleep.
 
 ## Stress Test
 
-```javascript
-export const options = {
-  stages: [
-    { duration: '2m', target: 100 },   // Ramp to 100 users
-    { duration: '5m', target: 100 },   // Stay at 100
-    { duration: '2m', target: 200 },   // Push to 200
-    { duration: '5m', target: 200 },   // Stay at 200
-    { duration: '2m', target: 0 },     // Ramp down
-  ],
-};
-```
+Reference stages: `2m:100`, `5m:100`, `2m:200`, `5m:200`, `2m:0`.
 
 ## Spike Test
 
-```javascript
-export const options = {
-  stages: [
-    { duration: '10s', target: 10 },   // Normal load
-    { duration: '1m', target: 10 },
-    { duration: '10s', target: 200 },  // Spike!
-    { duration: '3m', target: 200 },
-    { duration: '10s', target: 10 },   // Scale down
-    { duration: '3m', target: 10 },
-    { duration: '10s', target: 0 },
-  ],
-};
-```
+Reference stages: `10s:10`, `1m:10`, `10s:200`, `3m:200`, `10s:10`, `3m:10`, `10s:0`.
 
 ## API Testing with Auth
 
-```javascript
-import http from 'k6/http';
-
-export function setup() {
-  const loginRes = http.post('http://localhost:3000/api/login', {
-    email: 'test@test.com',
-    password: 'password',
-  });
-  return { token: loginRes.json('token') };
-}
-
-export default function (data) {
-  const params = {
-    headers: { Authorization: `Bearer ${data.token}` },
-  };
-
-  http.get('http://localhost:3000/api/protected', params);
-}
-```
+Authenticate in setup using test credentials; return token to iterations and send `Authorization: Bearer <token>` on protected requests.
 
 ## Thresholds Reference
 
-```javascript
-thresholds: {
-  // Response time
-  http_req_duration: ['p(95)<500', 'p(99)<1000'],
+| k6 metric | Reference gate |
+|---|---|
+| `http_req_duration` | `p(95)<500`, `p(99)<1000` (milliseconds) |
+| `http_req_failed` | `rate<0.01` (under 1% failures) |
+| `http_reqs` | `rate>100` (requests/second) |
+| `http_req_duration{name:login}` | `p(95)<200` |
 
-  // Error rate
-  http_req_failed: ['rate<0.01'],
-
-  // Throughput
-  http_reqs: ['rate>100'],
-
-  // Custom metrics
-  'http_req_duration{name:login}': ['p(95)<200'],
-}
-```
-
-## Quick Reference
-
-| Metric | Description |
-|--------|-------------|
-| `http_req_duration` | Response time |
-| `http_req_failed` | Failed requests rate |
-| `http_reqs` | Request rate |
-| `p(95)` | 95th percentile |
-| `rate` | Rate per second |
-
-| Test Type | Purpose |
-|-----------|---------|
-| Load | Normal expected load |
-| Stress | Find breaking point |
-| Spike | Sudden traffic surge |
-| Soak | Long duration stability |
+Report endpoint p50/p95/p99 per [report format](test-reports.md#test-report-template).

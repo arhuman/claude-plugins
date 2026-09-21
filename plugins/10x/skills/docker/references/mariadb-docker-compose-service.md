@@ -16,7 +16,7 @@ services:
       - ./conf/docker/initdb:/docker-entrypoint-initdb.d
       - ./conf/docker/mariadb.cnf:/etc/mysql/mariadb.cnf
     ports:
-      - "23306:3306"
+      - "127.0.0.1:${DB_PORT:-23306}:3306"
     networks:
       - default
     healthcheck:

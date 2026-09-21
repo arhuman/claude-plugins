@@ -2,215 +2,53 @@
 
 ## Manual Testing Types
 
-### Exploratory Testing
-```markdown
-**Charter**: Explore {feature} with focus on {aspect}
-**Duration**: 60-90 min
-**Mission**: Find defects in {specific functionality}
+| Type | Required record/checks | Reference time/target |
+|---|---|---|
+| Exploratory, new features | Charter (feature/focus), mission, boundary/error/recovery/workflow/integration ideas; severity findings with impact; areas explored and risks | charter 60-90min; planning range 60-120min |
+| Usability, UI changes | Task, completion time, errors, satisfaction 1-5; navigation/expectation mismatches and positive observations | 2-4h; 80% unaided completion in <5min |
+| Accessibility, every release | WCAG 2.1 AA: keyboard focus/navigation, ARIA labels, contrast; axe-core violations absent | 1-2h |
+| Localization, multi-region | No truncation; correct date/time/currency; RTL Arabic/Hebrew; UTF-8; locale sorting | 1 day/locale |
 
-Test Ideas:
-- Boundary conditions & edge cases
-- Error handling & recovery
-- User workflow variations
-- Integration points
-
-Findings:
-1. [HIGH] {Issue + impact}
-2. [MED] {Issue + impact}
-
-Coverage: {Areas explored} | Risks: {Identified risks}
-```
-
-### Usability Testing
-```markdown
-**Task**: Can users complete {action} intuitively?
-**Metrics**: Time to complete, errors made, satisfaction (1-5)
-**Success**: 80% complete without help in <5 min
-
-Observations:
-- Navigation confusing at {step}
-- Users expect {A} but get {B}
-- Positive: {feature feedback}
-```
-
-### Accessibility Testing (WCAG 2.1 AA)
-```typescript
-test('accessibility compliance', async ({ page }) => {
-  // Keyboard navigation
-  await page.keyboard.press('Tab');
-  expect(['A', 'BUTTON', 'INPUT']).toContain(
-    await page.evaluate(() => document.activeElement.tagName)
-  );
-  
-  // ARIA labels
-  expect(await page.getByRole('button').first().getAttribute('aria-label')).toBeTruthy();
-  
-  // Color contrast (axe-core)
-  const violations = await page.evaluate(async () => {
-    const axe = await import('axe-core');
-    return (await axe.run()).violations;
-  });
-  expect(violations).toHaveLength(0);
-});
-```
-
-### Localization Testing
-```markdown
-**Test**: {Feature} in {language/locale}
-- [ ] Text displays without truncation
-- [ ] Date/time/currency formats correct
-- [ ] Right-to-left layout (Arabic, Hebrew)
-- [ ] Character encoding UTF-8
-- [ ] Sort order respects locale
-```
-
-### Compatibility Matrix
-```markdown
-| Browser | Version | OS | Status |
-|---------|---------|----|----- --|
-| Chrome | Latest | Win/Mac | ✓ |
-| Firefox | Latest | Win/Mac | ✓ |
-| Safari | Latest | macOS/iOS | ✓ |
-| Edge | Latest | Windows | ✓ |
-```
+Compatibility output: `Browser | Version | OS | Status`. Cover latest Chrome/Firefox on Windows/Mac, Safari on macOS/iOS, Edge on Windows; report measured statuses only.
 
 ## Defect Management
 
-### Root Cause Analysis (5 Whys)
-```markdown
-1. Why did defect occur? {User input not validated}
-2. Why wasn't it validated? {Validation logic missing}
-3. Why was it missing? {Requirement unclear}
-4. Why was requirement unclear? {Acceptance criteria incomplete}
-5. Why incomplete? {No QA review in planning}
-
-**Root Cause**: QA not involved in requirements phase
-**Prevention**: Add QA to all planning meetings
-```
-
-### Defect Report Template
-```markdown
-## [CRITICAL] {Defect Title}
-
-**Steps to Reproduce**:
-1. {Step 1}
-2. {Step 2}
-
-**Expected**: {Should happen}
-**Actual**: {Actually happens}
-**Impact**: {Business/user impact}
-**Root Cause**: {Why it happened}
-**Fix**: {Recommended solution}
-```
+Use 5 Whys to establish root cause and prevention. Defect format: `[SEVERITY] Title`, reproduction steps, expected, actual, business/user impact, root cause, recommended fix. Severity definitions and full report belong to [test reports](test-reports.md#severity-definitions).
 
 ## Quality Metrics
 
-### Key Calculations
-```typescript
-// Defect Removal Efficiency (target: >95%)
-const dre = (defectsInTesting / (defectsInTesting + defectsInProd)) * 100;
+| Metric | Calculation | Target |
+|---|---|---|
+| Defect Removal Efficiency | testing defects / (testing + production defects) * 100 | >95% |
+| Leakage | production defects / total defects * 100 | <5% |
+| Test effectiveness | test-found defects / total defects * 100 | >90% |
+| Automation ROI | (time saved - maintenance cost - development cost) / development cost | report result |
 
-// Defect Leakage (target: <5%)
-const leakage = (defectsInProd / totalDefects) * 100;
+Dashboard columns: `Metric | Target | Actual | Trend | Status`. Reference targets: coverage >80%, leakage <5%, automation >70%, critical defects 0, MTTR <48h. Keep these reference targets distinct from the project's `COVER_MIN` sign-off floor.
 
-// Test Effectiveness (target: >90%)
-const effectiveness = (defectsFoundByTests / totalDefects) * 100;
-
-// Automation ROI
-const roi = (timeSaved - maintenanceCost - developmentCost) / developmentCost;
-```
-
-### Quality Dashboard
-```markdown
-| Metric | Target | Actual | Trend | Status |
-|--------|--------|--------|-------|--------|
-| Coverage | >80% | 87% | ↑ | ✓ |
-| Defect Leakage | <5% | 3% | ↓ | ✓ |
-| Automation | >70% | 68% | ↑ | ⚠ |
-| Critical Defects | 0 | 0 | → | ✓ |
-| MTTR | <48h | 36h | ↓ | ✓ |
-```
-
-## Continuous Testing & Shift-Left
-
-### Shift-Left Activities
-```markdown
-**Early Testing**:
-- Review requirements for testability
-- Create test cases during design
-- TDD: unit tests with code
-- Automated tests in CI pipeline
-- Static analysis on commit
-- Security scanning pre-merge
-
-**Benefits**: 10x cheaper defect fixes, faster feedback
-```
-
-### Feedback Cycle Targets
-```typescript
-const feedbackCycle = {
-  unitTests: '< 5 min',       // On save
-  integration: '< 15 min',    // On commit
-  e2e: '< 30 min',            // On PR
-  regression: '< 2 hours',    // Nightly
-};
-```
-
-## Quality Advocacy
-
-### Quality Gates
-```markdown
-## Production Release Gate
-
-**Must Pass (Blockers)**:
-- [ ] Zero critical defects
-- [ ] Coverage >80%
-- [ ] All P0/P1 tests passing
-- [ ] Performance SLA met
-- [ ] Security scan clean
-- [ ] Accessibility WCAG AA
-
-**Decision**: GO | NO-GO | GO with exceptions
-```
-
-## Test Planning
-
-### Test Plan Template
-```markdown
-## Test Plan: {Feature}
-
-**Scope**: {What to test}
-**Types**: Unit, Integration, E2E, Perf, Security
-**Resources**: {Team allocation}
-**Dependencies**: {Prerequisites}
-**Schedule**: {Timeline}
-**Entry Criteria**: {Start conditions}
-**Exit Criteria**: {Completion conditions}
-**Risks**: {Identified risks + mitigation}
-```
-
-### Environment Strategy
-```markdown
-| Env | Purpose | Data | Refresh | Access |
-|-----|---------|------|---------|--------|
-| Dev | Development | Synthetic | On-demand | All |
-| Test | QA testing | Test data | Daily | QA |
-| Stage | Pre-prod | Prod-like | Weekly | Limited |
-| Prod | Live | Real | N/A | Ops |
-```
-
-## Quick Reference
-
-| Testing Type | When | Duration |
-|--------------|------|----------|
-| Exploratory | New features | 60-120 min |
-| Usability | UI changes | 2-4 hours |
-| Accessibility | Every release | 1-2 hours |
-| Localization | Multi-region | 1 day/locale |
-
-| Metric | Excellent | Good | Needs Work |
-|--------|-----------|------|------------|
+| Metric | Excellent | Good | Needs work |
+|---|---|---|---|
 | Coverage | >90% | 70-90% | <70% |
 | Leakage | <2% | 2-5% | >5% |
 | Automation | >80% | 60-80% | <60% |
 | MTTR | <24h | 24-48h | >48h |
+
+## Continuous Testing & Shift-Left
+
+Review requirements for testability, design test cases during design, use test-first unit development, automate CI tests, static analysis on commit and security scans pre-merge.
+
+Feedback targets: unit on save <5min; integration on commit <15min; E2E on PR <30min; nightly regression <2h.
+
+## Quality Advocacy
+
+Production release gate blockers: zero critical defects, coverage >80%, all P0/P1 tests passing, performance SLA met, clean security scan, WCAG AA. Record decision exactly as `GO | NO-GO | GO with exceptions`; identify exceptions rather than claiming an unmet gate passed.
+
+## Test Planning
+
+Plan format: feature title; scope; types (unit/integration/E2E/performance/security); resources/team; dependencies; schedule; entry/exit criteria; risks and mitigation. Include case expectations/coverage/findings per [testing output](../SKILL.md#output-templates).
+
+Environment strategy columns: `Env | Purpose | Data | Refresh | Access`:
+- Dev: development, synthetic, on-demand, all.
+- Test: QA, test data, daily, QA.
+- Stage: pre-prod, prod-like, weekly, limited.
+- Prod: live, real, no refresh schedule, Ops; not a source of test data/credentials.

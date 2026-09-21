@@ -83,7 +83,7 @@ contract lives in `../../_shared/references/artifacts.md`.
 ## Sign-off
 
 - [ ] All critical issues addressed
-- [ ] Coverage meets threshold (80%)
+- [ ] Coverage meets the project's `COVER_MIN` floor
 - [ ] Performance meets SLA
 ```
 

@@ -1,164 +1,89 @@
 ---
 name: docker
-description: 'Docker and docker-compose best practices. Use for any Docker task: Dockerfiles (multi-stage builds, alpine, non-root), docker compose services (Go API, frontend, MariaDB, Oracle), healthchecks, volumes, networks, and K8S-compatible configurations. Not for running a large multi-file containerization work-package end to end: dispatch docker-agent, which applies this skill.'
+description: 'Docker and docker-compose best practices. Use for Dockerfiles, multi-stage/non-root builds, Compose services, healthchecks, volumes, networks, and K8S permissions. For end-to-end multi-file containerization, dispatch docker-agent, which applies this skill.'
 ---
-# 10x Docker 
+# 10x Docker
 
 ## Dockerfile
 
-For Go API please follow the recommendations in ./references/go-api-dockerfile.md
-For Frontend applications follow the recommendations in ./references/frontend-dockerfile.md
-Pair every Dockerfile with an allowlist `.dockerignore`: see ./references/dockerignore.md
+Load `references/go-api-dockerfile.md` for Go, `references/frontend-dockerfile.md` for frontend, and `references/dockerignore.md` for every build context.
 
 ### Dockerfile Standards (MUST)
 
-- Pin the syntax and use BuildKit: `# syntax=docker/dockerfile:1.7`, and cache the Go caches with `RUN --mount=type=cache,target=/go/pkg/mod` and `--mount=type=cache,target=/root/.cache/go-build`.
-- Build a static, reproducible, stripped binary: `CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w ..."`.
-- **Copy only the packages the binary compiles from: never `COPY . .`.** Copy `go.mod`/`go.sum` and `go mod download` *before* the source so a code change does not re-download modules. Keep the `COPY` list in sync with `.dockerignore`.
-- Copy runtime assets (templates, locales) from the build context in the runtime stage, not through the builder stage, so editing them rebuilds only small layers.
-- Run as a non-root user with a numeric UID (`USER 1001`) for K8S `runAsNonRoot`.
-- Add a `HEALTHCHECK` instruction (self-describing image), `EXPOSE` the port, and OCI `LABEL`s (`org.opencontainers.image.source`/`.licenses`/`.title`).
-- Explicit image tags, never `latest`. Do not bake a local `TZ` into a shared image.
+- BuildKit syntax `# syntax=docker/dockerfile:1.7`; Go cache mounts at `/go/pkg/mod` and `/root/.cache/go-build`.
+- Static, reproducible, stripped Go binary: `CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w ..."`.
+- Explicit package `COPY`, never `COPY . .`; keep `.dockerignore` allowlist synchronized. Copy manifests and download dependencies before source. Runtime assets come directly from context into the runtime stage.
+- Numeric non-root `USER 1001`; minimal alpine/slim runtime, explicit tags, never `latest` or baked-in local timezone.
+- Include `HEALTHCHECK`, `EXPOSE`, OCI source/licenses/title labels. Alternative probes: see Go reference.
 
 ### Dockerfile Performance
 
-1. **Layer Caching:**
-   - Copy dependency files first (go.mod, package.json)
-   - Run dependency download before copying source
-   - Order COPY commands from least to most frequently changed
-
-2. **Build Optimization:**
-   - Use multi-stage builds
-   - Minimize number of layers
-   - Combine RUN commands where appropriate
-
-3. **Development Speed:**
-   - Provide Dockerfile_localbuild for fast iteration
-   - Use volume mounts for live reload
-   - Implement proper healthchecks
+Multi-stage builds; order copies least-to-most changed; combine related `RUN` steps. Local iteration uses a prebuilt-binary `Dockerfile_localbuild` and source mounts for live reload.
 
 ### Done when (Dockerfile)
 
-- `docker build .` completes, and `docker inspect -f '{{.Config.User}}' <image>` prints a numeric UID (non-root survives into the final stage).
-- `grep -n 'syntax=docker/dockerfile' Dockerfile` and `grep -n 'HEALTHCHECK' Dockerfile` both match.
-- `grep -n 'COPY \. \.' Dockerfile` and `grep -n ':latest' Dockerfile` are both empty.
-- `test -f .dockerignore` succeeds and the file is an allowlist (starts by ignoring `*`).
+- `docker build .` succeeds; final `docker inspect -f '{{.Config.User}}' <image>` is numeric/non-root.
+- Syntax directive and healthcheck present; no `COPY . .` or `:latest`; `.dockerignore` starts with `*`.
 
 ## Docker-compose.yml
 
-- Omit the `version` field (obsolete in Compose v2; it triggers a warning)
-- Use `services:` as top-level key
+Use Compose v2 `services:`; omit obsolete `version:`.
 
 ### Per-Environment Files (MUST)
 
-Split environments by file, not `profiles`: a neutral base `docker-compose.yml`
-plus thin overlays merged with `-f`. See ./references/docker-compose-environments.md
-(and the `makefile` skill's `makefile-compose.md` for the targets that drive them).
+Load `references/docker-compose-environments.md` for every Compose change. Use base + local/prod/test overlays with `-f`, not profiles. For Makefile drivers load `../makefile/references/makefile-compose.md`.
 
-- The **base** defines services, images, healthchecks, `depends_on`, and named volumes: but **no host ports, no `container_name`, no environment routing**. Overlays (`docker-compose.local.yml` / `.prod.yml` / `.test.yml`) add those.
-- **Healthcheck on every service** (app: HTTP spider ~30s; datastore: native probe like `pg_isready` ~5s, retries 5-10).
-- **`depends_on` always uses `condition: service_healthy`**: never a bare `depends_on` (that waits for start, not readiness).
-- Address services by **compose service name**, not host ports. Named volumes for data; read-only (`:ro`) bind mount for init scripts.
-- **Restart policy per env**: base `unless-stopped`, prod `always`, test `"no"`. Run the test stack under its own `-p` project with `.env.test`.
-- Add **resource controls** (`ulimits`, `deploy.resources.limits`) for services that can run away.
-- **Configurable host ports, never hardcoded**: publish as `${SOME_PORT:-<default>}` and bind local datastore ports to `127.0.0.1`. A stack must not require editing the file to move a port.
-- **Front prod with the host's preconfigured reverse proxy, not a bundled one**: when the target host already runs a shared Traefik/nginx-proxy on an external `proxy` network, the prod overlay joins that network and routes via labels. Never ship a per-app proxy that binds 80/443. When a service is on more than one network, set `traefik.docker.network=<proxy-net>` or routing is non-deterministic. Route apex and www as **two routers to one service** (canonical www at `priority=1` plus a `-bare` apex router) off a single `APEX_DOMAIN` var, not one `||` rule; gate `make up` on a `preflight` that rejects an empty/default domain (see `makefile`).
-- **`.env` is the single config source, auto-loaded, no `env_file:` directive**: the user derives `.env` from a committed `env.sample`; Compose auto-loads `./.env` for `${VAR}` interpolation. Deliver config via an explicit `environment:` map (each container gets only what it reads), not `env_file:` (which dumps the whole file in). Prod keeps `.env` beside the compose files at mode 0600; test swaps it with `--env-file .env.test`. Because `docker compose` reads `.env` but `make` does not, any Makefile guard on those vars must `-include .env` and `export`, or it sees empty values while compose sees the real ones.
+- Base owns services/images, healthchecks, healthy dependencies, named data volumes; overlays own host ports, container names and routing.
+- Every service has a healthcheck: app HTTP ~30s, datastore native probe ~5s with 5-10 retries. Every dependency uses `condition: service_healthy`.
+- Containers connect by service name. Init-script mounts are read-only. Restart: base `unless-stopped`, prod `always`, test `"no"`; tests use separate `-p` project and `.env.test`.
+- Published ports use `${VAR:-default}`; local datastores bind loopback. Fixed disposable test ports are the explicit exception.
+- Prod uses the host's shared proxy, never a per-app proxy binding 80/443. Load environment reference for network pinning and apex/www routers; Makefile reference owns domain/secret preflight.
+- Config: committed `env.sample` -> uncommitted, auto-loaded `.env` -> explicit `environment:` maps; no `env_file:`. Environment reference owns prod 0600, test override and Makefile include/export rules.
+- Cap runaway services with `ulimits` and `deploy.resources.limits`.
 
 ### Done when (compose)
 
-- `docker compose -f docker-compose.yml -f docker-compose.<env>.yml config -q` exits 0 for every overlay touched.
-- `grep -n '^version:' docker-compose*.yml` is empty.
-- In the rendered `docker compose ... config` output, every `depends_on` entry shows `condition: service_healthy`, and the number of `healthcheck:` blocks equals `docker compose ... config --services | wc -l`.
-- `grep -nE '"[0-9]+:[0-9]+"' docker-compose*.yml` is empty: every published host port is a `${VAR:-default}`.
-- `grep -n 'env_file:' docker-compose*.yml` is empty; config flows through `environment:` maps from the auto-loaded `.env`.
+- `docker compose -f docker-compose.yml -f docker-compose.<env>.yml config -q` passes for each touched overlay.
+- Rendered config has a healthcheck per service and healthy conditions on every dependency.
+- No obsolete `version:`, `env_file:`, or bare published port outside the test overlay.
 
 ### Standard Service Patterns
 
-For MariaDB service read ./references/mariadb-docker-compose-service.md
-For Oracle service read ./references/oracle-docker-compose-service.md
-For Go API service read ./references/go-api-docker-compose-service.md
-For Frontend service read ./references/frontend-docker-compose-service.md
+Load the matching reference: `references/mariadb-docker-compose-service.md`, `references/oracle-docker-compose-service.md`, `references/go-api-docker-compose-service.md`, or `references/frontend-docker-compose-service.md`.
 
 ### Verification and Troubleshooting
 
-Before completing any task, run through `./references/verification-checklist.md`.
-For build/runtime/permission issues, consult `./references/troubleshooting.md`.
+Before completion read `references/verification-checklist.md`; on build/runtime/permission failures read `references/troubleshooting.md`.
 
 ### Volumes
 
-**Common Volume Patterns:**
-1. **Init Scripts:** `./conf/docker/initdb:/docker-entrypoint-initdb.d`
-2. **Configuration:** `./conf/docker/mariadb.cnf:/etc/mysql/mariadb.cnf`
-3. **Logs:** `/tmp/logs:/tmp/logs`
-4. **Runtime Config:** `./conf/docker/environment.json:/usr/share/nginx/html/assets/environments/environment.json`
-
-Do **not** bind-mount `env.sample` (or `.env`) into the container as a config file. App config comes from the auto-loaded `.env` via an `environment:` map (see Per-Environment Files), not a mounted file.
+Use service-reference mount paths for init scripts, database config and frontend `environment.json`; logs may use `/tmp/logs:/tmp/logs`. Never mount `.env` or `env.sample` as application config.
 
 ### Ports
 
-**Standard Port Mappings:**
-- Application APIs: `8080:8080`
-- MariaDB: `23306:3306` (non-conflicting external port)
-- Oracle: `1521:1521`, `5500:5500`
-- PostgreSQL: `25432:5432`
+Host defaults (container ports stay fixed):
+
+- API `${API_PORT:-8080}:8080`
+- MariaDB `127.0.0.1:${DB_PORT:-23306}:3306`
+- PostgreSQL `127.0.0.1:${DB_PORT:-25432}:5432`
+- Oracle `${ORACLE_PORT:-1521}:1521`, `${ORACLE_EM_PORT:-5500}:5500`
 
 ### Networks
-- Use default network for simple setups
-- Explicit networks only when needed for isolation
+
+Default network for simple stacks; explicit networks for isolation/proxy access.
 
 ## Environment Variables
 
-**Naming Convention:**
-- UPPERCASE with underscores
-- Prefixed with component name (e.g., `MARIADB_`, `ORACLE_`)
-- Use `.env` files for sensitive data (not committed)
-- Use `env.sample` as template
-
-**Common Variables:**
-- `MARIADB_ROOT_PASSWORD`, `MARIADB_DATABASE`, `MARIADB_USER`, `MARIADB_PASSWORD`
-- `TZ` (set per deployment, e.g. `TZ=UTC`; never bake a local timezone into a shared image)
-- `DOCKERFILE` for build variant selection
+UPPERCASE_UNDERSCORES with component prefixes (`MARIADB_`, `ORACLE_`). Document in `env.sample`; secrets stay uncommitted. `TZ` is deployment-specific, default UTC; `DOCKERFILE` selects the build variant. Service references specify database variables.
 
 ## Best Practices
 
 ### Security
 
-1. **Non-root User:**
-   - Always run as non-root (USER 1001)
-   - Create dedicated user/group
-   - Set proper permissions for K8S compatibility
-
-2. **Minimal Images:**
-   - Use alpine or slim variants when possible
-   - Multi-stage builds to reduce final image size
-
-3. **Secrets Management:**
-   - Never commit passwords in docker-compose.yml
-   - Use environment variables
-   - Provide env.sample templates
-   - Use Docker secrets for production
-
+Go reference owns OpenShift `chgrp 0` / `chmod g=u`. Never commit passwords in Dockerfiles/Compose. Prefer production Docker secrets for values not required in the process environment.
 
 ### Maintainability
 
-1. **Naming:**
-   - Container names: `project-component` (e.g., `persons-api`, `persons-db`)
-   - Image names: match container names
-   - Image tag: use explicit version number instead of 'latest'
-   - Service names: descriptive and consistent
-
-2. **Documentation:**
-   - Comment architecture-specific choices
-   - Document environment variables
-   - Provide usage examples in README
-
-3. **Variants:**
-   - `Dockerfile` - Production with multi-stage build
-   - `Dockerfile_localbuild` - Local development (pre-built binary)
-   - `Dockerfile_test` - Testing environment
-   - `docker-compose.yml` - Neutral base (no host ports / container_name / routing)
-   - `docker-compose.local.yml` - Local dev overlay (published ports, dev env)
-   - `docker-compose.prod.yml` - Production overlay (internal DBs, restart always, proxy)
-   - `docker-compose.test.yml` - Test overlay (`.env.test`, isolated ports, restart "no")
-
+- Names: `project-component` containers and matching images; descriptive, consistent service names.
+- Document variables, architecture-specific choices and README usage.
+- Variants: production multi-stage `Dockerfile`, prebuilt local `Dockerfile_localbuild`, testing `Dockerfile_test`; Compose base + `.local.yml`, `.prod.yml`, `.test.yml` overlays as above.

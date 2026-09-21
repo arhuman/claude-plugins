@@ -18,7 +18,7 @@ plugins/{name}/
 
 ### Frontmatter
 
-All fields are optional except `description` (recommended). Valid fields — [full spec](https://code.claude.com/docs/en/skills#frontmatter-reference):
+All fields are optional except `description` (recommended). Valid fields: [full spec](https://code.claude.com/docs/en/skills#frontmatter-reference).
 
 | Field | Description |
 |-------|-------------|
@@ -35,13 +35,15 @@ All fields are optional except `description` (recommended). Valid fields — [fu
 
 Do not add custom fields (`license`, `metadata`, `triggers`, `version`, `author`, etc.).
 
-The `description` is the sole auto-trigger mechanism. Include all "when to use" context there, not in the body.
+The `description` is the sole auto-trigger mechanism. Include trigger and anti-trigger context there, not in the body.
 
 ### SKILL.md body
 
-- Keep under 500 lines.
-- Move detailed reference material to `references/` files, link from SKILL.md.
-- Do not repeat content that is already in `references/` files.
+- Optimize for correct AI behavior per token.
+- Keep under 500 lines and inside `scripts/skill-token-budget.json`.
+- Keep text only when it changes a decision, constrains an action, defines an output, or verifies completion.
+- Move long phase detail to `references/` files and say when to read each reference.
+- Do not repeat content that is already in `references/` files or another owning skill.
 - No "When to Use This Skill" section in the body.
 
 ### Forbidden files inside `skills/`

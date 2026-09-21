@@ -1,0 +1,27 @@
+{
+  "tokenizer": "tiktoken==0.12.0",
+  "encoding": "cl100k_base",
+  "baseline_note": "Working copy at start of compression, including pre-existing CI, Docker and test-report edits. Counts include all Markdown under plugins/10x/skills, including shared references.",
+  "baseline": {
+    "totals": {"entry": 37220, "markdown": 123805},
+    "skills": {
+      "_shared": {"entry": 0, "markdown": 12101},
+      "ci": {"entry": 1670, "markdown": 3023},
+      "commit": {"entry": 2430, "markdown": 2430},
+      "conform": {"entry": 3201, "markdown": 4684},
+      "design-system": {"entry": 2115, "markdown": 11107},
+      "docker": {"entry": 2320, "markdown": 8461},
+      "documentation-rules": {"entry": 3516, "markdown": 6161},
+      "lang-go": {"entry": 2904, "markdown": 26472},
+      "lang-html": {"entry": 920, "markdown": 5119},
+      "lang-sql": {"entry": 1707, "markdown": 1707},
+      "lang-typescript": {"entry": 698, "markdown": 3860},
+      "loop": {"entry": 5760, "markdown": 6132},
+      "makefile": {"entry": 968, "markdown": 7129},
+      "manual": {"entry": 1127, "markdown": 2681},
+      "steering": {"entry": 5570, "markdown": 10012},
+      "testing": {"entry": 1072, "markdown": 11484},
+      "thinking": {"entry": 1242, "markdown": 1242}
+    }
+  }
+}

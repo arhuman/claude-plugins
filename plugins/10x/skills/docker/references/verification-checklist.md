@@ -8,7 +8,7 @@ Before completing any Docker configuration task, verify:
 - [ ] Proper `depends_on` with `condition: service_healthy`
 - [ ] Environment variables documented in `env.sample`
 - [ ] Volume mounts configured correctly with correct paths
-- [ ] Port mappings non-conflicting (use non-standard external ports: 23306, 25432)
+- [ ] Port mappings published as `${VAR:-default}`, never bare `host:container`, with datastores off their well-known port (defaults in the docker SKILL.md)
 - [ ] Timezone set per deployment (`TZ` env var, default `UTC`; never baked into shared images)
 - [ ] `.dockerignore` file present and trimmed
 - [ ] Build optimization (dependency layers before source layers)

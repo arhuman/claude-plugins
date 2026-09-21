@@ -1,114 +1,87 @@
 ---
 name: design-system
-description: 'UX and frontend design system for server-rendered web UIs (SSR + HTMX + hand-written CSS). Use when creating, restyling, or reviewing a page, modal, form, component, or stylesheet; when scoring a screen''s design quality ("is this page good?", "review the dashboard UI"); when defining tokens, themes, breakpoints, or UI CI guards. Provides the Lisibilité/Action/Soulagement quality grid, the CSS token contract, component and accessibility rules, HTMX UI conventions, and battle-tested regression checklists. Not for generic HTML/CSS/HTMX mechanics: use the `lang-html` skill.'
+description: 'Design-quality contract for SSR + HTMX + hand-written CSS. Use to create, restyle, review or score pages, modals, forms, components, tokens, themes, breakpoints and UI guards. Owns Readability/Action/Relief scoring, CSS/component/a11y/i18n rules. For generic HTML/CSS/HTMX mechanics use `lang-html`.'
 ---
-
 # design-system
 
-Design-quality contract for server-rendered frontends: Go SSR + HTMX fragments + hand-written CUBE CSS. Every rule here is backed either by a decision already taken in a production repo or by a bug that actually shipped.
-
-**Precedence**: a project-local design-system skill (for example `asheeve-design-system`) wins on project specifics (class names, palettes, screen tables). This skill supplies the defaults, the quality bar, and the invariants. `lang-html` owns generic HTML/CSS/HTMX mechanics; this skill owns design quality and the UI contract.
+Project-local design-system skills override project specifics (classes, palettes, screen tables); these defaults and invariants complement `lang-html` mechanics.
 
 ## Reference Guide
 
-Load the relevant reference when the task involves:
+Load when the task involves:
 
-| Topic | File | Load When |
-|-------|------|-----------|
-| CSS contract | `references/css-contract.md` | tokens, layers, breakpoints, themability, presentation security |
-| Components | `references/components.md` | buttons, chips, forms, modals, tables, states, animations |
-| HTMX UI architecture | `references/htmx-ui.md` | fragments, event contract, the ten HTMX gotchas |
-| Accessibility & i18n | `references/accessibility-i18n.md` | contrast, touch targets, focus, overflow, translations, glossary |
-| CI guards & tests | `references/quality-guards.md` | audits, ratchets, UI test strategy, regression checklist |
-| Design handoff | `references/design-handoff.md` | delegating design work to a generator that does not load this skill (another session, a design agent, an artifact builder); ships the verbatim brief and the return gate |
-| Aesthetic direction | `references/aesthetics.md` | visual identity, typography, color, motion, distinctive design |
+| Topic | Reference |
+|-------|-----------|
+| Tokens, layers, breakpoints, themes, CSP | `references/css-contract.md` |
+| Buttons, forms, modals, tables, states, motion | `references/components.md` |
+| Fragments, mutation events, HTMX pitfalls | `references/htmx-ui.md` |
+| Contrast, focus, overflow, translations/glossary | `references/accessibility-i18n.md` |
+| Audits, ratchets, tests, regression review | `references/quality-guards.md` |
+| Generator without this skill | `references/design-handoff.md` (verbatim brief + return gate) |
+| Visual identity | `references/aesthetics.md` |
 
 ## Stack Invariants (do not rediscuss per project)
 
-| Layer | Canonical choice | Forbidden |
-|---|---|---|
-| Rendering | SSR (`html/template` or `templ`) + HTMX for partial swaps | SPA shell, client routing, per-page JS bootstrap |
-| CSS | Hand-written, CUBE CSS + Every Layout, zero Node build | Tailwind, CSS-in-JS, CSS bundler |
-| JS | UI concerns only (theme, shortcuts, toasts, pickers); progressive enhancement | JWT in `localStorage`, `Authorization` header injection, app state in JS |
-| Auth surface | JWT in HttpOnly cookie (+ `SameSite=Lax`); `Origin` check on mutating methods | tokens readable from JS |
-| Assets | Embedded or static `webroot/`, versioned (`?v=<hash>`) | CDN dependencies on authenticated pages |
+| Layer | Required | Forbidden |
+|-------|----------|-----------|
+| Rendering | SSR (`html/template`/`templ`) + HTMX | SPA, client routing, per-page JS bootstrap |
+| CSS | Hand-written CUBE + Every Layout, zero Node build | Tailwind, CSS-in-JS, bundler |
+| JS | UI-only progressive enhancement | app state, localStorage JWT, Authorization injection |
+| Auth | JWT HttpOnly + SameSite=Lax cookie; Origin checks on mutations | JS-readable tokens |
+| Assets | Embedded/static `webroot/`, `?v=<hash>` | authenticated-page CDN dependencies |
 
-Why no Tailwind: a multi-model evaluation showed the CUBE-to-Tailwind migration addressed none of the root causes of real UI glitches (cascade conflicts, stacking contexts, mobile desync). The budget went to cheap CI audits and ratchets instead, which did stop the regressions.
+## Quality Bar: Readability / Action / Relief
 
-## Quality Bar: Lisibilité / Action / Soulagement
-
-This grid is the lens for everything else. The mechanical rules say **how** to build a screen; this section says **whether it is any good**. Score every new page or modal before shipping.
+Score every new page/modal before shipping.
 
 ### The three qualities
 
-**1. Lisibilité immédiate.** Every screen answers in under 5 seconds: where am I, what am I looking at, what deserves my attention?
-
-Checklist: one explicit title, a clear visual hierarchy, few competing elements, a visible primary state, a single dominant zone. Brutal test: blur the screen slightly; can you still tell where to look? Build on the pattern: eyebrow label (where am I) + page title (what is this) + one dominant zone below. If two zones fight for attention, one of them is not the dominant one.
-
-**2. Action évidente.** Ask of every screen: what is the one action I hope the user takes now? Not necessarily a single available action, but one **dominant** action. Aim for "here is what you can do now thanks to this data", not "here is your data". A screen that is only informational risks becoming decorative. The dominant action lives in the page-header primary CTA or the modal-footer primary submit. If you cannot name the dominant action, the screen is not done.
-
-**3. Sentiment de soulagement.** Each screen should reduce one form of tension: too many things, too much fog, too many open decisions, too many uninterpreted metrics. After opening it, the user should think "ok, this is clearer", even if nothing is finished. Anti-pattern: the permanent analytical cockpit. Criterion: does the screen reduce mental load, or does it only prove the system is clever? If the latter, stop: that flatters the product and costs the user.
+- **Immediate readability:** under 5 seconds to identify location, content and priority. Explicit title, eyebrow context, visible primary state, clear hierarchy, one dominant zone; verify focus remains clear when blurred.
+- **Obvious action:** name one dominant action in the page-header CTA or modal-footer submit. Data must make the next action clear.
+- **Relief:** reduce overload, ambiguity, open decisions or uninterpreted metrics. Reject permanent analytical cockpits that add mental load.
 
 ### Scoring grid (1 to 5 on each line)
 
 | Quality | Question |
-|---|---|
-| Lisibilité | Do I understand the screen in 5 seconds? |
-| Action | Do I know what to do now? |
-| Soulagement | Does the screen reduce my mental load? |
+|---------|----------|
+| Readability | Understood in 5 seconds? |
+| Action | Obvious next action? |
+| Relief | Less mental load? |
 
-**Pass bar: at least 4 / 4 / 4.** A good screen is balanced, not spiky.
-
-| Unbalanced profile | Verdict |
-|---|---|
-| 5 lisibilité / 2 action | pretty but passive |
-| 5 action / 2 soulagement | efficient but stressful |
-| 5 soulagement / 2 lisibilité | poetic but vague |
-| 5 intelligence / 1 soulagement | founder's trap |
+Each score must be **≥ 4 (4/4/4)**; a high score cannot offset a low one.
 
 ### Per-project screen table (required artifact)
 
-Each project maintains a table mapping every screen (route/template) to its expected dominant action and the tension it relieves, in the project design-system skill or CLAUDE.md. Add a row in the same PR that adds a screen. If you cannot fill both columns, the screen is not designed yet.
+Maintain route/template, dominant action and tension relieved in the project design-system skill or CLAUDE.md. Add each new screen's row in the same PR; both columns are required.
 
 ## Aesthetic Direction (summary)
 
-Commit to one intentional aesthetic direction before coding, and execute it with precision: bold maximalism and refined minimalism both work; the key is intentionality, not intensity. Distinctiveness is expressed **through the token layer and theme scopes** (typography, palette, radius, motion speed), never by breaking the CSS architecture, adding ad-hoc layout CSS, or hardcoding values. Full guidance in `references/aesthetics.md`.
+Commit to one direction before coding. Express identity through tokens/theme chrome, preserving layout architecture; load `references/aesthetics.md`.
 
 ## Core Rules
 
 ### MUST DO
 
-- Score every new page or modal against the quality grid (≥ 4/4/4) and name its dominant action
-- Start new templates from the project scaffold files, never from a copy of an existing page
-- Express every color, spacing, radius, font, duration, and z-index through a token
-- Signal active/selected state through ARIA (`aria-pressed`, `aria-current`), never a CSS class
-- Ship every interactive element with all four states: `:hover`, `:focus-visible`, `:active`, `:disabled`
-- Serve every list bounded (server-side cap + truncation flag) or paginated
-- Subscribe every list container to the mutation events its entity emits (`hx-trigger="load once, XUpdated from:body, ..."`)
-- Meet WCAG 2.1 AA contrast, measured and documented next to the tokens
-- Keep visible strings out of templates, JS, and `aria-label`s: everything goes through i18n
-- Run the UI audit battery (`make audit-ui` or equivalent) before pushing UI changes
+- Start templates from project scaffolds, reuse partials; all colors/spacing/radii/fonts/durations/z-indexes use tokens.
+- Native/ARIA selected state; all interactive elements have hover, focus-visible, active, disabled states.
+- Paginate or server-cap lists with truncation flags; subscribe lists to all entity mutations.
+- Measured WCAG 2.1 AA contrast beside tokens; all visible strings, including JS/ARIA, use i18n.
+- Run UI audits before pushing.
 
 ### MUST NOT
 
-- Hardcode a color literal, spacing value, `font-family` string, duration, or numeric `z-index` outside `tokens.css`
-- Add a breakpoint outside the canonical three defined in `references/css-contract.md`
-- Use `animation-fill-mode: both` (permanent stacking context traps popovers; use `backwards`)
-- Return `204` on an HTMX swap, or use `hx-get` for file downloads
-- Nest two containers that each own background + padding + border (one surface owner per region)
-- Use `overflow: hidden` on a modal body (clips the submit button on mobile)
-- Duplicate a component inline across partials, or maintain separate desktop and mobile nav item lists
-- Edit a concatenated CSS build artifact by hand (author in section files)
-- Read the theme from `localStorage` in JS or set it client-side (server-injected only)
-- Let a theme scope redeclare structure (positioning, clearance, responsive collapse): themes own chrome and voice only
+- Hardcode design values outside `tokens.css`, add noncanonical breakpoints, or hand-edit concatenated CSS.
+- Use `animation-fill-mode: both`, modal-body `overflow: hidden`, or nested background/padding/border owners.
+- Return 204 for swaps, use `hx-get` for downloads, duplicate component partials or desktop/mobile nav sources.
+- Read theme from localStorage or set it client-side; theme scopes must not redefine structure.
 
 ## Working Order on a UI Feature
 
-1. Read the project CLAUDE.md, the relevant ADRs, and the vocabulary glossary.
-2. Slice vertically: data → service → fragment → UI → ordering/display. Ship "data layer PR" then "end-to-end PR".
-3. Start from the scaffold, reuse an existing partial; create a new CSS block only as a last resort, and in a section file, never in the build artifact.
-4. Run the UI audits, then Playwright across **every theme the project ships** for any spacing/layout change (cascade bugs are only visible there).
-5. Write the regression test at the level where the bug was visible (route/fragment test for a rendering problem).
-6. CHANGELOG entry with root cause + how it was verified. Conventional commit.
+1. Read project CLAUDE.md, relevant ADRs and glossary.
+2. Slice data -> service -> fragment -> UI -> ordering/display; data-layer PR then end-to-end PR.
+3. Scaffold and reuse first; new blocks last, authored in section files.
+4. Run audits and, for spacing/layout, Playwright across every shipped theme.
+5. Regression test where the bug was visible (route/fragment for rendering).
+6. CHANGELOG: root cause + verification; Conventional Commit.
 
-Done when: the screen scores at least 4/4/4 on the quality grid with its dominant action named, the UI audit battery passes, the per-project screen table has a row for every screen the change added, and the CHANGELOG entry exists.
+Done: ≥ 4/4/4 with dominant action named, audits pass, screen-table rows and CHANGELOG entry exist.

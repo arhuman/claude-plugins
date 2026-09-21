@@ -2,137 +2,31 @@
 
 ## Philosophy: Errors Are Values
 
-In Go, errors are values. Handle them explicitly at every level; do not use exceptions or panics for recoverable situations. Good error messages enable fast debugging: include the operation name and contextual data.
+Handle every error explicitly; no naked `_` discard without justification. Reserve panic for unrecoverable programmer errors, never recoverable failures.
 
 ## Tier 1: Wrapping (always)
 
-Wrap errors at every level to preserve the full call chain. Use `fmt.Errorf` with `%w`.
-
-```go
-// Pattern: "pkg: operation: %w" (prefix = the current package, lowercase)
-// package store
-func (r *UserRepository) FindByID(ctx context.Context, id string) (*User, error) {
-    var user User
-    result := r.db.WithContext(ctx).Where("id = ?", id).First(&user)
-    if result.Error != nil {
-        return nil, fmt.Errorf("store: find user %q: %w", id, result.Error)
-    }
-    return &user, nil
-}
-
-// package user
-func (s *UserService) GetUser(ctx context.Context, id string) (*User, error) {
-    user, err := s.repo.FindByID(ctx, id)
-    if err != nil {
-        return nil, fmt.Errorf("user: get %q: %w", id, err)
-    }
-    return user, nil
-}
-```
-
-This ensures `errors.Is()` and `errors.As()` work correctly up the entire call chain.
+At each level, wrap the cause with operation/context using `fmt.Errorf("pkg: operation: %w", err)`, not bare `return err`. Preserve the full inspectable chain.
 
 ## Tier 2: Sentinel Errors
 
-Define sentinel errors when callers need to branch on a specific condition.
-
-```go
-var (
-    ErrNotFound      = errors.New("store: not found")
-    ErrAlreadyExists = errors.New("store: already exists")
-    ErrUnauthorized  = errors.New("auth: unauthorized")
-)
-
-func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*User, error) {
-    var user User
-    result := r.db.WithContext(ctx).Where("email = ?", email).First(&user)
-    if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-        return nil, fmt.Errorf("store: find by email %q: %w", email, ErrNotFound)
-    }
-    if result.Error != nil {
-        return nil, fmt.Errorf("store: find by email: %w", result.Error)
-    }
-    return &user, nil
-}
-
-// Caller can branch cleanly:
-user, err := repo.FindByEmail(ctx, email)
-if errors.Is(err, ErrNotFound) {
-    return nil, ErrUnauthorized // don't leak existence
-}
-```
-
-Use sentinel errors for stable, well-defined outcomes. Do not create a sentinel for every possible error: only when callers need to identify it programmatically.
+Only create sentinels for stable conditions callers branch on. Name them `Err*`, e.g. `var ErrNotFound = errors.New("store: not found")`. Translate `gorm.ErrRecordNotFound` to domain not-found where appropriate; authentication may map not-found to unauthorized to avoid leaking existence.
 
 ## Tier 3: Custom Error Types
 
-Use structured error types when callers need to extract machine-readable context.
-
-```go
-// Custom error type with context
-type ValidationError struct {
-    Field   string
-    Value   any
-    Message string
-}
-
-func (e *ValidationError) Error() string {
-    return fmt.Sprintf("validation failed for field %q (value: %v): %s", e.Field, e.Value, e.Message)
-}
-
-// Unwrap is only needed when this type holds a wrapped cause.
-// Remove this method if ValidationError is a leaf error (no wrapped cause).
-func (e *ValidationError) Unwrap() error { return nil }
-
-// Usage
-func validateUser(u *User) error {
-    if u.Email == "" {
-        return &ValidationError{Field: "email", Value: u.Email, Message: "email is required"}
-    }
-    return nil
-}
-
-// Caller extracts structured data
-var ve *ValidationError
-if errors.As(err, &ve) {
-    log.Warn("validation error", zap.String("field", ve.Field))
-    return http.StatusBadRequest
-}
-```
+When callers extract machine-readable context, use a `*Error`-suffixed type with `Error() string`; e.g. `ValidationError{Field, Value, Message}`. Leaf errors need no `Unwrap`.
 
 ## errors.Join (Go 1.20+)
 
-Combine multiple errors into one: useful for validation that collects all failures before returning:
-
-```go
-// errors.Join wraps multiple errors into one
-err := errors.Join(err1, err2, err3)
-
-// errors.Is and errors.As traverse all wrapped errors
-if errors.Is(err, ErrNotFound) { ... }
-```
+Use `errors.Join(errs...)` to collect independent failures, such as validation. Identity/type inspection traverses all joined causes.
 
 ## errors.Is vs errors.As
 
-```go
-// errors.Is: check identity (equality) in the chain
-if errors.Is(err, ErrNotFound) { ... }
-
-// errors.As: check type in the chain and extract the value
-var ve *ValidationError
-if errors.As(err, &ve) {
-    fmt.Println("invalid field:", ve.Field)
-}
-
-var dbErr *pgconn.PgError
-if errors.As(err, &dbErr) && dbErr.Code == "23505" {
-    return ErrAlreadyExists
-}
-```
+Use `errors.Is(err, sentinel)` for identity and `errors.As(err, &target)` for type/context, never direct equality/type assertions on wrapped errors. For PostgreSQL duplicate keys, extract `*pgconn.PgError` and check code `23505` before translating to already-exists.
 
 ## Unwrap() Requirement
 
-Any custom error type that wraps another error MUST implement `Unwrap()`:
+Every custom error holding a cause implements `Unwrap()`:
 
 ```go
 type ServiceError struct {
@@ -141,110 +35,28 @@ type ServiceError struct {
 }
 
 func (e *ServiceError) Error() string {
-    return fmt.Sprintf("%s: %v", e.Op, e.Err)
+    return fmt.Sprintf("service: %s: %v", e.Op, e.Err)
 }
 
 func (e *ServiceError) Unwrap() error { return e.Err }
 ```
 
-This ensures `errors.Is()` and `errors.As()` can traverse the chain.
-
 ## Repository Context Pattern (GORM)
 
-All GORM operations must use `WithContext()` to propagate request context:
-
-```go
-// Always: enables cancellation and timeout propagation
-result := r.db.WithContext(ctx).Create(entity)
-result := r.db.WithContext(ctx).Where("id = ?", id).First(&entity)
-result := r.db.WithContext(ctx).Save(entity)
-result := r.db.WithContext(ctx).Delete(&Entity{}, id)
-```
-
-Never call GORM methods without `WithContext(ctx)` in request handlers or service methods.
+Use `db.WithContext(ctx)` on every GORM operation (Create, query, Save, Delete), including handlers/services. Context call-chain rules live in [concurrency](concurrency.md#context-propagation-mandatory).
 
 ## Error Message Conventions
 
-Prefix every wrapped error with the **package name** (lowercase), then the
-operation, then the cause. Lowercase and no trailing punctuation: Go error
-strings are fragments that get composed, and `revive`'s `error-strings` rule
-(and staticcheck ST1005) reject capitalized or punctuated messages.
-
-```
-"pkg: description"              // wrapping another error
-"pkg: operation: field %q: %w" // including contextual data
-"pkg: expected X, got Y"       // descriptive without wrapping
-```
-
-Examples (from real packages named `memory`, `config`, `ledger`):
-```go
-fmt.Errorf("memory: search: %w", err)
-fmt.Errorf("config: parse: field %q missing", key)
-fmt.Errorf("ledger: update balance: account %s: insufficient funds, have %d need %d", id, have, need)
-```
-
-The package prefix makes a wrapped chain read as a call path
-(`ledger: update balance: store: sql: ...`) and lets a reader locate the origin
-without a stack trace. Keep sentinel-error messages prefixed the same way
-(`errors.New("memory: not found")`).
+Prefix with the current lowercase package name; include operation and useful fields, with no trailing punctuation. Examples: `"config: parse: field %q missing"`, `"store: find user %q: %w"`. Apply the same prefix to sentinels. Gates: `errorlint` for `%w`, `revive/error-strings` and staticcheck ST1005 for message shape, `errname` for `Err*`/`*Error` naming.
 
 ## Anti-Patterns to Avoid
 
-```go
-// BAD: silent discard
-result, _ := doSomething()
-
-// BAD: panic for recoverable errors
-if err != nil {
-    panic(err)
-}
-
-// BAD: losing the original error
-return fmt.Errorf("something went wrong") // no %w: breaks errors.Is/As
-
-// BAD: overly generic messages
-return fmt.Errorf("error occurred")
-
-// BAD: returning errors.New in a hot path with formatting
-return errors.New("user " + id + " not found") // allocates; use fmt.Errorf
-
-// GOOD
-return fmt.Errorf("user: find %q: %w", id, ErrNotFound)
-```
+Reject generic messages that lose operation/cause, discarded errors and formatted hot-path `errors.New("user " + id ...)`; use `fmt.Errorf` with contextual formatting.
 
 ## Logging vs Returning Errors
 
-**Rule**: log OR return, never both at the same level.
-
-```go
-// BAD: double-logs the error
-func (s *Service) Process(ctx context.Context, id string) error {
-    err := s.repo.Find(ctx, id)
-    if err != nil {
-        s.log.Error("find failed", "error", err) // logged here
-        return fmt.Errorf("service: process: %w", err) // and surfaced to caller who also logs
-    }
-    return nil
-}
-
-// GOOD: return and let the top-level handler log
-func (s *Service) Process(ctx context.Context, id string) error {
-    if err := s.repo.Find(ctx, id); err != nil {
-        return fmt.Errorf("service: process: %w", err)
-    }
-    return nil
-}
-```
+Log OR return the same error at a given level, never both. Return wrapped errors for the top-level handler to log.
 
 ## Quick Reference
 
-| Scenario | Approach |
-|----------|----------|
-| Always | `fmt.Errorf("pkg: op: %w", err)` (lowercase package prefix) |
-| Caller branches on condition | Sentinel: `var ErrX = errors.New(...)` |
-| Caller needs structured data | Custom type with `Error()` + `Unwrap()` |
-| Check sentinel in chain | `errors.Is(err, ErrX)` |
-| Extract typed error | `errors.As(err, &target)` |
-| GORM operations | `db.WithContext(ctx).Operation(...)` |
-| Log or return | Never both at the same level |
-| Panic | Only for unrecoverable programmer errors |
+Gate: trace a failure through callers; its sentinel/type must remain discoverable, context retained, and logging performed once.

@@ -2,107 +2,30 @@
 
 ## Typed Error Classes
 
-```typescript
-// Base application error
-export class AppError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly statusCode: number = 500,
-  ) {
-    super(message);
-    this.name = this.constructor.name;
-    // Fix prototype chain for instanceof checks
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
-}
-
-export class NotFoundError extends AppError {
-  constructor(resource: string, id: string) {
-    super(`${resource} with id ${id} not found`, 'NOT_FOUND', 404);
-  }
-}
-
-export class ValidationError extends AppError {
-  constructor(
-    message: string,
-    public readonly fields: Record<string, string>,
-  ) {
-    super(message, 'VALIDATION_ERROR', 400);
-  }
-}
-```
+Application errors extend `Error`, carry readonly `code` and `statusCode` (default 500), set `name` to the concrete class, and preserve `instanceof` with `Object.setPrototypeOf(this, new.target.prototype)`. Not-found errors include resource/id, code `NOT_FOUND`, status 404. Validation errors use `VALIDATION_ERROR`, status 400, and readonly `fields: Record<string, string>`.
 
 ## Result Pattern
 
-Prefer over throwing for expected failures:
+Prefer Result over throwing for expected failures. Narrow on `ok` before accessing either payload:
 
 ```typescript
 type Result<T, E = Error> =
   | { ok: true; value: T }
   | { ok: false; error: E };
 
-function ok<T>(value: T): Result<T> {
+function ok<T>(value: T): Result<T, never> {
   return { ok: true, value };
 }
 
 function err<E>(error: E): Result<never, E> {
   return { ok: false, error };
 }
-
-// Usage
-async function findUser(id: string): Promise<Result<User, NotFoundError>> {
-  const user = await db.users.findById(id);
-  if (!user) return err(new NotFoundError('User', id));
-  return ok(user);
-}
-
-const result = await findUser('123');
-if (!result.ok) {
-  // result.error is NotFoundError here
-  console.error(result.error.code);
-  return;
-}
-// result.value is User here
 ```
 
 ## RxJS Error Handling
 
-```typescript
-import { catchError, EMPTY, of, throwError } from 'rxjs';
-
-// Handle and recover
-this.userService.getUser(id).pipe(
-  catchError((err: unknown) => {
-    if (err instanceof NotFoundError) {
-      return of(null); // recover with null
-    }
-    return throwError(() => err); // re-throw unknown errors
-  }),
-);
-
-// Handle and stop stream
-this.userService.getUser(id).pipe(
-  catchError((err) => {
-    this.notifyError(err);
-    return EMPTY; // complete without emitting
-  }),
-);
-```
+In `catchError`, narrow the error: recover a recognized not-found with `of(null)` when absence is allowed; rethrow unknown errors using `throwError(() => error)`. To notify and stop without emitting, notify then return `EMPTY`. Gate: each branch explicitly recovers, propagates, or completes.
 
 ## Unknown Error Narrowing
 
-```typescript
-// Never use catch (e: any): always narrow from unknown
-function toMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'string') return error;
-  return 'An unexpected error occurred';
-}
-
-try {
-  await riskyOperation();
-} catch (error: unknown) {
-  logger.error(toMessage(error));
-}
-```
+Catch as `unknown`. Use `Error.message` for Error instances, the string itself for strings, otherwise `'An unexpected error occurred'`; log the normalized message.

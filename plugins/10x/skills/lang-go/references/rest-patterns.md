@@ -2,334 +2,96 @@
 
 ## Resource-Oriented Architecture
 
-REST APIs are built around resources, not actions. Resources are the nouns of your API.
-
 ### Resource Identification
 
-**Good Resource URIs:**
-```
-GET    /users                  # Collection
-GET    /users/{id}             # Individual resource
-GET    /users/{id}/orders      # Nested collection
-POST   /users                  # Create resource
-PUT    /users/{id}             # Replace resource
-PATCH  /users/{id}             # Update resource
-DELETE /users/{id}             # Delete resource
-```
-
-**Bad Resource URIs:**
-```
-POST   /getUser                # Verb in URI
-POST   /createUser             # Verb in URI
-GET    /user?action=delete     # Action as query param
-```
+URIs identify resources, not actions: collection `/users`, individual `/users/{id}`, child `/users/{id}/orders`. Express actions through HTTP methods, never `/getUser`, `/createUser` or `?action=delete`.
 
 ### Resource Naming Conventions
 
-- Use plural nouns for collections: `/users`, `/orders`, `/products`
-- Use lowercase and hyphens for readability: `/shipping-addresses`
-- Avoid deep nesting (max 2-3 levels): `/users/{id}/orders/{orderId}`
-- Use query parameters for filtering: `/users?status=active&role=admin`
+Use plural lowercase hyphenated collection names; maximum 2-3 nesting levels. Filter through query parameters.
 
 ## HTTP Method Semantics
 
 ### Safe and Idempotent Methods
 
-| Method | Safe | Idempotent | Use Case |
-|--------|------|------------|----------|
-| GET | Yes | Yes | Retrieve resource(s) |
-| POST | No | No | Create resource, non-idempotent operations |
-| PUT | No | Yes | Replace entire resource |
-| PATCH | No | No | Partial update |
-| DELETE | No | Yes | Remove resource |
-| HEAD | Yes | Yes | Get metadata only |
-| OPTIONS | Yes | Yes | Get allowed methods |
+| Method | Safe | Idempotent | Purpose |
+|--------|------|------------|---------|
+| GET | Yes | Yes | Retrieve |
+| POST | No | No by default | Create/non-idempotent operation |
+| PUT | No | Yes | Full replacement |
+| PATCH | No | Not guaranteed | Partial update |
+| DELETE | No | Yes | Remove |
+| HEAD | Yes | Yes | Metadata |
+| OPTIONS | Yes | Yes | Allowed methods |
 
 ### Method Usage
 
-**GET - Retrieve Resources**
-```http
-GET /users/123
-Accept: application/json
-
-Response: 200 OK
-{
-  "id": 123,
-  "name": "John Doe",
-  "email": "john@example.com",
-  "created_at": "2024-01-15T10:30:00Z"
-}
-```
-
-**POST - Create Resources**
-```http
-POST /users
-Content-Type: application/json
-
-{
-  "name": "Jane Smith",
-  "email": "jane@example.com"
-}
-
-Response: 201 Created
-Location: /users/124
-{
-  "id": 124,
-  "name": "Jane Smith",
-  "email": "jane@example.com",
-  "created_at": "2024-01-16T14:20:00Z"
-}
-```
-
-**PUT - Replace Resource**
-```http
-PUT /users/123
-Content-Type: application/json
-
-{
-  "name": "John Doe Updated",
-  "email": "john.new@example.com"
-}
-
-Response: 200 OK
-{
-  "id": 123,
-  "name": "John Doe Updated",
-  "email": "john.new@example.com",
-  "updated_at": "2024-01-17T09:15:00Z"
-}
-```
-
-**PATCH - Partial Update**
-```http
-PATCH /users/123
-Content-Type: application/json
-
-{
-  "email": "john.updated@example.com"
-}
-
-Response: 200 OK
-{
-  "id": 123,
-  "name": "John Doe",
-  "email": "john.updated@example.com",
-  "updated_at": "2024-01-17T10:00:00Z"
-}
-```
-
-**DELETE - Remove Resource**
-```http
-DELETE /users/123
-
-Response: 204 No Content
-```
+Apply the method/status contracts below; JSON requests/responses declare their media types. Creation returns the created resource with Location; DELETE 204 has no body.
 
 ## HTTP Status Codes
 
 ### Success Codes (2xx)
 
-- **200 OK** - Request succeeded (GET, PUT, PATCH)
-- **201 Created** - Resource created (POST), include Location header
-- **202 Accepted** - Request accepted for async processing
-- **204 No Content** - Success with no response body (DELETE)
+200: successful GET/PUT/PATCH; 201: created POST with Location; 202: accepted async processing; 204: successful no-content operation.
 
 ### Redirection (3xx)
 
-- **301 Moved Permanently** - Resource permanently moved
-- **302 Found** - Temporary redirect
-- **304 Not Modified** - Cached version is still valid
+301: permanent move; 302: temporary redirect; 304: valid cached representation.
 
 ### Client Errors (4xx)
 
-- **400 Bad Request** - Invalid request syntax or validation error
-- **401 Unauthorized** - Authentication required or failed
-- **403 Forbidden** - Authenticated but not authorized
-- **404 Not Found** - Resource doesn't exist
-- **405 Method Not Allowed** - HTTP method not supported for resource
-- **409 Conflict** - Request conflicts with current state (e.g., duplicate)
-- **422 Unprocessable Entity** - Valid syntax but semantic errors
-- **429 Too Many Requests** - Rate limit exceeded
+400: invalid syntax/validation; 401: missing/failed authentication; 403: authenticated but unauthorized; 404: absent resource; 405: unsupported method; 409: state conflict/duplicate; 422: syntactically valid but semantically invalid; 429: rate limit.
 
 ### Server Errors (5xx)
 
-- **500 Internal Server Error** - Unexpected server error
-- **502 Bad Gateway** - Invalid response from upstream server
-- **503 Service Unavailable** - Server temporarily unavailable
-- **504 Gateway Timeout** - Upstream server timeout
+500: unexpected failure; 502: invalid upstream response; 503: temporary unavailability; 504: upstream timeout.
 
 ## HATEOAS (Hypermedia)
 
 ### Hypermedia-Driven APIs
 
-Include links to related resources and available actions:
-
-```json
-{
-  "id": 123,
-  "name": "John Doe",
-  "email": "john@example.com",
-  "_links": {
-    "self": { "href": "/users/123" },
-    "orders": { "href": "/users/123/orders" },
-    "update": { "href": "/users/123", "method": "PATCH" },
-    "delete": { "href": "/users/123", "method": "DELETE" }
-  }
-}
-```
+Include related resources and available actions as links: `_links.self`, child collection links, update/delete links with `href` and `method`.
 
 ### HAL (Hypertext Application Language)
 
-```json
-{
-  "id": 123,
-  "name": "John Doe",
-  "_links": {
-    "self": { "href": "/users/123" }
-  },
-  "_embedded": {
-    "orders": [
-      {
-        "id": 456,
-        "total": 99.99,
-        "_links": {
-          "self": { "href": "/orders/456" }
-        }
-      }
-    ]
-  }
-}
-```
+When using HAL, use `_links` for navigation and `_embedded` for included related resources, each with its own self link.
 
 ## Content Negotiation
 
 ### Accept Headers
 
-```http
-GET /users/123
-Accept: application/json
-
-GET /users/123
-Accept: application/xml
-
-GET /users/123
-Accept: application/hal+json
-```
+Honor supported Accept types such as `application/json`, `application/xml`, `application/hal+json`.
 
 ### Response Content-Type
 
-```http
-Content-Type: application/json; charset=utf-8
-Content-Type: application/problem+json
-Content-Type: application/hal+json
-```
+Set the actual response media type: e.g. `application/json; charset=utf-8`, `application/problem+json`, or `application/hal+json`.
 
 ## Idempotency
 
 ### Idempotent Operations
 
-**PUT - Always idempotent:**
-Multiple identical PUT requests produce the same result as a single request.
-
-**DELETE - Idempotent:**
-First DELETE returns 204, subsequent DELETEs return 404 (same end state).
-
-**POST - Not idempotent by default:**
-Use `Idempotency-Key` header for idempotent POST:
-
-```http
-POST /payments
-Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000
-Content-Type: application/json
-
-{
-  "amount": 100.00,
-  "currency": "USD"
-}
-```
-
-Server stores idempotency key and returns same response for duplicate requests.
+Repeated identical PUTs preserve the same final state. DELETE may return 204 then 404 while remaining idempotent. When POST needs idempotency (e.g. payments), accept `Idempotency-Key`, persist its response and replay that response for duplicates.
 
 ## Cache Control
 
 ### Cache Headers
 
-```http
-Cache-Control: public, max-age=3600
-Cache-Control: private, no-cache
-Cache-Control: no-store
-ETag: "33a64df551425fcc55e4d42a148795d9f25f89d4"
-Last-Modified: Wed, 15 Jan 2024 10:30:00 GMT
-```
+Choose explicit policy: `public, max-age=3600`, `private, no-cache`, or `no-store` as appropriate. Supply `ETag`/`Last-Modified` validators when supporting conditional requests.
 
 ### Conditional Requests
 
-```http
-GET /users/123
-If-None-Match: "33a64df551425fcc55e4d42a148795d9f25f89d4"
-
-Response: 304 Not Modified
-```
-
-```http
-PUT /users/123
-If-Match: "33a64df551425fcc55e4d42a148795d9f25f89d4"
-Content-Type: application/json
-
-{
-  "name": "Updated Name"
-}
-
-Response: 412 Precondition Failed (if ETag doesn't match)
-```
+Matching `If-None-Match` on GET returns 304; stale `If-Match` on PUT returns 412 Precondition Failed.
 
 ## URI Patterns
 
 ### Consistent URI Structure
 
-```
-/{version}/{resource}
-/{version}/{resource}/{id}
-/{version}/{resource}/{id}/{sub-resource}
-/{version}/{resource}/{id}/{sub-resource}/{sub-id}
-```
+Use `/{version}/{resource}[/{id}[/{sub-resource}[/{sub-id}]]]`; plan versioning from the start.
 
 ### Query Parameters
 
-**Filtering:**
-```
-GET /users?status=active&role=admin
-GET /products?category=electronics&price_min=100&price_max=500
-```
-
-**Sorting:**
-```
-GET /users?sort=created_at
-GET /users?sort=-created_at          # Descending
-GET /users?sort=name,created_at      # Multiple fields
-```
-
-**Field Selection:**
-```
-GET /users?fields=id,name,email
-GET /users?exclude=password,social_security_number
-```
-
-**Search:**
-```
-GET /users?q=john
-GET /products?search=laptop
-```
+Support filters (`status`, `role`, `price_min`, `price_max`), sorting (`sort=created_at`, `sort=-created_at`, `sort=name,created_at`), field selection (`fields=id,name`, `exclude=...`) and search (`q` or `search`). Return pagination/filter/sort metadata. Choose snake_case or camelCase field naming consistently.
 
 ## Best Practices
 
-1. **Use nouns, not verbs** - Resources are nouns, methods are verbs
-2. **Plural collections** - Use `/users` not `/user`
-3. **Consistent naming** - Choose snake_case or camelCase and stick to it
-4. **Proper status codes** - Use appropriate HTTP status codes
-5. **Include metadata** - Pagination, filtering, sorting info in responses
-6. **Version your API** - Plan for evolution from day one
-7. **Document everything** - OpenAPI specs, examples, error codes
-8. **Security by default** - HTTPS, authentication, rate limiting
-9. **Support filtering** - Enable clients to get exactly what they need
-10. **Implement HATEOAS** - Make APIs self-documenting and discoverable
+Gate: verify resource/method/status consistency, filtering, navigation, versioning, HTTPS, authentication and rate limits. Document API examples/error codes through [OpenAPI](openapi.md).

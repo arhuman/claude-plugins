@@ -2,93 +2,10 @@
 
 ## Go: Table-Driven Tests
 
-The authoritative Go testing guide is the `lang-go` skill's `references/testing.md` (table-driven tests, testify, benchmarks, fuzzing, mocking, coverage): consult it for Go projects. The pattern below is the minimum shape; use `t.Run` for subtests.
-
-```go
-func TestConfigValidation(t *testing.T) {
-    tests := []struct {
-        name        string
-        input       Config
-        expectError bool
-    }{
-        {
-            name:       "valid config",
-            input:      Config{Directory: ".", MappingFile: "test.csv"},
-            expectError: false,
-        },
-        {
-            name:       "missing directory",
-            input:      Config{MappingFile: "test.csv"},
-            expectError: true,
-        },
-    }
-
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            err := tt.input.Validate()
-            if tt.expectError {
-                assert.Error(t, err)
-            } else {
-                assert.NoError(t, err)
-            }
-        })
-    }
-}
-```
-
-Always use `github.com/stretchr/testify/assert` (non-fatal) or `require` (fatal on failure).
+For Go, consult the canonical [lang-go testing guide](../../lang-go/references/testing.md) for table tests, mocking, benchmarks, fuzzing and coverage. Use `t.Run` and testify `assert` (nonfatal) or `require` (fatal), interface test doubles, and test setup accepting `*testing.T`. Race/coverage execution requirements live in [testing constraints](../SKILL.md#constraints).
 
 ## TypeScript: Angular Unit Tests (Jasmine + TestBed)
 
-```typescript
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { of } from 'rxjs';
+Use Jasmine `describe`/`it`, `beforeEach` TestBed setup, and `jasmine.createSpyObj(name, methodNames)` for injected services, provided as `{ provide: ServiceClass, useValue: spy }`. Create the component fixture, run change detection, and assert rendered behavior, including invalid-form disabled actions. Import required forms modules and supply observable service responses when expected.
 
-describe('ManagementComponent', () => {
-    let fixture: ComponentFixture<ManagementComponent>;
-    let component: ManagementComponent;
-
-    beforeEach(() => {
-        const userService = jasmine.createSpyObj('UserService', ['getUsers', 'deleteUser']);
-        userService.getUsers.and.returnValue(of([{ id: 1, name: 'Alice' }]));
-
-        TestBed.configureTestingModule({
-            declarations: [ManagementComponent],
-            imports: [ReactiveFormsModule],
-            providers: [
-                { provide: ComponentFixtureAutoDetect, useValue: true },
-                { provide: UserService, useValue: userService },
-            ],
-        });
-
-        fixture = TestBed.createComponent(ManagementComponent);
-        component = fixture.componentInstance;
-    });
-
-    it('renders the user list', () => {
-        fixture.detectChanges();
-        const rows = fixture.debugElement.queryAll(By.css('.user-row'));
-        expect(rows.length).toBe(1);
-    });
-
-    it('disables save button when form is invalid', () => {
-        fixture.detectChanges();
-        const btn = fixture.debugElement.query(By.css('#save-button'));
-        expect(btn.nativeElement.disabled).toBeTrue();
-    });
-});
-```
-
-Use `jasmine.createSpyObj(name, methodNames)` to mock services injected via DI. Provide them with `{ provide: ServiceClass, useValue: spy }`.
-
-## Quick Reference
-
-| Pattern | Go | TypeScript |
-|---------|----|------------|
-| Test runner | `go test ./...` | `ng test` (Web Test Runner or Jest per project; Karma is deprecated) |
-| Assertions | `assert.Equal`, `require.NoError` | `expect(...).toBe`, `expect(...).toBeTruthy` |
-| Mocking | test doubles via interfaces | `jasmine.createSpyObj()` |
-| Setup | `SetupData(t *testing.T)` | `beforeEach(() => TestBed.configureTestingModule(...))` |
-| Table tests | `[]struct{}` + `t.Run` | `describe`/`it` nesting |
-| Race detection | `go test -race ./...` | n/a |
+Run `ng test` using the project's runner. Karma is deprecated; new projects use Web Test Runner or Jest per Angular configuration.

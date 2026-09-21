@@ -1,94 +1,63 @@
 # Component Rules
 
-Canonical writing rules for buttons, chips, forms, modals, tables, states, and animations. Class names below are the canonical defaults; a project-local design-system skill wins if it defines its own.
+Project-local class conventions override these defaults.
 
 ## Active state: ARIA, never a class
 
-```html
-<button class="b-chip" aria-pressed="true">...</button>   <!-- toggle -->
-<a class="b-chip" aria-current="page">...</a>             <!-- filter / nav -->
-```
-
-| Element is a | Active signaled by |
-|---|---|
-| `<button>` (toggle) | `aria-pressed="true"` |
-| `<a>` (navigation / filter) | `aria-current="page"` |
-
-An `--active` / `--selected` class is **forbidden** (CI audit): theme scopes target the ARIA attribute with higher specificity and silently win, so the chip keeps its selected look while the underlying input is unchecked. Corollary: when a state has a native CSS representation (`:has(:checked)`), that representation is the **only** source of truth. If another concern needs to track selection, use a differently named `data-*` attribute and never gate visual styling on it.
+Toggle buttons: `aria-pressed="true"`; navigation/filter links: `aria-current="page"`. Never `--active`/`--selected` classes. Where native state exists (`:has(:checked)`), it alone drives visuals; secondary tracking may use differently named `data-*`, never visual selectors.
 
 ## Buttons
 
-Always include the base class; a modifier alone does not work: `class="btn btn--primary"`, never `class="btn--primary"`.
+Always include `btn` plus modifier:
 
-| Class | Use case |
-|-------|----------|
-| `btn--primary` | Main CTA, form submit: the screen's dominant action |
-| `btn--secondary` | Cancel, dismiss, secondary paired with primary |
-| `btn--ghost` | Low-emphasis nav, background action |
-| `btn--danger` | Destructive; always pair with a confirm (`hx-confirm`) |
-| `btn--sm` / `btn--lg` / `btn--block` | Dense toolbars / hero CTAs / full-width modal footers |
+| Modifier | Use |
+|----------|-----|
+| `btn--primary` | Dominant CTA/submit |
+| `btn--secondary` | Cancel/dismiss/paired secondary |
+| `btn--ghost` | Low-emphasis action/nav |
+| `btn--danger` | Destructive, with `hx-confirm` |
+| `btn--sm`, `btn--lg`, `btn--block` | Dense toolbar, hero CTA, full-width footer |
 
-Icon-only buttons are a separate component (`.btn-icon`), not a `btn` modifier, and **always** carry an accessible name (`title` + `aria-label`). Quick-pick chips (durations, tags, filters) use `.b-chip`, never `btn--sm btn--secondary`.
+Icon-only: separate `.btn-icon` with `title` + `aria-label`. Quick picks use `.b-chip`, not small secondary buttons.
 
 ## Forms
 
-- **One form architecture per project**: `b-form__group` + `b-form__legend` + `b-form__field`; one control class set (`form-input` for input/textarea, `form-select` for select). Never mix a second pattern in.
-- New files start from a **scaffold** (`templates/_scaffold/`), not from a copy of an existing page.
-- Create and edit variants of one entity **share the field body** in a common partial. Two diverging modals means two design systems and every bug fixed twice.
-- Default-value normalization lives in the **shared command** (`runCreateX`), not in each handler; otherwise onboarding creates objects that differ from the rest of the app.
-- Reading order descends: title, description, secondary fields. Frequent things visible; rare things folded in a `<details>`.
-- Prefer purpose-built controls over dumb `<select>`s for complex pickers: searchable popover for entity pickers (with inline "+ new"), segmented control with status dots for states, radio pills for priorities, chip input for tags.
-- When creating or editing a child entity, surface the **parent chain** at the top of the modal (for example Vision → Objective → Project). Empty state: "no parent linked yet" in danger tone; this makes the no-orphan rule visible.
+- One architecture: `b-form__group`, `b-form__legend`, `b-form__field`; `form-input` for input/textarea, `form-select` for select.
+- Start from `templates/_scaffold/`; create/edit share a field partial. Normalize defaults in shared command (`runCreateX`), not handlers.
+- Order title, description, secondary fields; frequent fields visible, rare fields in `<details>`.
+- Complex pickers: searchable entity popover with inline creation, state segments/dots, priority radio pills, tag chips.
+- Child modals show parent chain first; absent parent uses danger-toned “no parent linked yet”.
 
 ### Validation states
 
-```html
-<input type="text" class="form-input" aria-invalid="true" ...>
-<span role="alert" class="b-form__error text-sm color-danger">Required field</span>
-```
-
-- `[aria-invalid="true"]` drives the error border via a danger token; `[data-valid="true"]` shows a subtle success glyph, no border change.
-- **Never** `alert()` or `style="color: red"` for validation feedback.
+`aria-invalid="true"` drives danger-token border; linked error text uses `role="alert"`. `data-valid="true"` shows subtle success glyph without border change. Never `alert()` or inline red styles. Apply `../../lang-html/references/accessibility.md` for error linkage/focus.
 
 ### Interactive states (mandatory on every interactive element)
 
-Every `button`, `a`, `input`, `select`, `textarea` ships all four:
-
-- `:hover` visible change
-- `:focus-visible` outline via the focus-ring token
-- `:active` pressed feedback (small translate + brightness)
-- `:disabled` / `[aria-disabled="true"]` reduced opacity + `cursor: not-allowed`
-
-No component ships without all four.
+Every button/link/input/select/textarea: visible `:hover`, token-ring `:focus-visible`, pressed translate/brightness `:active`, and reduced-opacity/not-allowed `:disabled` or `[aria-disabled="true"]`.
 
 ## Modals
 
-- Scrollable body: `overflow-x: hidden; overflow-y: auto` + block-size cap `min(90dvh, ...)`. Never `overflow: hidden`: the submit button gets clipped as soon as a folded section opens, especially with the mobile keyboard up.
-- One modal open at a time, so field IDs are stable and normalized (`task-form-*`).
-- Immediate feedback on submit (close the modal or disable the button): without visible feedback the user double-clicks and creates duplicates.
-- Root element carries the modal class only; dismiss lives on the overlay element, never on the root.
-- Keep modal data structs narrow: no preemptive `BaseModalData`; the fragment inherits theme context from the parent document. Generalize only after 3 real cases.
+- Body: `overflow-x: hidden; overflow-y: auto`, cap `min(90dvh, ...)`; never `overflow: hidden`.
+- One open modal; stable normalized field IDs (`task-form-*`). Submit immediately closes modal or disables button.
+- Root carries modal class only; overlay owns dismissal.
+- Narrow data structs; inherit parent theme, no speculative `BaseModalData`. Generalize after 3 real cases.
 
 ## One surface owner per region
 
-Never nest two containers that each carry background + padding + border. The card-in-a-card (doubled spacing, parasite frame) is a recurring bug: if a panel wraps a complete card, the panel becomes a passthrough (`padding: 0; background: transparent; border: 0`).
+Never nest background + padding + border owners. Wrapper around a complete card becomes `padding: 0; background: transparent; border: 0`.
 
 ## Tables
 
-A table **always** ships its block style and its mobile behavior:
-
-- An internal scrollable wrapper (`.table-wrap`, `minmax(0, 1fr)` grid track).
-- At `≤ 640px`, each `<tr>` collapses into a card; labels are restored via `data-label` attributes + `::before`. Without this, the right-hand columns (badges, statuses) are invisible on phones.
+Ship block styles and mobile behavior: internal `.table-wrap`, `minmax(0, 1fr)` track; at ≤ 640px rows become cards with `data-label` + `::before` labels.
 
 ## Empty states
 
-Never render a zero-value where there is no sample (`0m` where nothing was measured). Convention: the sentinel character `—` with an empty unit key, tested in the template.
+No sample: sentinel `—` and empty unit key, tested in template; never a misleading zero such as `0m`.
 
 ## Animations and transitions
 
-- `animation-fill-mode: backwards`, not `both`. A `both` keeps the final value applied: even an identity transform creates a **permanent stacking context** that traps popovers and tooltips under neighboring cards.
-- Transitions always via the easing/duration tokens (`transition: <prop> var(--ease)`); never hardcode duration or easing (they are theme decisions).
-- `prefers-reduced-motion` is handled globally in `tokens.css`; individual components do not need their own guard, but must not bypass it.
-- Consistent markup across pages for one block: the same component rendered as `<ul>` on one page and `<div role="list">` on another means scoped CSS applies to only one of them. Unify the markup and use element-agnostic child selectors (`> :where(div, li)`).
-- One partial per component, zero inline copies: a duplicated `task-card` means only one copy receives the next fix.
-- One source of nav items, looped for desktop and mobile: two hand-maintained blocks means every new item exists on only one side.
+- `animation-fill-mode: backwards`, never `both` (persistent stacking context).
+- Token durations/easing; honor global `prefers-reduced-motion` in `tokens.css`, no per-component bypass.
+- One partial and consistent markup per component; use element-agnostic child selectors (`> :where(div, li)`).
+- Desktop/mobile nav loop over one item source.

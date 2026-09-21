@@ -1,7 +1,5 @@
 # HTMX Reference
 
-HTMX enables server-driven partial page updates via HTML attributes. It extends HTML: don't fight it.
-
 Targets **htmx 2.x**. Source: https://htmx.org/docs
 
 ---
@@ -44,70 +42,27 @@ none       : no DOM change (side-effect requests)
 
 ### Lazy-load a section
 
-```html
-<div hx-get="/dashboard/stats" hx-trigger="load" hx-swap="innerHTML">
-  <p aria-live="polite">Loading…</p>
-</div>
-```
+Use fragment URL, `hx-trigger="load"`, `hx-swap="innerHTML"`, and existing polite loading region.
 
 ### Infinite scroll
 
-```html
-<tbody id="rows">
-  <!-- rows -->
-  <tr hx-get="/rows?page=2" hx-trigger="revealed" hx-swap="afterend" hx-target="this">
-    <td colspan="4">Loading more…</td>
-  </tr>
-</tbody>
-```
+Next-page row: `hx-trigger="revealed"`, `hx-swap="afterend"`, `hx-target="this"`; request the next page and announce loading.
 
 ### Active search
 
-```html
-<input
-  type="search"
-  name="q"
-  hx-get="/search"
-  hx-trigger="input changed delay:300ms, search"
-  hx-target="#results"
-  hx-swap="innerHTML"
-  placeholder="Search…"
-  aria-controls="results"
-/>
-<ul id="results" aria-live="polite"></ul>
-```
+Search input `name="q"`, `hx-get="/search"`, `hx-trigger="input changed delay:300ms, search"`, `hx-target="#results"`, `aria-controls="results"`; existing results region `aria-live="polite"`.
 
 ### Form with validation feedback
 
-```html
-<form hx-post="/signup" hx-target="#form-feedback" hx-swap="innerHTML">
-  <div class="stack">
-    <label for="email">Email</label>
-    <input id="email" name="email" type="email" required />
-  </div>
-  <div id="form-feedback" aria-live="assertive"></div>
-  <button type="submit">Sign up</button>
-</form>
-```
+Put `hx-post` on the form, target existing assertive feedback region, label controls and use native constraints plus server validation. Load `accessibility.md` for linked errors/focus.
 
 ### Optimistic UI with `hx-swap-oob`
 
-Server can return multiple fragments. Out-of-band swaps update secondary targets:
-
-```html
-<!-- Server returns this in the response body -->
-<li id="todo-123">Updated task</li>
-<span id="todo-count" hx-swap-oob="innerHTML">5</span>
-```
+Return secondary fragments with matching IDs and `hx-swap-oob="innerHTML"` alongside the primary fragment.
 
 ### Loading indicator
 
-```html
-<button hx-post="/process" hx-indicator="#spinner">
-  Run
-</button>
-<span id="spinner" class="htmx-indicator" aria-hidden="true">Processing…</span>
-```
+Point `hx-indicator` at an `aria-hidden="true"` spinner with class `htmx-indicator`:
 
 ```css
 .htmx-indicator { display: none; }
@@ -146,7 +101,7 @@ Use `HX-Request` on the server to return partial HTML vs full page.
 
 ## MUST DO
 
-- Always pair `hx-target` with an `aria-live` region when updating content users need to notice
+- Apply `accessibility.md` for existing live regions, busy state and post-swap focus
 - Use `hx-boost="true"` on `<main>` or `<nav>` before adding individual `hx-get` attributes
 - Return only the fragment HTML for HTMX requests; return the full page otherwise (check `HX-Request` header)
 - Use `hx-indicator` for any request taking > 200ms
