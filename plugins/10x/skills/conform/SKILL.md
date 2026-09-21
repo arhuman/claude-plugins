@@ -49,11 +49,10 @@ identically everywhere. A profile that could weaken a P0 would be a way to make 
 repo pass by relabelling it, which is the failure mode this design exists to avoid.
 
 Resolution order: `CONFORM_PROFILE` env, then `10x-profile: <name>` in the repo's
-`CLAUDE.md` (beside the `10x-standard: vX.Y` stamp), then `public`.
-
-The default is the strictest on purpose. An undeclared repo must never quietly lose
-checks: narrowing the standard is an explicit act that leaves a trace in the repo,
-and the runner prints the active profile and the count it dropped on every run.
+`CLAUDE.md` or `AGENTS.md` (beside the `10x-standard: vX.Y` stamp), then the
+manifest's `default_profile`, which is `public` and strictest for the reason the
+manifest states. The runner prints the active profile and the count it dropped on
+every run, so a narrowed standard is visible in the report as well as in the repo.
 
 ## MUST DO
 

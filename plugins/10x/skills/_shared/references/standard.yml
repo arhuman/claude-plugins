@@ -82,8 +82,10 @@
 standard_version: "1.13"
 
 # Audience profiles. A repo declares one; everything else is a default, never an
-# inference. Declare it as `10x-profile: <name>` in the repo's CLAUDE.md, beside the
-# `10x-standard: vX.Y` stamp, or pass CONFORM_PROFILE=<name> to the runner.
+# inference. Declare it as `10x-profile: <name>` in the repo's CLAUDE.md or
+# AGENTS.md, beside the `10x-standard: vX.Y` stamp, or pass CONFORM_PROFILE=<name>
+# to the runner. Resolution order, as conform.sh implements it: CONFORM_PROFILE,
+# then either file, then the default below.
 #
 # The default is `public`, the strictest, on purpose: an undeclared repo must not
 # quietly lose checks. Weakening the standard is an explicit act that leaves a trace
