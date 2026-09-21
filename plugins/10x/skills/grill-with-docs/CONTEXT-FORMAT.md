@@ -1,6 +1,6 @@
 # CONTEXT.md Format
 
-The paths below assume an owned repo. On a `foreign` repo (per `10x-plan`'s
+The paths below assume an owned repo. On a `foreign` repo (per `steering`'s
 ownership table), the file lives at `.claude/project/context.md` instead; the
 shape is identical.
 

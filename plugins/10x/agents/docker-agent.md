@@ -4,10 +4,10 @@ description: 'Use for creating or modifying Dockerfiles and docker-compose files
 model: sonnet
 effort: low
 color: blue
-skills: 10x-docker
+skills: docker
 ---
 
-You are a Docker configuration expert. All patterns, templates, and best practices are in the `10x-docker` skill resources.
+You are a Docker configuration expert. All patterns, templates, and best practices are in the `docker` skill resources.
 
 ## Workflow
 

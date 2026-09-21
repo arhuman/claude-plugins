@@ -1,6 +1,6 @@
 ---
 name: lang-html
-description: 'HTML, HTMX, and CSS best practices following CUBE CSS methodology and Every Layout primitives. Use when working with HTML templates, HTMX interactions, CSS styling, or building server-rendered UI components. Not for design quality, visual identity, or scoring a screen: use 10x-frontend-design.'
+description: 'HTML, HTMX, and CSS best practices following CUBE CSS methodology and Every Layout primitives. Use when working with HTML templates, HTMX interactions, CSS styling, or building server-rendered UI components. Not for design quality, visual identity, or scoring a screen: use the `design-system` skill.'
 ---
 
 # lang-html
@@ -18,7 +18,7 @@ Load the relevant reference when the task involves:
 | HTMX | `references/htmx.md` | HTMX attributes, partial rendering, swap strategies, events |
 | Accessibility | `references/accessibility.md` | ARIA, focus management, HTMX swap announcements, forms, keyboard support |
 
-For full frontend design work (visual identity, design quality bar, novel components), the `10x-frontend-design` skill complements these rules; this skill owns the HTML/CSS/HTMX mechanics.
+For full frontend design work (visual identity, design quality bar, novel components), the `design-system` skill complements these rules; this skill owns the HTML/CSS/HTMX mechanics.
 
 ## Core Philosophy
 

@@ -5,7 +5,7 @@ It plays for skills the role standard.yml plays for repos: one written definitio
 "conformant", so authoring and auditing cannot diverge. When a rule here conflicts
 with an older skill's current shape, the rule wins and the skill is drifted.
 
-Rules are numbered S1... so 10x-conform (or a manual pass) can cite them per finding.
+Rules are numbered S1... so conform (or a manual pass) can cite them per finding.
 
 ## Universal rules (every skill)
 
@@ -13,7 +13,7 @@ Rules are numbered S1... so 10x-conform (or a manual pass) can cite them per fin
 is the only always-on text; it must say when to fire AND when not to. End every
 description with one anti-trigger clause naming the neighboring skill or command that
 covers the excluded case ("Not for X: use Y"). Overlapping skills without negative
-clauses mis-fire against each other (10x-conform vs /code-review,
+clauses mis-fire against each other (conform vs /code-review,
 grill-me vs grill-with-docs).
 
 **S2. Done-when blocks: observable exit criteria.** Every procedural phase ends with
@@ -66,16 +66,16 @@ in new skills, and a new skill matching a line's shape should carry it.
 - "Ask only questions that can change what gets built." (integrated: grill-with-docs)
 - "Stop when remaining gaps are explicit assumptions, not hidden ambiguity." (integrated: grill-with-docs Done when)
 - "A bare opinion is not a finding: tie each to a checklist item, a threshold row, a duplication site, or a confirmed defect."
-- "Never record a finding inferred from naming alone: a plausible name is not evidence." (kin to 10x-thinker phantom references)
-- "Unscannable check: mark it Not run with the reason, never invent findings for it." (integrated: 10x-conform MUST NOT, via S6)
+- "Never record a finding inferred from naming alone: a plausible name is not evidence." (kin to thinking phantom references)
+- "Unscannable check: mark it Not run with the reason, never invent findings for it." (integrated: conform MUST NOT, via S6)
 - "Never trust a delegate's claim alone: verify with a concrete check." (integrated: coder-agent Delegation)
 - "Honesty over escape: never report done until the success condition genuinely passes." (integrated: coder-agent Workflow)
 - "No silent TODO, skipped test, or placeholder mock: declare anything you bypass." (integrated: coder-agent and fixer-agent)
-- "empty, duplicate, concurrent, stale, missing, hostile, partial" (integrated: 10x-tester MUST DO)
+- "empty, duplicate, concurrent, stale, missing, hostile, partial" (integrated: testing MUST DO)
 - "Use premortem for risk: shipped, failed, why?" (integrated: grill-with-docs)
-- "Code silent on a line is not code that contradicts it." (integrated: 10x-plan init)
-- "Points to the code over a copy. Names a tech without its version." (integrated: 10x-plan init)
-- "A hook that rejects the commit is not this skill's job: report which hook and why, then stop." (integrated: 10x-commit MUST DO)
+- "Code silent on a line is not code that contradicts it." (integrated: steering init)
+- "Points to the code over a copy. Names a tech without its version." (integrated: steering init)
+- "A hook that rejects the commit is not this skill's job: report which hook and why, then stop." (integrated: commit MUST DO)
 
 ## Applying this standard to an existing skill
 

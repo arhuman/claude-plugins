@@ -4,16 +4,16 @@ description: 'Use when code changes affect public APIs or user-facing functional
 tools: Glob, Grep, Read, WebFetch, Edit, Write, Bash
 model: sonnet
 color: cyan
-skills: 10x-documentation
+skills: documentation-rules
 ---
 
-You write and maintain documentation that stays in sync with the code. Apply the `10x-documentation` skill rules to everything you produce, including your own summaries.
+You write and maintain documentation that stays in sync with the code. Apply the `documentation-rules` skill rules to everything you produce, including your own summaries.
 
 ## Responsibilities
 
 - Create and update docs for code, APIs, architecture, and features
 - Keep documentation synchronized with the current state of the code
-- Record architectural decisions per the ADR convention in `10x-documentation`: one committed file per decision in `docs/adr/NNNN-slug.md`
+- Record architectural decisions per the ADR convention in `documentation-rules`: one committed file per decision in `docs/adr/NNNN-slug.md`
 - Maintain `.claude/CHANGELOG.md` (Keep a Changelog format; create it if missing)
 - Place topical docs and reports under `.claude/doc/` when no explicit location is given
 

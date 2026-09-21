@@ -12,7 +12,7 @@ Skills reference these files with a sibling-relative path, e.g. from
 | File | Owner concept | Consumed by |
 |------|---------------|-------------|
 | `references/plan-format.md` | Plan file and phase shape, `Refs:` grammar, status enum, ordering | `loop`, `steering` |
-| `references/ux-contract.md` | `docs/ux.md` shape: screens, components, state rules, `ui_paths` | `steering`, `10x-frontend-design` |
+| `references/ux-contract.md` | `docs/ux.md` shape: screens, components, state rules, `ui_paths` | `steering`, `design-system` |
 | `references/standard.yml` | The machine-checkable engineering standard: checks, severities, profiles, probes | `conform` (its runner is a generated view of this file) |
 | `references/skill-standard.md` | How a SKILL.md is written: description clauses, Done-when blocks, one-fact-one-home | every skill, and skill reviews |
 | `references/artifacts.md` | Registry of every artifact 10x writes or reads in a target project: path, writer, reader, format, lifecycle | `steering`, `loop`, `conform`, `testing`, commands |
@@ -31,7 +31,7 @@ maturity; the binary version is pinned in `references/versions.md`.
 1. **minimal**: `references/golangci-minimal.yml`. `default: none` + 7 linters.
    Correctness/resource bugs only, no complexity program. Small tools, libs,
    early-stage code.
-2. **standard**: `../10x-makefile/references/.golangci.yml`. `default: none` +
+2. **standard**: `../makefile/references/.golangci.yml`. `default: none` +
    11 linters, encoding the shared complexity/duplication thresholds
    (gocyclo>10, gocognit>15, funlen 80, nestif 4, dupl 50) so daily linting
    measures what a review measures. Default tier for scaffolded projects.

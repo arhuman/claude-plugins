@@ -1,7 +1,7 @@
 # Pinned Tool & Action Versions (single source of truth)
 
 This file is the one place the 10x Go/CI/Makefile skills agree on versions.
-`lang-go`, `10x-makefile`, and `10x-ci` all point here so a `make tools`
+`lang-go`, `makefile`, and `ci` all point here so a `make tools`
 target, a `.golangci.yml`, and a CI workflow never pin three different
 golangci-lint versions.
 
@@ -62,7 +62,7 @@ Observed across the reference repos before this baseline was set:
 - `aquasecurity/trivy-action`: absent from this table while `standard.yml`
   graded repos on having a scan, so scan jobs were hand-written and one
   invented `0.28.0`, a tag that does not exist → **v0.36.0**, pinned here and
-  templated in `10x-ci/references/ci.yml` so nobody has to guess again.
+  templated in `ci/references/ci.yml` so nobody has to guess again.
 
 Pick the newest observed and move every repo to it; do not leave two workflows
 on different majors.

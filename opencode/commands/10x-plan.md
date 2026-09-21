@@ -20,15 +20,15 @@ To execute a phase, use `/10x:loop`.
 
 ## Context
 - Request: $ARGUMENTS
-- Full workflow: `10x-plan` skill
+- Full workflow: `steering` skill
 - Plan and phase format: `~/.config/opencode/skills/_shared/references/plan-format.md`
 - UX contract format: `~/.config/opencode/skills/_shared/references/ux-contract.md`
-- Verifiers: `~/.config/opencode/skills/10x-plan/references/verify-plan.sh`, `verify-ux.sh`
-- Ownership: `~/.config/opencode/skills/10x-plan/references/ownership.sh` (owned vs foreign repo)
+- Verifiers: `skills/steering/references/verify-plan.sh`, `verify-ux.sh`
+- Ownership: `skills/steering/references/ownership.sh` (owned vs foreign repo)
 - Plan resolution: explicit `--plan` path, else `.claude/plan/*.md`, else `PLAN.md`
 
 ## Workflow
-1. Load the `10x-plan` skill and run the requested verb end to end, following its Done-when block.
+1. Load the `steering` skill and run the requested verb end to end, following its Done-when block.
 2. State the resolved plan path before any write.
 3. Report: what was written and where, the verifier output quoted verbatim when one ran, and what needs the user's decision.
 

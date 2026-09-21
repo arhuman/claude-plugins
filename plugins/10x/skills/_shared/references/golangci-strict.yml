@@ -11,7 +11,7 @@
 # worst offender in a comment next to each gate so the next paydown is obvious.
 #
 # Tier ladder: minimal (./golangci-minimal.yml) -> standard
-#              (../../10x-makefile/references/.golangci.yml) -> strict (this file).
+#              (../../makefile/references/.golangci.yml) -> strict (this file).
 #              See ../README.md.
 #
 # Pin the golangci-lint binary to the version in ./versions.md.

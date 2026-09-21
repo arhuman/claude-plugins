@@ -13,7 +13,7 @@ shared checkout still races: in jj the working copy `@` is a real commit, one
 per workspace, and by default a repo has exactly one workspace. Two sessions
 in the same directory share one `@`, so their edits land in the same
 uncommitted change, indistinguishable once both have written, and `jj split`
-cannot untangle overlapping paths after the fact. 10x-commit's stop rule
+cannot untangle overlapping paths after the fact. commit's stop rule
 ("changes you did not make this session") is the safety net for that
 situation, not a substitute for avoiding it.
 
@@ -36,7 +36,7 @@ and everything else through `jj`.
 
 ## Landing work
 
-A workspace never pushes or merges into another workspace. Its 10x-commit
+A workspace never pushes or merges into another workspace. Its commit
 step lands the commit in the shared repo, immediately visible from every
 other workspace via `jj log`, with no sync step. What remains shared and
 mutable is exactly two things:

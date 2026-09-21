@@ -1,6 +1,6 @@
 ---
 name: lang-go
-description: 'Go coding best practices and patterns. Use when working with Go or Golang files: implementation, testing, refactoring, architectural review, goroutines, channels, interfaces, error handling, memory management, and API development. Not for Makefile or CI workflow authoring in a Go repo: use 10x-makefile and 10x-ci.'
+description: 'Go coding best practices and patterns. Use when working with Go or Golang files: implementation, testing, refactoring, architectural review, goroutines, channels, interfaces, error handling, memory management, and API development. Not for Makefile or CI workflow authoring in a Go repo: use the `makefile` and `ci` skills.'
 ---
 
 # 10x Go
@@ -35,7 +35,7 @@ Load the relevant reference when the task involves:
 - Favor generic functions over specific ones (`hasRole(string)` instead of `hasAdminRole()` and `hasWriterRole()`).
 - ALWAYS make small, atomic, incremental changes rather than big-bang rewrites.
 - **Fewer packages, more files.** A package is justified by what importing it buys the caller (an independently useful capability), not by what concept it represents. Divide packages by what they provide, files by what they import. Use functions to express generalisation, files to express separation, packages to express independence. See `references/project-structure.md`.
-- The reader's context budget and the materialization ladder are owned by `10x-thinker` Simplicity First; apply them before creating any new file, type, interface, or package.
+- The reader's context budget and the materialization ladder are owned by `thinking` Simplicity First; apply them before creating any new file, type, interface, or package.
 - **One verb layer, thin adapters.** Put business logic in a single service layer (`internal/<domain>`); make each entry point (CLI, HTTP, MCP, gRPC) a thin adapter that translates transport to a call on that layer. Surfaces then cannot drift in semantics. See `references/project-structure.md`.
 - **Composition root, not globals.** Assemble process-wide dependencies (config, `*slog.Logger`, `*sql.DB`) once into an `App`/`Store` struct in `internal/app`; hand the built value to commands. Do not reach for package-level globals or `init()` for wiring.
 - **Constructors normalize nil dependencies.** `New*` substitutes a safe default for a nil dependency (nil logger → `slog.New(slog.DiscardHandler)`, nil config → empty) instead of panicking or deferring a nil-pointer crash. See `references/interfaces.md`.
@@ -82,7 +82,7 @@ Load the relevant reference when the task involves:
 - Group imports: standard library, then third-party, then project-specific
 - Package names and all exported entities must have docstrings
 - Code must be self-documenting with clear, consistent naming
-- Comments: default to none inside function bodies, and follow the `10x-documentation` Code Comments section. It is canonical; do not restate its rules here.
+- Comments: default to none inside function bodies, and follow the `documentation-rules` Code Comments section. It is canonical; do not restate its rules here.
 - **Keep the happy path left.** Guard clauses first: preconditions read as one paragraph of early returns, then the operation. The success flow reads top to bottom at indent zero.
 - **Initialize once.** A variable acquires its identity at declaration: `customer := resolveCustomer(...)`, not `var customer Customer` followed by if/else assignment.
 - **Domain ID types.** Be suspicious of functions taking several arguments of the same type. When raw string/int IDs cross function boundaries, introduce `type UserID string` style types: extra typing, no extra architecture.
@@ -92,20 +92,20 @@ Load the relevant reference when the task involves:
 - `go.mod` sets a deliberate `go` floor and a pinned `toolchain`; the two may legitimately differ. Values and rationale live in `../_shared/references/versions.md`.
 - Functions must be small, focused, and easily testable.
 - Every new package ships at least one `_test.go` file covering its exported surface before work is reported complete.
-- **Enforce a numeric coverage gate**, not a vibe: `make cover` fails below `COVER_MIN`; the target mechanics, the default floor, and the ratchet rule (raise, never lower) live in `10x-makefile`. As a secondary rule, no package may sit at 0% coverage in a final report; if coverage is genuinely impossible (e.g., a thin `main` package), say so explicitly.
+- **Enforce a numeric coverage gate**, not a vibe: `make cover` fails below `COVER_MIN`; the target mechanics, the default floor, and the ratchet rule (raise, never lower) live in `makefile`. As a secondary rule, no package may sit at 0% coverage in a final report; if coverage is genuinely impossible (e.g., a thin `main` package), say so explicitly.
 - Dependencies must be minimal and well-justified; prefer the standard library (`log/slog`, `database/sql`, `crypto/*`, `net/http`) and pure-Go drivers before pulling a new module.
 - Performance optimizations must be measured, not assumed. Profile with pprof before optimizing.
 - Log at Debug level by default; log at Info level for one-time or important events (initialization, configuration).
 - Never log secrets, tokens, or PII: scrub before logging.
 - Use parameterized GORM queries; never concatenate user input into raw SQL.
-- Run `govulncheck ./...` in CI to detect known vulnerabilities in dependencies: see the `10x-ci` skill for the workflow that runs it (via `make audit`).
+- Run `govulncheck ./...` in CI to detect known vulnerabilities in dependencies: see the `ci` skill for the workflow that runs it (via `make audit`).
 
 ### Linting configuration
 
 - Every Go project ships a committed `.golangci.yml` (schema `version: "2"`). Do not rely on golangci-lint defaults.
 - Pick a tier from the shared ladder (`../_shared/README.md`):
   - **minimal** (`../_shared/references/golangci-minimal.yml`): small tools, libraries, early-stage code.
-  - **standard** (`../10x-makefile/references/.golangci.yml`): default; encodes the shared complexity/duplication thresholds so daily linting matches what a review measures.
+  - **standard** (`../makefile/references/.golangci.yml`): default; encodes the shared complexity/duplication thresholds so daily linting matches what a review measures.
   - **strict** (`../_shared/references/golangci-strict.yml`): mature services; security + error-wrapping + performance linters and ratchet-based complexity gates. Never raise a complexity gate to green a build; lower it one rung as offenders are refactored.
 - Pin the golangci-lint and govulncheck versions to `../_shared/references/versions.md`; the same versions must appear in the Makefile `tools` target and the CI `lint` job so the three never drift.
 

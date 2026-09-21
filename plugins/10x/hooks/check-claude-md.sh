@@ -1,6 +1,6 @@
 #!/bin/sh
 # PostToolUse hook: after a Write/Edit touching CLAUDE.md, remind the model
-# to resync the project context scaffold via the 10x-plan skill.
+# to resync the project context scaffold via the steering skill.
 command -v jq >/dev/null 2>&1 || exit 0
 fp=$(jq -r '.tool_input.file_path // empty' 2>/dev/null)
 case "$fp" in

@@ -101,7 +101,7 @@ set (`docs/adr/`). An ADR set is conformant when every file:
 - if `status: superseded`, carries a `superseded_by:` pointing at an existing file;
 - if it declares `supersedes:`/`superseded_by:`, the referenced ADR file exists.
 
-A ready-to-run checker ships with the `10x-plan` skill
+A ready-to-run checker ships with the `steering` skill
 (`references/verify-adr.sh`); treat a clean run as part of the definition of
 done, and wire it into CI where possible.
 

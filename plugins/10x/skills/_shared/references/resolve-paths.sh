@@ -6,10 +6,10 @@
 # Recognised keys: PRD TECH UX ADR CONTEXT PLANDIR ARCHIVES OWNERSHIP
 #
 # Why this exists: an artifact whose location depends on ownership has two
-# spellings, and every consumer was resolving it independently. 10x-plan writes
+# spellings, and every consumer was resolving it independently. steering writes
 # the UX contract to .claude/project/ux.md on a foreign repo (SKILL.md, the
 # owned/foreign table), while verify-plan.sh defaulted UX to docs/ux.md and the
-# 10x-loop gate tested docs/ux.md directly. On a foreign repo the writer and the
+# loop gate tested docs/ux.md directly. On a foreign repo the writer and the
 # readers therefore disagreed: the contract existed, and the gate that was
 # supposed to enforce it silently skipped, reporting a pass because it could not
 # find the file rather than because the file was conformant.
@@ -24,7 +24,7 @@
 set -eu
 
 HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-OWNERSHIP_SH="$HERE/../../10x-plan/references/ownership.sh"
+OWNERSHIP_SH="$HERE/../../steering/references/ownership.sh"
 
 REPO="${1:-}"
 case "$REPO" in
@@ -52,7 +52,7 @@ TECH="${TECH:-.claude/project/tech.md}"
 PLANDIR="${PLANDIR:-.claude/plan}"
 ARCHIVES="${ARCHIVES:-.claude/project/archives}"
 
-# Tracked artifacts: the owned/foreign pairs from 10x-plan's ownership table.
+# Tracked artifacts: the owned/foreign pairs from steering's ownership table.
 if [ "$OWN" = "foreign" ]; then
   UX="${UX:-.claude/project/ux.md}"
   ADR="${ADR:-.claude/project/decisions}"

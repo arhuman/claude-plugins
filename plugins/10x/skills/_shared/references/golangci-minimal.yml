@@ -5,7 +5,7 @@
 # bar without a ratchet program. `default: none` means ONLY the linters listed
 # below run — nothing is inherited.
 #
-# Tier ladder: minimal (this file) -> standard (../../10x-makefile/references/.golangci.yml)
+# Tier ladder: minimal (this file) -> standard (../../makefile/references/.golangci.yml)
 #              -> strict (./golangci-strict.yml). See ../README.md.
 #
 # The tier ladder scales complexity and style pressure, NOT security. gosec is

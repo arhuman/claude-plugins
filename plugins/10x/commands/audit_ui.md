@@ -14,17 +14,17 @@ Deeper than `/check_conform`'s ui.* probes: those measure standard drift; this a
 
 ## Context
 - Arguments: $ARGUMENTS
-- Runner (not copied into the repo): `skills/10x-frontend-design/references/audit-ui.sh`
-- Contract the checks enforce: `skills/10x-frontend-design/references/css-contract.md`
-- Battery documentation: `skills/10x-frontend-design/references/quality-guards.md`
+- Runner (not copied into the repo): `skills/design-system/references/audit-ui.sh`
+- Contract the checks enforce: `skills/design-system/references/css-contract.md`
+- Battery documentation: `skills/design-system/references/quality-guards.md`
 
 ## Workflow
 
-1. Load the `10x-frontend-design` skill.
-2. Run `sh skills/10x-frontend-design/references/audit-ui.sh <subcommand> [css-dir]` from the target repo root. No subcommand given means `all`. If the runner cannot find a CSS directory, ask for the path rather than guessing one.
+1. Load the `design-system` skill.
+2. Run `sh skills/design-system/references/audit-ui.sh <subcommand> [css-dir]` from the target repo root. No subcommand given means `all`. If the runner cannot find a CSS directory, ask for the path rather than guessing one.
 3. Quote the PASS/FAIL output verbatim. A FAIL line is a lead: confirm one or two findings in the source before presenting counts as verdicts (the checks are grep-grade, and hand-written CSS occasionally defeats them).
 4. Present the result grouped as a migration worklist: what blocks now (new drift above baseline), what is frozen debt (under baseline), which check each finding came from, and the single next action (usually `baseline` on a first run, or a plan phase per finding cluster).
-5. If the repo has no `make audit-ui` target, say so and offer to wire one (the `10x-makefile` skill owns that change; do not make it inside this command).
+5. If the repo has no `make audit-ui` target, say so and offer to wire one (the `makefile` skill owns that change; do not make it inside this command).
 
 ## Constraints
 - Read-only, with one exception: `baseline` writes `<css-dir>/.audit-ui-baseline` in the target repo, and only when explicitly invoked.

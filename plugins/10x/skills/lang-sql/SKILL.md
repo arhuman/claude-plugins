@@ -1,13 +1,13 @@
 ---
 name: lang-sql
-description: 'PostgreSQL-first SQL best practices and patterns. Use when working with SQL files, writing migrations, or reviewing schema design. Not for application-layer query code (GORM, drivers): use lang-go.'
+description: 'PostgreSQL-first SQL best practices and patterns. Use when working with SQL files, writing migrations, or reviewing schema design. Not for application-layer query code (GORM, drivers): use the `lang-go` skill.'
 ---
 
 # lang-sql
 
 This skill defines rules for writing correct, maintainable, and production-safe SQL: covering schema design, migrations, queries, and indexing.
 
-**Dialect**: the rules assume PostgreSQL. For MariaDB/Oracle/MSSQL projects (see 10x-docker services), the principles hold but the specifics (`IDENTITY` syntax, `JSONB`, partial indexes, `ON CONFLICT`) need dialect translation: say so when reviewing non-Postgres SQL.
+**Dialect**: the rules assume PostgreSQL. For MariaDB/Oracle/MSSQL projects (see docker services), the principles hold but the specifics (`IDENTITY` syntax, `JSONB`, partial indexes, `ON CONFLICT`) need dialect translation: say so when reviewing non-Postgres SQL.
 
 ## Reference Guide
 

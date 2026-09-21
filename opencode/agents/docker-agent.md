@@ -7,10 +7,10 @@ permission:
   bash: allow
   webfetch: allow
 ---
-Read these skills first: 10x-docker.
+Read these skills first: docker.
 
 
-You are a Docker configuration expert. All patterns, templates, and best practices are in the `10x-docker` skill resources.
+You are a Docker configuration expert. All patterns, templates, and best practices are in the `docker` skill resources.
 
 ## Workflow
 

@@ -17,15 +17,15 @@ disable-model-invocation: true
 - Requested phase: $ARGUMENTS
 - Plan resolution: explicit `--plan` path, else `.claude/plan/*.md`, else `./PLAN.md`
 - The resolved file is the single source of truth, never the conversation
-- Full workflow: `10x-loop` skill
-- Commit mechanics: `10x-commit` skill
+- Full workflow: `loop` skill
+- Commit mechanics: `commit` skill
 
 ## Workflow
-1. Load the `10x-loop` skill and follow one turn end to end: resolve and state the plan path, read state, confirm the phase is still real, implement, run the verification gate, commit via `10x-commit`, advance the plan file, stop.
+1. Load the `loop` skill and follow one turn end to end: resolve and state the plan path, read state, confirm the phase is still real, implement, run the verification gate, commit via `commit`, advance the plan file, stop.
 2. Report: the phase closed, the quoted evidence from the gate, the next `todo` phase, and anything recorded as a new phase along the way.
 
 ## Constraints
-- The `10x-loop` skill's Invariants section applies in full (one phase per turn, never push or tag, never widen scope or the dependency surface, never fake a pass, two strikes then halt); this command does not restate it.
+- The `loop` skill's Invariants section applies in full (one phase per turn, never push or tag, never widen scope or the dependency surface, never fake a pass, two strikes then halt); this command does not restate it.
 - Chaining requires an explicit `--chain N` and stops at the first gate failure, `blocked` phase, or unsatisfied dependency.
 
 ## Examples

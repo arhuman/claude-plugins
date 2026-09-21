@@ -15,15 +15,15 @@ Plugin to make Claude Code a 10x more efficient
 | Command | `/10x:propose_probe` | Turn a confirmed conformance false negative into a draft new check |
 | Command | `/10x:tellme` | Read-only technical Q&A and architectural guidance |
 | Command | `/10x:evaluate` | Multi-model comparison of an answer via PAL, synthesized into one doc |
-| Skill | `10x-plan` | Steering documentation: scaffold, execution plan, UX contract, consistency audit, ownership |
-| Skill | `10x-loop` | The work loop and its verification gate (mutation check, dependency surface, goldens) |
-| Skill | `10x-doc` | The plugin's own catalogue and glossary, derived from the files |
-| Skill | `10x-conform` | Drift from the engineering standard: `standard.yml` plus the portable runner |
-| Skill | `10x-frontend-design` | UX/frontend design system for SSR + HTMX UIs: quality grid, CSS token contract, component and accessibility rules, UI CI guards |
-| Skill | `10x-ci` | GitHub Actions CI/CD, release automation, coverage gates |
-| Skill | `10x-commit` | jj (Jujutsu) commit mechanics, hardened against recurring jj/commitlint failures |
-| Skill | `10x-thinker` | Thinking guidelines to reduce common coding mistakes |
-| Skill | `10x-docker`, `10x-makefile`, `10x-documentation`, `10x-tester` | Domain best practices (Docker, Makefiles, docs, testing) |
+| Skill | `steering` | Steering documentation: scaffold, execution plan, UX contract, consistency audit, ownership |
+| Skill | `loop` | The work loop and its verification gate (mutation check, dependency surface, goldens) |
+| Skill | `manual` | The plugin's own catalogue and glossary, derived from the files |
+| Skill | `conform` | Drift from the engineering standard: `standard.yml` plus the portable runner |
+| Skill | `design-system` | UX/frontend design system for SSR + HTMX UIs: quality grid, CSS token contract, component and accessibility rules, UI CI guards |
+| Skill | `ci` | GitHub Actions CI/CD, release automation, coverage gates |
+| Skill | `commit` | jj (Jujutsu) commit mechanics, hardened against recurring jj/commitlint failures |
+| Skill | `thinking` | Thinking guidelines to reduce common coding mistakes |
+| Skill | `docker`, `makefile`, `documentation-rules`, `testing` | Domain best practices (Docker, Makefiles, docs, testing) |
 | Skill | `lang-go`, `lang-typescript`, `lang-html`, `lang-sql` | Per-language coding standards |
 | Skill | `grill-with-docs` | Plan stress-testing against the documented domain model |
 | Agent | `conform-agent` | Audits a repo against the standard and dispatches remediation |

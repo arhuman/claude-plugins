@@ -20,13 +20,13 @@ model: sonnet
 
 ## Context
 - Request: $ARGUMENTS
-- Full workflow: `10x-doc` skill
-- Catalogue, derived: `skills/10x-doc/references/inventory.sh [--commands|--skills|--agents|--scripts]`
-- Concepts: `skills/10x-doc/references/glossary.md`
-- Project status: `skills/10x-plan/references/verify-plan.sh`, `verify-ux.sh`, `verify-adr.sh`, `ownership.sh`
+- Full workflow: `manual` skill
+- Catalogue, derived: `skills/manual/references/inventory.sh [--commands|--skills|--agents|--scripts]`
+- Concepts: `skills/manual/references/glossary.md`
+- Project status: `skills/steering/references/verify-plan.sh`, `verify-ux.sh`, `verify-adr.sh`, `ownership.sh`
 
 ## Workflow
-1. Load the `10x-doc` skill.
+1. Load the `manual` skill.
 2. Run `inventory.sh` for anything naming a command, skill or agent. Never answer that from memory.
 3. Read `glossary.md` for anything naming a concept.
 4. For project status, run the verifiers and quote their output. Outside a project, say so in one line and stop there.

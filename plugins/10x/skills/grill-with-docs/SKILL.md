@@ -53,10 +53,10 @@ When the user states how something works, check whether the code agrees. If you 
 
 ### Update CONTEXT.md inline
 
-Resolve ownership before the first write when `10x-plan` is available in the
-session: run `../10x-plan/references/ownership.sh` and, on a `foreign` verdict, write
+Resolve ownership before the first write when `steering` is available in the
+session: run `../steering/references/ownership.sh` and, on a `foreign` verdict, write
 the same content to `.claude/project/context.md` instead of a tracked root
-`CONTEXT.md`, per `10x-plan`'s ownership table. Absent `10x-plan`, default to
+`CONTEXT.md`, per `steering`'s ownership table. Absent `steering`, default to
 root `CONTEXT.md` (the common case) and say so.
 
 When a term is resolved, update `CONTEXT.md` right there. Don't batch these up: capture them as they happen. Use the format in [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md).
@@ -74,7 +74,7 @@ Only offer an ADR when the decision passes the three-part gate in [ADR-FORMAT.md
 
 Done when:
 
-- The new ADR passes the ADR-FORMAT.md Verification checklist (run `verify-adr.sh` from the 10x-plan skill when available).
+- The new ADR passes the ADR-FORMAT.md Verification checklist (run `verify-adr.sh` from the steering skill when available).
 - No `NNNN`, `{...}`, or leftover instruction line remains in the written file.
 
 </supporting-info>

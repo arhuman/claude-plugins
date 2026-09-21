@@ -1,12 +1,12 @@
 # UX contract format (v1)
 
-The authoritative shape of `docs/ux.md`. Consumed by `10x-plan` (which writes
-and audits it) and `10x-frontend-design` (which requires a screen table and a
+The authoritative shape of `docs/ux.md`. Consumed by `steering` (which writes
+and audits it) and `design-system` (which requires a screen table and a
 component registry without ever saying where they live).
 
 ## Why the file exists
 
-`10x-frontend-design` defends the CSS layer with machinery: twelve audits, a
+`design-system` defends the CSS layer with machinery: twelve audits, a
 token contract, numeric ratchets. A feature physically cannot introduce a new
 colour or spacing rhythm without touching `tokens.css`.
 
@@ -115,7 +115,7 @@ settled once, at `init`, and written down, so it is never guessed again.
 
 **"Dominant action" and "tension relieved" are the two columns that carry the
 design intent.** If you cannot fill both, the screen is not designed yet, only
-built. That rule comes from `10x-frontend-design` and is the reason the table
+built. That rule comes from `design-system` and is the reason the table
 exists at all.
 
 ## Rules
@@ -135,7 +135,7 @@ Readability/Action/Relief grid per screen. It does not survive contact: a script
 can only check that a score is *filled*, never that it is *right*, so the gate
 is satisfied by a constant, and a constant is what ends up written. Worse, it
 forces an edit to the contract on every typo fix in a template, until someone
-disables the check. The grid stays where it belongs, in `10x-frontend-design`,
+disables the check. The grid stays where it belongs, in `design-system`,
 applied by a person looking at the screen.
 
 ## What `verify-ux.sh` checks
@@ -184,5 +184,5 @@ behaviours, and the choice decides whether the file stays alive:
 - **Record the debt**: the rule applies immediately to new work, non-conforming past becomes `backlog` phases.
 
 The third, which reuses two things that already exist: the `backlog` status, and
-the ratchet doctrine of `10x-frontend-design` (a baseline that only improves,
+the ratchet doctrine of `design-system` (a baseline that only improves,
 never lowered to green a build).

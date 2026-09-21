@@ -1,6 +1,6 @@
 ---
 name: lang-typescript
-description: 'TypeScript and Angular coding best practices. Use when working with TypeScript, Angular, or Node.js files: implementation, testing, refactoring, signals, RxJS Observables, type system, strict mode, generics, and async patterns. Not for HTML templates, HTMX, or CSS: use lang-html.'
+description: 'TypeScript and Angular coding best practices. Use when working with TypeScript, Angular, or Node.js files: implementation, testing, refactoring, signals, RxJS Observables, type system, strict mode, generics, and async patterns. Not for HTML templates, HTMX, or CSS: use the `lang-html` skill.'
 ---
 # lang-typescript
 
@@ -31,7 +31,7 @@ description: 'TypeScript and Angular coding best practices. Use when working wit
 - Prefer signals (`signal`, `computed`, `input()`) for component state; use RxJS for event streams and async composition: see `./references/async.md`
 - Use `satisfies` over a widening type annotation for config objects and lookup tables: see `./references/types.md`
 - Use `const` by default; `let` only when reassignment is necessary
-- Comments: default to none inside function bodies, and follow the `10x-documentation` Code Comments section. It is canonical; do not restate its rules here.
+- Comments: default to none inside function bodies, and follow the `documentation-rules` Code Comments section. It is canonical; do not restate its rules here.
 
 ## MUST NOT
 
