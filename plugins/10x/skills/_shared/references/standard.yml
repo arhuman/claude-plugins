@@ -79,7 +79,16 @@
 #        binary, and forcing it on a library would mean a hand-maintained
 #        constant that can contradict the tag. release.goreleaser likewise stays
 #        binary-only: a library has no cross-platform artifact to build or sign.
-standard_version: "1.13"
+# v1.14: commit.no_agent_trailer. The 10x commit skill forbids appending an agent
+#        attribution trailer (Co-Authored-By: Claude, "Generated with") to a
+#        message, but nothing measured it, so the rule held only while an agent
+#        happened to read that skill. It is the one commit-hygiene property that
+#        is verifiable after the fact from history alone, and a trailer once
+#        pushed cannot be removed without rewriting published commits, so
+#        catching it as drift is the only cheap moment. P2, and universal: the
+#        misattribution is equally wrong in a private repo, so no profile drops
+#        it, though it stays below P0 because it soils history, not production.
+standard_version: "1.14"
 
 # Audience profiles. A repo declares one; everything else is a default, never an
 # inference. Declare it as `10x-profile: <name>` in the repo's CLAUDE.md or
@@ -333,6 +342,14 @@ checks:
     probe: 'grep -rqsE "commitlint" .github/workflows'
     expected: "Commit messages are checked in CI (dependency-free commitlint) AND locally (a lefthook/commit-msg hook). The convention is what makes release notes and semver derivation mechanical, so it matters wherever more than one person or one release consumes the history."
     remediation: {skill: ci, ref: shell-gates.md}
+
+  - id: commit.no_agent_trailer
+    dimension: governance
+    applies_to: [all]
+    severity: P2
+    probe: '! git log -n 200 --format=%B 2>/dev/null | grep -qiE "co-authored-by: *claude|generated with .*claude"'
+    expected: "No commit in recent history carries an agent attribution trailer (`Co-Authored-By: Claude`, a `Generated with` line). Authorship is the committer's alone. Fix forward: a trailer already pushed must not be rewritten out of published history."
+    remediation: {skill: commit}
 
   - id: supply_chain.sign_sbom
     dimension: supply-chain

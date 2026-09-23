@@ -15,7 +15,7 @@
 #                           (default: read `10x-profile:` from CLAUDE.md, else public)
 set -u
 
-STANDARD_VERSION="1.13"
+STANDARD_VERSION="1.14"
 TARGET="${1:-.}"
 cd "$TARGET" 2>/dev/null || { echo "conform: cannot enter $TARGET" >&2; exit 2; }
 
@@ -140,6 +140,7 @@ ui.cube_layers|web-app|P2||_ui_layers
 ui.color_literals|web-app|P2||_ui_no_color_literals
 ui.contract|web-app|P2||test -f docs/ux.md || test -f .claude/project/ux.md
 commit.ci_check|all|P2|private=P2,internal=P1,public=P1|grep -rqsE "commitlint" .github/workflows
+commit.no_agent_trailer|all|P2||! git log -n 200 --format=%B 2>/dev/null | grep -qiE "co-authored-by: *claude|generated with .*claude"
 supply_chain.sign_sbom|go-service,go-cli|P2|private=NA,internal=P2,public=P1|grep -qsE "sboms:|signs:" .goreleaser.y*ml
 supply_chain.scan|go-service,web-app|P2|private=P2,internal=P1,public=P1|grep -rqsE "trivy|grype|codeql" .github/workflows
 '
