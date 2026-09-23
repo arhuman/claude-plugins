@@ -34,6 +34,7 @@ Never pipe jj into `grep -q`: early grep exit can give jj broken-pipe exit 3 and
 - Modify any revision reachable from a remote bookmark, even for a one-line fix or cleaner history. Never offer "if nobody pulled" as an exception; that is unknowable.
 - Use `jj git push --allow-backwards` or `git push --force`. Fix published mistakes forward; a red historical CI result is not permission to rewrite.
 - Push before the full local gate, or leave described `@` open when work may follow.
+- Append any agent attribution trailer to a message: no `Co-Authored-By: Claude`, no `Generated with` line. Authorship is the committer's alone.
 
 ## Done when
 
@@ -42,6 +43,7 @@ Before opening the fresh change:
 - `jj log -r @ --no-graph -T description` passes repo limits (else 72/100); no body line starts with `-`.
 - `jj diff -r @ --stat` is non-empty and contains only the intended logical change; `jj status` confirms intended repo/scope.
 - A tracked root changelog accompanies `feat`/`fix`/`perf`, or the body explains user invisibility.
+- The description carries no agent attribution trailer (`Co-Authored-By`, `Generated with`).
 - Each rewritten revision was unpushed, with the required `remote_bookmarks()..<rev>` check before rewriting.
 
 For a push: bookmark pointed at the change and was tracked beforehand; full gate passed; `jj git push` exited 0 and named the moved bookmark without retrying bookmark errors into silence. Movement must be strictly forward (`Move forward bookmark <name> from <old> to <new>`), never sideways/backward; no force/backwards flags.
