@@ -88,7 +88,18 @@
 #        catching it as drift is the only cheap moment. P2, and universal: the
 #        misattribution is equally wrong in a private repo, so no profile drops
 #        it, though it stays below P0 because it soils history, not production.
-standard_version: "1.14"
+# v1.15: makefile.tool_version_pinned. A pinned tool version only binds the
+#        machines that do not already have the binary: `which golangci-lint ||
+#        make tools` accepts whatever is on PATH, so `make ci` passes locally on
+#        an older analyzer set while the same commit fails in CI, which installs
+#        the pin on a clean runner. Observed on a real repo: local v2.11.3
+#        against a pinned v2.13.2, and the two modernize/errorsastype findings
+#        that only the newer one can emit. lint.config and ci.uses_make both
+#        passed throughout, which is why this needed its own check: the drift is
+#        in the installed binary, not in any file they read. P1 rather than P0,
+#        because it weakens a gate rather than shipping a defect, and the CI side
+#        still catches what the local side missed.
+standard_version: "1.15"
 
 # Audience profiles. A repo declares one; everything else is a default, never an
 # inference. Declare it as `10x-profile: <name>` in the repo's CLAUDE.md or
@@ -181,6 +192,14 @@ checks:
     probe: 'ls .golangci.y*ml >/dev/null 2>&1'
     expected: "A committed golangci-lint v2 config with gosec enabled; thresholds mirror the standard tier (makefile references/.golangci.yml)."
     remediation: {skill: makefile, ref: .golangci.yml}
+
+  - id: makefile.tool_version_pinned
+    dimension: makefile
+    applies_to: [go]
+    severity: P1
+    probe: '! grep -qsE "^[A-Za-z_]+_VERSION *\?=" Makefile || ! grep -qsE "which +[a-z-]+ .*(MAKE). *tools" Makefile'
+    expected: "A target that pins a tool version verifies the INSTALLED version against the pin, never merely that the binary exists. `which <tool> >/dev/null || $(MAKE) tools` installs the pin only where the tool is absent, so a developer with an older copy on PATH runs a different linter than CI does, and the local gate silently becomes the weaker one. Compare the version and reinstall on mismatch."
+    remediation: {skill: makefile, ref: makefile-go.md}
 
   - id: coverage.gate
     dimension: makefile

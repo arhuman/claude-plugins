@@ -15,7 +15,7 @@
 #                           (default: read `10x-profile:` from CLAUDE.md, else public)
 set -u
 
-STANDARD_VERSION="1.14"
+STANDARD_VERSION="1.15"
 TARGET="${1:-.}"
 cd "$TARGET" 2>/dev/null || { echo "conform: cannot enter $TARGET" >&2; exit 2; }
 
@@ -121,6 +121,7 @@ compose.proxy_routing|go-service,web-app|P1||! grep -qsE "traefik\.enable=true" 
 compose.apex_domain|go-service,web-app|P2||! grep -qsE "Host\(" docker-compose.prod.yml || grep -qsE "_DOMAIN" docker-compose.prod.yml
 compose.traefik_apex|go-service,web-app|P1||grep -qsE "^up:" Makefile && grep -qsE "docker-compose\.prod\.yml" Makefile && grep -qsE "traefik\.enable=true" docker-compose.prod.yml && grep -qsE "Host\([^)]*APEX_DOMAIN" docker-compose.prod.yml
 lint.config|go|P0||ls .golangci.y*ml >/dev/null 2>&1
+makefile.tool_version_pinned|go|P1||! grep -qsE "^[A-Za-z_]+_VERSION *\?=" Makefile || ! grep -qsE "which +[a-z-]+ .*(MAKE). *tools" Makefile
 coverage.gate|go|P1||grep -qsE "COVER_MIN" Makefile
 makefile.test_split|go-service,go-lib,web-app,cli|P1||! test -f Makefile || { grep -qsE "^test:" Makefile && grep -qsE "^fulltest:" Makefile; }
 makefile.local_run|go-service,web-app|P1||grep -qsE "^local:" Makefile && grep -qsE "^up:" Makefile && grep -qsE "^down:" Makefile
