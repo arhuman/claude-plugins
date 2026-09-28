@@ -23,17 +23,19 @@ what does not is the "Harness support" matrix in `plugins/10x/README.md`,
 checked in CI against the tree. Skills are consumed straight from source (they
 are OpenCode-valid as written); commands and agents are converted into the
 committed `opencode/` tree by `scripts/gen-opencode.sh` and kept in sync by
-CI; hooks are not ported. To install, clone this repo and run:
+CI. The three PostToolUse hooks are ported too, through a generated OpenCode
+plugin (`opencode/plugins/10x-hooks.js`) that runs the very same shell scripts
+on OpenCode's `tool.execute.after` event. To install, clone this repo and run:
 
 ```bash
 sh scripts/install-opencode.sh
 ```
 
 This symlinks into `~/.config/opencode/`: the 11 commands (as `/10x-<name>`),
-the 6 agents, and the 16 skills plus their shared `_shared` references.
-`sh scripts/install-opencode.sh --uninstall` reverses it, removing only
-symlinks that point into this repo. `make install-opencode` runs the install
-and the model binding below in one step.
+the 6 agents, the hook plugin, and the 16 skills plus their shared `_shared`
+references. `sh scripts/install-opencode.sh --uninstall` reverses it, removing
+only symlinks that point into this repo. `make install-opencode` runs the
+install and the model binding below in one step.
 
 ### Models under OpenCode
 
