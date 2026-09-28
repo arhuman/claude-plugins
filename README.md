@@ -18,10 +18,12 @@ In claude code
 
 ## Install for OpenCode
 
-The same content works in [OpenCode](https://opencode.ai). Skills are consumed
-straight from source (they are OpenCode-valid as written); commands and agents
-are converted into the committed `opencode/` tree by `scripts/gen-opencode.sh`
-and kept in sync by CI. To install, clone this repo and run:
+Most of the plugin works in [OpenCode](https://opencode.ai); what does and
+what does not is the "Harness support" matrix in `plugins/10x/README.md`,
+checked in CI against the tree. Skills are consumed straight from source (they
+are OpenCode-valid as written); commands and agents are converted into the
+committed `opencode/` tree by `scripts/gen-opencode.sh` and kept in sync by
+CI; hooks are not ported. To install, clone this repo and run:
 
 ```bash
 sh scripts/install-opencode.sh

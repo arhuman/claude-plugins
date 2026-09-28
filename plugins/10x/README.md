@@ -38,6 +38,69 @@ briefs, steering docs) is catalogued in
 `skills/_shared/references/artifacts.md`: path, writer, reader, format,
 lifecycle.
 
+## Harness support
+
+What each shipped surface does under each harness. Every row names a file
+under `commands/`, `agents/`, `skills/` or `hooks/`, and every such file has a
+row: `scripts/check-harness-matrix.sh` fails CI otherwise, so this table cannot
+silently fall behind the tree. Values:
+
+- `supported`: consumed by the harness as written.
+- `generated`: converted into the committed `opencode/` tree by
+  `scripts/gen-opencode.sh`; the check confirms the generated file exists.
+- `linked`: symlinked from source by `scripts/install-opencode.sh`, unmodified.
+- `unsupported`: not delivered to that harness by this repo. Hooks are Claude
+  Code's PostToolUse shell commands; OpenCode uses a JS plugin API, and no
+  port exists yet. MCP servers marked `unsupported` are not declared by the
+  installer (`--mcp` declares `pal` only); the skills still name their tools
+  in Claude Code's id form.
+
+| Surface | Name | Claude Code | OpenCode |
+|---|---|---|---|
+| Command | `audit_ui` | supported | generated (`/10x-audit_ui`) |
+| Command | `check_conform` | supported | generated (`/10x-check_conform`) |
+| Command | `design_handoff` | supported | generated (`/10x-design_handoff`) |
+| Command | `evaluate` | supported | generated (`/10x-evaluate`) |
+| Command | `handoff` | supported | generated (`/10x-handoff`) |
+| Command | `loop` | supported | generated (`/10x-loop`) |
+| Command | `make_conform` | supported | generated (`/10x-make_conform`) |
+| Command | `manual` | supported | generated (`/10x-manual`) |
+| Command | `plan` | supported | generated (`/10x-plan`) |
+| Command | `propose_probe` | supported | generated (`/10x-propose_probe`) |
+| Command | `tellme` | supported | generated (`/10x-tellme`) |
+| Agent | `coder-agent` | supported | generated |
+| Agent | `conform-agent` | supported | generated |
+| Agent | `docker-agent` | supported | generated |
+| Agent | `documentation-agent` | supported | generated |
+| Agent | `fixer-agent` | supported | generated |
+| Agent | `tester-agent` | supported | generated |
+| Skill | `ci` | supported | linked |
+| Skill | `commit` | supported | linked |
+| Skill | `conform` | supported | linked |
+| Skill | `design-system` | supported | linked |
+| Skill | `docker` | supported | linked |
+| Skill | `documentation-rules` | supported | linked |
+| Skill | `lang-go` | supported | linked |
+| Skill | `lang-html` | supported | linked |
+| Skill | `lang-sql` | supported | linked |
+| Skill | `lang-typescript` | supported | linked |
+| Skill | `loop` | supported | linked |
+| Skill | `makefile` | supported | linked |
+| Skill | `manual` | supported | linked |
+| Skill | `steering` | supported | linked |
+| Skill | `testing` | supported | linked |
+| Skill | `thinking` | supported | linked |
+| Skill | `_shared` | supported | linked |
+| Hook | `check-claude-md` | supported | unsupported |
+| Hook | `check-dashes` | supported | unsupported |
+| Hook | `check-refs` | supported | unsupported |
+| MCP | `pal` | supported | supported |
+| MCP | `tree_sitter` | supported | unsupported |
+| MCP | `context7` | supported | unsupported |
+
+Agents under OpenCode also take their model from `opencode.json`, bound by
+`scripts/install-opencode.sh --models` (see the repository README).
+
 ## Prerequisites
 
 The plugin's skills and agents rely on three MCP servers. None are bundled: bundling would start duplicate server instances (and duplicate tool schemas) for users who already register them globally. Register them once in `~/.claude.json` under `mcpServers`:

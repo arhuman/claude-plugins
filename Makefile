@@ -33,6 +33,7 @@ check: shellcheck policy
 	@sh scripts/check-dangling-refs.sh
 	@sh scripts/check-artifact-registry.sh
 	@sh scripts/check-opencode-sync.sh
+	@sh scripts/check-harness-matrix.sh
 	@sh scripts/check-no-personal-paths.sh
 	@sh scripts/test-hooks.sh
 	@sh scripts/test-install-opencode.sh
