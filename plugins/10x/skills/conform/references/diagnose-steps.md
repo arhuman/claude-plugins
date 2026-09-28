@@ -1,7 +1,7 @@
 # Shared diagnosis steps
 
 The four steps every conformance run performs before its mode-specific work.
-They live here once so `check_conform`, `make_conform`, and `conform-agent`
+They live here once so `check-conform`, `make-conform`, and `conform-agent`
 cannot drift from each other; each cites this file instead of restating it.
 
 1. Load the `conform` skill and read `../../_shared/references/standard.yml`.

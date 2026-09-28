@@ -1,17 +1,15 @@
 ---
 description: 'Bring a repo up to the 10x engineering standard: diagnose drift, then dispatch the manifest remediations (Makefile, CI, Docker, versioning, governance, security headers, supply chain) and commit the fixes. Modifies the repo; never pushes or opens a PR.'
-argument-hint: "[repo-path]"
-disable-model-invocation: true
 ---
 
 ## Usage
-`/make_conform [repo-path]`  (default path: `.`)
+`/make-conform [repo-path]`  (default path: `.`)
 
-Diagnoses, then applies the fixes. For a read-only report, use `/check_conform`.
+Diagnoses, then applies the fixes. For a read-only report, use `/check-conform`.
 
 ## Context
 - Target: $ARGUMENTS
-- Standard manifest (source of truth): `skills/_shared/references/standard.yml`
+- Standard manifest (source of truth): `~/.config/opencode/skills/_shared/references/standard.yml`
 - Global runner (not copied into the repo): `skills/conform/references/conform.sh`
 
 ## Workflow

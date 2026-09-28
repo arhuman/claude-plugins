@@ -115,6 +115,22 @@ one. A command may declare one too, but it only reaches Claude Code: OpenCode
 cannot carry a command model outside the command definition. A new tier word
 needs a row in that file.
 
+## Naming
+
+Every id this repo ships is lowercase kebab-case, ASCII only: no underscore,
+no whitespace, no path separator. That covers a command stem, an agent id, a
+skill directory, a hook script, a generated file under `opencode/`, and an
+artifact-table prefix. `scripts/check-naming.sh`, wired into `make check`,
+walks the five source directories and the generated tree and fails on any
+violation.
+
+It also flags a command and a skill sharing a stem, since that reads as
+unsupported everywhere or as the wrong thing loading. That is reported, not
+forbidden: a command whose entire job is to invoke the skill of the same name
+is a deliberate pairing (`loop`, `manual`), listed in the script's
+`DOCUMENTED_PAIRS`. Any other repeated stem needs a rename or an entry there,
+a decision the script does not make for you.
+
 ## Version control
 
 This repo uses [jj](https://github.com/martinvonz/jj) (Jujutsu) with git colocated.

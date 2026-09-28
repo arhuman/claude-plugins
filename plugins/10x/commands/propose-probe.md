@@ -5,7 +5,7 @@ disable-model-invocation: true
 ---
 
 ## Usage
-`/propose_probe <incident description>`
+`/propose-probe <incident description>`
 
 Capture only. To apply an approved proposal, edit `standard.yml` and `conform.sh`
 per `conform`'s lockstep rule, then bump the plugin version - do not do this

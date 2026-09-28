@@ -69,7 +69,7 @@ agent the repo does not ship, an unknown key, or an id without a provider.
 Agents left unbound inherit the primary agent's model; `--doctor` reports each
 binding and flags the unbound ones.
 
-Commands are not bound. The two that declare a tier (`audit_ui`, `manual`) run
+Commands are not bound. The two that declare a tier (`audit-ui`, `manual`) run
 with the session's model under OpenCode: its config schema requires a full
 definition (`template`) on any `command.<name>` entry, so a model alone there
 invalidates the whole config.

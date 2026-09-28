@@ -154,4 +154,4 @@ Use adjacent `.golangci.yml` for standard-tier v2 complexity/duplication gates. 
 
 ## Standard conformance gate
 
-Use global `conform`: `/check_conform` to diagnose, `/make_conform` to fix. For CI load its “Enforce in CI” section and fetch at job time; no per-repo target or committed `scripts/conform.sh` copy.
+Use global `conform`: `/check-conform` to diagnose, `/make-conform` to fix. For CI load its “Enforce in CI” section and fetch at job time; no per-repo target or committed `scripts/conform.sh` copy.

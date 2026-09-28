@@ -1,11 +1,13 @@
 ---
 description: 'Assemble the ready-to-paste design brief for an external generator (a fresh Claude session, a design agent, an artifact builder): the fixed directive from the design-system skill with the three PROJECT blocks filled from the target repo. With --check, gate a returned deliverable instead. Never runs the generation itself.'
+argument-hint: "[screen ...] | --check <css-dir>"
+disable-model-invocation: true
 ---
 
 ## Usage
-`/design_handoff`                    brief for the whole project (all screens in docs/ux.md)
-`/design_handoff <screen> ...`       brief scoped to the named screens
-`/design_handoff --check <css-dir>`  gate a returned deliverable (audit + dialect diff + placement)
+`/design-handoff`                    brief for the whole project (all screens in docs/ux.md)
+`/design-handoff <screen> ...`       brief scoped to the named screens
+`/design-handoff --check <css-dir>`  gate a returned deliverable (audit + dialect diff + placement)
 
 Not `/handoff`: that command saves or restores an interrupted phase. This one delegates design work outward and gates what comes back.
 
@@ -26,7 +28,7 @@ Not `/handoff`: that command saves or restores an interrupted phase. This one de
    - COMPONENTS: the component registry from `docs/ux.md`, else `ls <css-dir>/blocks/`, else the block classes greppable from the mono-file.
 3. Assemble the brief: the directive between the two `---` markers of `design-handoff.md`, **copied verbatim**, with only the three PROJECT blocks filled. Never reword the fixed part: every paraphrase so far has dropped the constraint that mattered.
 4. Write it to `.claude/doc/design-brief-<scope>.md` and print it in full, ready to paste.
-5. Close with the return instruction: run `/design_handoff --check <css-dir>` on the deliverable.
+5. Close with the return instruction: run `/design-handoff --check <css-dir>` on the deliverable.
 
 ### Check mode (--check)
 

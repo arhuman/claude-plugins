@@ -3,9 +3,9 @@ description: 'Diagnose a repo against the 10x engineering standard (Makefile, CI
 ---
 
 ## Usage
-`/check_conform [repo-path]`  (default path: `.`)
+`/check-conform [repo-path]`  (default path: `.`)
 
-Read-only diagnosis. To apply the fixes, run `/make_conform` instead.
+Read-only diagnosis. To apply the fixes, run `/make-conform` instead.
 
 ## Context
 - Target: $ARGUMENTS

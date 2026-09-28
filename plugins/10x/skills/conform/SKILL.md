@@ -20,7 +20,7 @@ internal consistency against `versions.md`). Conform checks a *real repo*.
 | `../_shared/references/standard.yml` | Authoritative manifest: every check, its `applies_to`, `severity`, `profiles`, `probe`, `expected`, `remediation`, plus the `profiles` block and `default_profile`. Edit here first. |
 | `./references/conform.sh` | Portable POSIX runner (a generated view of the manifest). Global: it lives here in the plugin and runs against any repo via `sh ./references/conform.sh <target>`. It is **not** copied into audited repos. |
 | `./references/conformance-report.md` | The report template the agent fills. |
-| `./references/diagnose-steps.md` | The four shared diagnosis steps `check_conform`, `make_conform`, and `conform-agent` cite instead of restating. |
+| `./references/diagnose-steps.md` | The four shared diagnosis steps `check-conform`, `make-conform`, and `conform-agent` cite instead of restating. |
 | `./references/verify-lockstep.sh` | Fails when `standard.yml` and `conform.sh` diverge (version, check ids, severities, and the probe strings themselves). Run it after any manifest edit; `--self-test` proves it catches each drift kind. |
 | `./references/probe-proposal.md` | Template for drafting a candidate new/amended check from a confirmed false negative, before it touches `standard.yml`. |
 
@@ -63,7 +63,7 @@ every run, so a narrowed standard is visible in the report as well as in the rep
 - Resolve the profile before reading any result, and name it in the report header with where it came from. Report **effective** severities (post-profile), and list what the profile dropped under "Dropped by profile" rather than leaving the narrower scope implicit: a shrunken question set is not an improved repo.
 - Produce the report from `references/conformance-report.md`: headline score, per-check table, the **drift delta** versus the repo's stamped `standard_version`, and a remediation plan grouped by severity.
 - Keep `standard.yml` and `conform.sh` in lockstep. Add a check to the manifest first, then regenerate the runner. Never add a check only to the runner. Prove it with `sh ./references/verify-lockstep.sh` (exit 0) before committing any edit to either file: the rule was held by prose alone until a real slip shipped a runner that never executed the newest check.
-- When a repo audit, a `make_conform` run, or a reported incident shows that a check PASSED (or no check existed) while a real, deployed problem happened anyway, that is a confirmed false negative in the standard itself, not only a bug in one repo. Capture it with `propose_probe` before or alongside fixing the instance, so the lesson survives past this conversation.
+- When a repo audit, a `make-conform` run, or a reported incident shows that a check PASSED (or no check existed) while a real, deployed problem happened anyway, that is a confirmed false negative in the standard itself, not only a bug in one repo. Capture it with `propose-probe` before or alongside fixing the instance, so the lesson survives past this conversation.
 
 ## MUST NOT
 
@@ -75,22 +75,22 @@ every run, so a narrowed standard is visible in the report as well as in the rep
 - Pick or change a repo's profile to clear a failing check. The profile describes who consumes the repo; it is a fact about the project, not a dial. If a `public` repo fails public checks, the finding is real.
 - Give a P0 a profile override. Security and correctness do not vary by audience, and a profile that could weaken one becomes a relabelling exploit.
 - Count a profile-dropped check as a pass, or report a headline score without saying which profile produced it.
-- Apply a `propose_probe` draft to `standard.yml` or `conform.sh` without explicit human approval, or propose a new check that duplicates an existing one in spirit (fix that check's `probe` instead, and say so).
-- Push, open a pull request, or otherwise publish what `make_conform` produced. It stops at the commit; the operator decides when anything leaves the machine.
+- Apply a `propose-probe` draft to `standard.yml` or `conform.sh` without explicit human approval, or propose a new check that duplicates an existing one in spirit (fix that check's `probe` instead, and say so).
+- Push, open a pull request, or otherwise publish what `make-conform` produced. It stops at the commit; the operator decides when anything leaves the machine.
 - Rewrite history the operator did not ask you to touch. Commits parked off the main line are parked on purpose, and a detached head is a decision, not damage. Confirm what a commit is for before rebasing, squashing or abandoning it, and never "repair" a topology you did not create.
 - Trust a `jj split` reported as empty. A commit can be empty of the paths you selected while still carrying an unrelated deletion, which then silently unignores whole trees. Check what a split actually produced before building on it.
 
 ## Commands
 
-Three commands. `check_conform` and `make_conform` run the global runner from the
-plugin against a target repo; neither writes the runner into that repo. `propose_probe`
+Three commands. `check-conform` and `make-conform` run the global runner from the
+plugin against a target repo; neither writes the runner into that repo. `propose-probe`
 never touches a target repo at all - it only drafts a change to the standard itself.
 
-- **`check_conform`** [Detect, default]: run the runner against the target repo, confirm P0 leads in source, and produce the diagnosis (the report). Read-only: it never modifies the audited repo.
-- **`make_conform`** [Fix]: run the diagnosis, then for each confirmed FAIL dispatch its `remediation` (agent + skill/ref from the manifest) to apply the canonical template, re-run the runner to confirm, and **commit** the result. One atomic commit per dimension fixed, following the repo's commit convention. **Never push, never open a PR**: publishing is the operator's call, made separately and on request. Judgment and design deltas are listed for a human, never auto-applied.
-- **`propose_probe`** [Capture]: turn a confirmed false negative (a check passed, or none existed, while a real incident happened) into a draft addition to `standard.yml`, using `references/probe-proposal.md`. Writes the draft to `.claude/doc/` and stops for review; applying an approved draft follows the same lockstep rule as any other manifest edit (manifest first, then the runner, then the plugin version).
+- **`check-conform`** [Detect, default]: run the runner against the target repo, confirm P0 leads in source, and produce the diagnosis (the report). Read-only: it never modifies the audited repo.
+- **`make-conform`** [Fix]: run the diagnosis, then for each confirmed FAIL dispatch its `remediation` (agent + skill/ref from the manifest) to apply the canonical template, re-run the runner to confirm, and **commit** the result. One atomic commit per dimension fixed, following the repo's commit convention. **Never push, never open a PR**: publishing is the operator's call, made separately and on request. Judgment and design deltas are listed for a human, never auto-applied.
+- **`propose-probe`** [Capture]: turn a confirmed false negative (a check passed, or none existed, while a real incident happened) into a draft addition to `standard.yml`, using `references/probe-proposal.md`. Writes the draft to `.claude/doc/` and stops for review; applying an approved draft follows the same lockstep rule as any other manifest edit (manifest first, then the runner, then the plugin version).
 
-Remediation dispatch for `make_conform` [Fix]:
+Remediation dispatch for `make-conform` [Fix]:
 
 | remediation.agent | Delegate to | For |
 |-------------------|-------------|-----|
@@ -101,9 +101,9 @@ Remediation dispatch for `make_conform` [Fix]:
 
 Done when, per command:
 
-- `check_conform`: the runner has actually run against the target (`sh ./references/conform.sh <target>`; exit 0 = no P0 drift, 1 = P0 drift, 2 = target unreachable) and its exit code is quoted in the report. The report file exists, names the active profile and its source in the header, leaves no `<...>` placeholder (`grep -cE '<[a-z_]+>' <report>` returns 0), and every P0 FAIL row cites the source evidence that confirmed it (or is downgraded to PARTIAL).
-- `make_conform`: re-running the runner on the fixed repo exits 0, or every remaining FAIL is listed as a judgment item for a human; `jj log` shows one commit per dimension fixed; nothing was pushed.
-- `propose_probe`: the draft file exists under `.claude/doc/`, follows `references/probe-proposal.md` with no `<...>` placeholder left, and `standard.yml` and `conform.sh` are byte-identical to before the run (`jj diff` shows neither file touched).
+- `check-conform`: the runner has actually run against the target (`sh ./references/conform.sh <target>`; exit 0 = no P0 drift, 1 = P0 drift, 2 = target unreachable) and its exit code is quoted in the report. The report file exists, names the active profile and its source in the header, leaves no `<...>` placeholder (`grep -cE '<[a-z_]+>' <report>` returns 0), and every P0 FAIL row cites the source evidence that confirmed it (or is downgraded to PARTIAL).
+- `make-conform`: re-running the runner on the fixed repo exits 0, or every remaining FAIL is listed as a judgment item for a human; `jj log` shows one commit per dimension fixed; nothing was pushed.
+- `propose-probe`: the draft file exists under `.claude/doc/`, follows `references/probe-proposal.md` with no `<...>` placeholder left, and `standard.yml` and `conform.sh` are byte-identical to before the run (`jj diff` shows neither file touched).
 
 ## Enforce in CI (optional)
 
@@ -165,7 +165,7 @@ whoever scaffolds the repo, and only read by tooling (`conform.sh`,
 
 ## Reachability
 
-Invoke via the `/check_conform` (diagnose), `/make_conform` (fix), or `/propose_probe`
+Invoke via the `/check-conform` (diagnose), `/make-conform` (fix), or `/propose-probe`
 (capture) commands, or the `conform-agent`. Do not leave it only
 description-triggered: a scheduled CI job and a human must both be able to run
 it on any repo at any time.

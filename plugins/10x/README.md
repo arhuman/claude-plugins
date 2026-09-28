@@ -10,9 +10,9 @@ Plugin to make Claude Code a 10x more efficient
 | Command | `/10x:plan` | Steering documents: `init`, `status`, `add`, `rule`, `check`, `done`. Writes plans and contracts, never executes a phase |
 | Command | `/10x:loop` | One plan-driven work turn: take a phase, implement, prove it with a mutation-checked gate, commit, stop. Never pushes |
 | Command | `/10x:handoff` | Save or restore the thread of a phase interrupted mid-way (`--resume` to read it back) |
-| Command | `/10x:check_conform` | Diagnose a repo against the engineering standard and report drift. Read-only |
-| Command | `/10x:make_conform` | Apply the standard's remediations and open one PR. Modifies the repo |
-| Command | `/10x:propose_probe` | Turn a confirmed conformance false negative into a draft new check |
+| Command | `/10x:check-conform` | Diagnose a repo against the engineering standard and report drift. Read-only |
+| Command | `/10x:make-conform` | Apply the standard's remediations and open one PR. Modifies the repo |
+| Command | `/10x:propose-probe` | Turn a confirmed conformance false negative into a draft new check |
 | Command | `/10x:tellme` | Read-only technical Q&A and architectural guidance |
 | Command | `/10x:evaluate` | Multi-model comparison of an answer via PAL, synthesized into one doc |
 | Skill | `steering` | Steering documentation: scaffold, execution plan, UX contract, consistency audit, ownership |
@@ -64,16 +64,16 @@ note appended to the tool result rather than a separate hook message.
 
 | Surface | Name | Claude Code | OpenCode |
 |---|---|---|---|
-| Command | `audit_ui` | supported | generated (`/10x-audit_ui`) |
-| Command | `check_conform` | supported | generated (`/10x-check_conform`) |
-| Command | `design_handoff` | supported | generated (`/10x-design_handoff`) |
+| Command | `audit-ui` | supported | generated (`/10x-audit-ui`) |
+| Command | `check-conform` | supported | generated (`/10x-check-conform`) |
+| Command | `design-handoff` | supported | generated (`/10x-design-handoff`) |
 | Command | `evaluate` | supported | generated (`/10x-evaluate`) |
 | Command | `handoff` | supported | generated (`/10x-handoff`) |
 | Command | `loop` | supported | generated (`/10x-loop`) |
-| Command | `make_conform` | supported | generated (`/10x-make_conform`) |
+| Command | `make-conform` | supported | generated (`/10x-make-conform`) |
 | Command | `manual` | supported | generated (`/10x-manual`) |
 | Command | `plan` | supported | generated (`/10x-plan`) |
-| Command | `propose_probe` | supported | generated (`/10x-propose_probe`) |
+| Command | `propose-probe` | supported | generated (`/10x-propose-probe`) |
 | Command | `tellme` | supported | generated (`/10x-tellme`) |
 | Agent | `coder-agent` | supported | generated |
 | Agent | `conform-agent` | supported | generated |

@@ -1,13 +1,16 @@
 ---
 description: 'Run the mechanical CSS-contract audit (tokens, literals, breakpoints, theme-structure, coupling, states, bg-color) on a repo and report the findings as a migration worklist. Read-only except `baseline`, which records the literal-count ratchet.'
+argument-hint: "[check|all|baseline] [css-dir]"
+disable-model-invocation: true
+model: sonnet
 ---
 
 ## Usage
-`/audit_ui`                      run every check on the auto-detected CSS directory
-`/audit_ui <check> [css-dir]`    one of: tokens, literals, breakpoints, theme-structure, coupling, states, bg-color
-`/audit_ui baseline [css-dir]`   record the current literal count as the ratchet (the one write this command may do)
+`/audit-ui`                      run every check on the auto-detected CSS directory
+`/audit-ui <check> [css-dir]`    one of: tokens, literals, breakpoints, theme-structure, coupling, states, bg-color
+`/audit-ui baseline [css-dir]`   record the current literal count as the ratchet (the one write this command may do)
 
-Deeper than `/check_conform`'s ui.* probes: those measure standard drift; this audits the CSS contract itself.
+Deeper than `/check-conform`'s ui.* probes: those measure standard drift; this audits the CSS contract itself.
 
 ## Context
 - Arguments: $ARGUMENTS
