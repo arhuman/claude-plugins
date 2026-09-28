@@ -16,8 +16,9 @@
 # directory like .claude/doc/ would match almost any writer and check
 # nothing. Writer "nobody" rows are skipped.
 set -u
+. "$(dirname "$0")/lib.sh"
 
-REGISTRY=plugins/10x/skills/_shared/references/artifacts.md
+REGISTRY=$PLUGIN_ROOT/skills/_shared/references/artifacts.md
 [ -f "$REGISTRY" ] || { echo "missing $REGISTRY"; exit 1; }
 
 fail=0
@@ -32,9 +33,9 @@ while IFS='|' read -r _ cell_path cell_writer _rest; do
   case "$writer" in nobody*) continue ;; esac
 
   case "$writer" in
-    /*) target="plugins/10x/commands/${writer#/}.md" ;;
-    *-agent) target="plugins/10x/agents/${writer}.md" ;;
-    *) target="plugins/10x/skills/${writer}" ;;
+    /*) target="$PLUGIN_ROOT/commands/${writer#/}.md" ;;
+    *-agent) target="$PLUGIN_ROOT/agents/${writer}.md" ;;
+    *) target="$PLUGIN_ROOT/skills/${writer}" ;;
   esac
   if [ ! -e "$target" ]; then
     echo "registry names writer '$writer' but $target does not exist"

@@ -6,8 +6,9 @@
 # (references/x, ./references/x) and cross-skill/shared references
 # (../_shared/references/x, ../other-skill/references/x) are all supported.
 set -u
+. "$(dirname "$0")/lib.sh"
 fail=0
-for skill in plugins/*/skills/*/SKILL.md; do
+for skill in $(plugin_skills); do
   dir=$(dirname "$skill")
   for ref in $(grep -oE '((\.\.?/)+([A-Za-z0-9._-]+/)*)?references/[A-Za-z0-9._-]+' "$skill" | sort -u); do
     if [ ! -e "$dir/$ref" ]; then

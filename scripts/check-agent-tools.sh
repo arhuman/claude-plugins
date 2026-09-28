@@ -22,6 +22,7 @@
 # that legitimately edits code (coder, fixer, docker, documentation) does not
 # belong in this list.
 set -u
+. "$(dirname "$0")/lib.sh"
 
 # agent file basename, one per line
 ANALYSIS_AGENTS='conform-agent'
@@ -36,11 +37,7 @@ for name in $ANALYSIS_AGENTS; do
 
     # Frontmatter only: a `tools:` written in prose further down the file is not
     # a grant and must not satisfy this check.
-    tools=$(awk '
-      NR == 1 && $0 == "---" { in_fm = 1; next }
-      in_fm && $0 == "---"   { exit }
-      in_fm && /^tools:/     { sub(/^tools:[[:space:]]*/, ""); print; exit }
-    ' "$f")
+    tools=$(fm_field "$f" tools)
 
     if [ -z "$tools" ]; then
       echo "FAIL: $f declares no 'tools:' line."

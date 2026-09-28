@@ -18,6 +18,7 @@
 # throughout the skills. A bare entry that fires on prose gets silenced by
 # deleting it, which is how a guard dies.
 set -u
+. "$(dirname "$0")/lib.sh"
 
 NAMES='10x-review
 10x-authoring
@@ -34,7 +35,8 @@ review-agent
 offenders=$(
   printf '%s\n' "$NAMES" | while read -r name; do
     [ -n "$name" ] || continue
-    grep -rIln -F -- "$name" plugins/ README.md .github/ 2>/dev/null \
+    # shellcheck disable=SC2086 # the surface is a deliberate word list
+    grep -rIln -F -- "$name" $SHIPPED_SURFACE 2>/dev/null \
       | grep -v '/\.claude/' \
       | sed "s|$| mentions: $name|"
   done | sort -u
