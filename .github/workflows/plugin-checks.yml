@@ -23,6 +23,10 @@ jobs:
             | tar -xJ
           sudo mv shellcheck-v0.11.0/shellcheck /usr/local/bin/shellcheck
           shellcheck --version
+      # The pinned spproof; make check would install it anyway, but a named
+      # step keeps the download failure separate from a policy failure.
+      - name: Install spproof
+        run: make tools
       - name: Static checks
         run: make check
       - name: Validate plugin manifests (strict)

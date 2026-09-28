@@ -1,0 +1,58 @@
+# Static policy over the shipped tree, proven by `make policy` (part of
+# `make check`). Globs are scoped to plugins/10x/ and opencode/: plugins/
+# also holds a private .claude/ working directory that is not shipped.
+version: 1
+rules:
+  # Every skill, command and agent frontmatter parses and carries the field
+  # the loader matches on. An unquoted ": " inside a description used to
+  # drop the whole block silently; a parse failure is a violation here.
+  - id: frontmatter-parses
+    check: yaml_frontmatter
+    files:
+      - "plugins/10x/skills/*/SKILL.md"
+      - "plugins/10x/commands/*.md"
+      - "plugins/10x/agents/*.md"
+    with:
+      required_keys: [description]
+    message: "frontmatter must parse and carry a description; quote a value containing ': '"
+
+  # A SKILL.md is loaded whole on every trigger. Under 500 lines: detail
+  # belongs in references/ loaded on demand.
+  - id: skill-size
+    check: file_line_max
+    files: ["plugins/10x/skills/*/SKILL.md"]
+    with:
+      max: 499
+    message: "SKILL.md stays under 500 lines; move detail to references/"
+
+  # Inside the Makefile templates' makefile fences, recipes need tabs and
+  # everything else starts at column 0.
+  - id: makefile-tabs
+    check: pattern_absent
+    files: ["plugins/10x/skills/makefile/references/makefile-*.md"]
+    with:
+      pattern: "^ +[^ ]"
+      fence_lang: makefile
+    message: "space-indented line inside a makefile fence; recipes use tabs"
+
+  # Every relative markdown link resolves to a real file, so a rename breaks
+  # CI instead of 404ing when the model follows it. Code is masked by the
+  # check itself.
+  - id: markdown-links
+    check: resolvable_local_path
+    files:
+      - "plugins/10x/**/*.md"
+      - "opencode/**/*.md"
+
+  # House style, until now enforced only by a hook at write time. Code is
+  # skipped: components.md documents a dash sentinel as data.
+  - id: no-dash
+    check: pattern_absent
+    files:
+      - "plugins/10x/**/*.md"
+      - "opencode/**/*.md"
+      - "*.md"
+    with:
+      pattern: "[—–]"
+      skip_code: true
+    message: "no em or en dash; use a comma, a period, a colon or parentheses"

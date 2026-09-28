@@ -32,6 +32,15 @@ The golangci-lint version pinned here MUST equal the `version:` field passed to
 `golangci/golangci-lint-action` in CI. Config format is golangci-lint schema
 `version: "2"`.
 
+## Repository static checks
+
+| Tool | Version | Install |
+|------|---------|---------|
+| spproof | `v0.1.1` | `make tools` in this repo: the release's `install.sh` with `VERSION` pinned, checksum-verified |
+
+The Makefile's `SPPROOF_VERSION` must equal this pin; `make policy` refuses to
+run when they differ, so the two cannot drift apart silently.
+
 ## GitHub Actions (pin in every workflow)
 
 | Action | Version | Notes |

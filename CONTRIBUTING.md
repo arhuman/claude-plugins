@@ -76,11 +76,20 @@ make check
 It runs the same static checks as CI, in the same order, and stops on the first
 failure. `make help` lists every target.
 
-Three checks degrade instead of failing when a tool is missing, and say so on
-stdout: the token budget needs `tiktoken`, the frontmatter parse prefers
-`pyyaml` (it falls back to a narrower grep without it), and the shell lint
-needs `shellcheck`. CI installs all three before running `make check`, so a
-local `SKIP` line never means CI skipped it too.
+The declarative checks (frontmatter shape, SKILL.md size, Makefile template
+indentation, relative links, the no-dash rule) are one policy, `.spproof.yml`,
+proven by [spproof](https://github.com/arhuman/spproof). `make check` installs
+the pinned version into `~/.local/bin` when it is absent or stale (`make tools`
+does it explicitly); the pin lives in the Makefile and in
+`plugins/10x/skills/_shared/references/versions.md`, and the check refuses to
+run when they disagree. A rule whose globs match no file fails the run: a check
+that passes because its target moved is worse than none.
+
+Two checks degrade instead of failing when a tool is missing, and say so on
+stdout: the token budget needs `tiktoken`, and the shell lint needs
+`shellcheck`. The OpenCode sync check needs `pyyaml` for its YAML parse. CI
+installs all three before running `make check`, so a local `SKIP` line never
+means CI skipped it too.
 
 ```bash
 python3 -m pip install tiktoken==0.12.0 pyyaml
