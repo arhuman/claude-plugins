@@ -20,6 +20,7 @@ Skills reference these files with a sibling-relative path, e.g. from
 | `references/claim.sh` | Compare-and-swap phase claiming: mutex + claim token, the mechanism `plan-format.md` specifies | `loop` |
 | `references/resolve-paths.sh` | Steering-document paths for a repo, owned/foreign resolved once | `loop`, `verify-plan.sh`, `steering` |
 | `references/versions.md` | Pinned Go toolchain, golangci-lint/govulncheck, and GitHub Actions versions | `lang-go`, `makefile`, `ci` |
+| `references/tool-names.md` | MCP tool ids per harness: Claude Code `mcp__<server>__<tool>` mapped to OpenCode `<server>_<tool>` | `gen-opencode.sh` |
 | `references/golangci-minimal.yml` | golangci-lint **minimal** tier | `lang-go`, `makefile` |
 | `references/golangci-strict.yml` | golangci-lint **strict** tier (ratchet discipline) | `lang-go`, `makefile` |
 

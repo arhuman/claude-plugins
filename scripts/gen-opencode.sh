@@ -43,6 +43,22 @@ body_of() {
   awk 'c>=2{print; next} /^---$/{c++}' "$1"
 }
 
+# Build the MCP tool id substitutions from the reference table, so the mapping
+# lives in one place a reader can find. Rows look like:
+#   | `mcp__pal__debug` | `pal_debug` | coder-agent |
+# A host names MCP tools itself, so an id written for Claude Code names nothing
+# under OpenCode: the call fails even with the server configured.
+TOOL_TABLE=$SRC/skills/_shared/references/tool-names.md
+tool_id_script=$(
+  sed -n 's/^| `\(mcp__[A-Za-z0-9_]*\)` *| `\([A-Za-z0-9_]*\)` *|.*/s,\1,\2,g/p' "$TOOL_TABLE"
+)
+[ -n "$tool_id_script" ] || { echo "no tool id rows found in $TOOL_TABLE" >&2; exit 1; }
+
+# Rewrite MCP tool ids to the host's naming scheme.
+rewrite_tool_ids() {
+  sed "$tool_id_script"
+}
+
 # Rewrite plugin-tree path references to the installed skills location.
 # Anchored on a preceding backtick, space, or paren plus a known skills/
 # child prefix, so prose mentioning "skills" is never touched.
@@ -80,7 +96,7 @@ for f in "$SRC"/commands/*.md; do
     echo "$desc"
     [ -n "$tier" ] && echo "model: $(map_model "$tier")"
     echo "---"
-    body_of "$f" | rewrite_paths
+    body_of "$f" | rewrite_paths | rewrite_tool_ids
   } > "$out"
 done
 
@@ -119,9 +135,18 @@ for f in "$SRC"/agents/*.md; do
       echo "Read these skills first: $(printf '%s' "$skills" | sed 's/  */, /g')."
       echo ""
     fi
-    body_of "$f" | rewrite_paths
+    body_of "$f" | rewrite_paths | rewrite_tool_ids
   } > "$out"
 done
+
+# Self-check: no Claude-only MCP tool id survived the rewrite. A surviving id
+# has no row in tool-names.md, so it would reach OpenCode naming nothing.
+stale_ids=$(grep -rn 'mcp__' "$OUT" || true)
+if [ -n "$stale_ids" ]; then
+  echo "unrewritten MCP tool id in generated output (add a row to $TOOL_TABLE):" >&2
+  echo "$stale_ids" >&2
+  exit 1
+fi
 
 # Self-check: no plugin-tree path reference survived the rewrite.
 leftover=$(grep -rn '[ `(]skills/\(10x-\|lang-\|_shared\)\|`\.\./skills/\|`\.\./_shared/' "$OUT" || true)
