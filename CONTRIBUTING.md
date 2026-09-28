@@ -65,6 +65,33 @@ Do not create auxiliary documentation files inside a skill directory:
 
 Use `references/`, not `resources/`.
 
+## Checks
+
+Run before every commit:
+
+```bash
+make check
+```
+
+It runs the same static checks as CI, in the same order, and stops on the first
+failure. `make help` lists every target.
+
+Two checks degrade instead of failing when a python module is missing, and say
+so on stdout: the token budget needs `tiktoken`, the frontmatter parse prefers
+`pyyaml` (it falls back to a narrower grep without it). CI installs both before
+running `make check`, so a local `SKIP` line never means CI skipped it too.
+
+```bash
+python3 -m pip install tiktoken==0.12.0 pyyaml
+```
+
+After changing anything under `plugins/10x/commands/` or `plugins/10x/agents/`,
+regenerate the OpenCode tree in the same commit; never edit `opencode/` by hand.
+
+```bash
+make gen
+```
+
 ## Version control
 
 This repo uses [jj](https://github.com/martinvonz/jj) (Jujutsu) with git colocated.

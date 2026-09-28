@@ -10,35 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: SKILL.md reference pointers resolve
-        run: sh scripts/check-skill-references.sh
-      - name: Relative markdown links resolve
-        run: sh scripts/check-markdown-links.sh
-      - name: SKILL.md stays under 500 lines
-        run: sh scripts/check-skill-size.sh
-      - name: Skill corpus stays within token budget
-        run: |
-          python3 -m pip install --quiet tiktoken==0.12.0
-          python3 scripts/check-skill-tokens.py
-      - name: Makefile templates use tabs
-        run: sh scripts/check-makefile-tabs.sh
-      - name: Canonical rules not restated outside their owning skill
-        run: sh scripts/check-rule-duplication.sh
-      - name: No references to private or removed components
-        run: sh scripts/check-dangling-refs.sh
-      - name: Artifact registry matches what writers actually produce
-        run: sh scripts/check-artifact-registry.sh
-      - name: Generated opencode/ tree in sync and within OpenCode bounds
-        run: sh scripts/check-opencode-sync.sh
-      - name: Analysis agents cannot edit the code they analyse
-        run: sh scripts/check-agent-tools.sh
-      - name: Frontmatter parses as YAML
-        # pyyaml so the script takes its real-parse path; without it the script
-        # falls back to a grep for the one construct that has broken before,
-        # which is a weaker check that would pass on a novel YAML error.
-        run: |
-          python3 -m pip install --quiet pyyaml
-          sh scripts/check-frontmatter-parses.sh
+      # Installed before `make check` so the token-budget and frontmatter
+      # checks take their real path: both degrade to a weaker check (or skip)
+      # when their import is missing, which would pass silently here.
+      - name: Check dependencies
+        run: python3 -m pip install --quiet tiktoken==0.12.0 pyyaml
+      - name: Static checks
+        run: make check
       - name: Validate plugin manifests (strict)
         run: |
           npm install -g @anthropic-ai/claude-code
