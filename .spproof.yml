@@ -44,6 +44,25 @@ rules:
       - "plugins/10x/**/*.md"
       - "opencode/**/*.md"
 
+  # Analysis agents must not be able to edit the code they analyse: a
+  # subagent asked "is this finding real?" reaches for the most direct
+  # answer, changing the code, and the mutation stays in a tree whose owner
+  # is reading a report. Write stays: the report is the deliverable. The
+  # file is named, not globbed, so a renamed agent leaves the rule with no
+  # file and make policy's coverage guard fails the run. split reads the
+  # one-line `tools: A, B, C` form Claude Code documents; tokens compare
+  # whole, so MultiEdit never matches Edit.
+  - id: agent-tools
+    check: yaml_frontmatter
+    files: ["plugins/10x/agents/conform-agent.md"]
+    with:
+      required_keys: [tools]
+      key_constraints:
+        tools:
+          forbidden: [Edit, NotebookEdit]
+          split: ","
+    message: "analysis agent: declare a tools allowlist without Edit or NotebookEdit; keep Write for the report and Task for dispatch"
+
   # House style, until now enforced only by a hook at write time. Code is
   # skipped: components.md documents a dash sentinel as data.
   - id: no-dash

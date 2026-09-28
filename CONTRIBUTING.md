@@ -77,7 +77,8 @@ It runs the same static checks as CI, in the same order, and stops on the first
 failure. `make help` lists every target.
 
 The declarative checks (frontmatter shape, SKILL.md size, Makefile template
-indentation, relative links, the no-dash rule) are one policy, `.spproof.yml`,
+indentation, relative links, the no-dash rule, the analysis agents' tool
+allowlist) are one policy, `.spproof.yml`,
 proven by [spproof](https://github.com/arhuman/spproof). `make check` installs
 the pinned version into `~/.local/bin` when it is absent or stale (`make tools`
 does it explicitly); the pin lives in the Makefile and in

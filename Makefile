@@ -8,7 +8,7 @@ OPENCODE_OUT ?= opencode
 # spproof proves .spproof.yml over the tree. The pin is the one place the
 # version lives; versions.md must agree (policy checks it) and tools installs
 # exactly it through the release's install.sh, which verifies checksums.
-SPPROOF_VERSION ?= v0.1.1
+SPPROOF_VERSION ?= v0.2.0
 SPPROOF_INSTALL_DIR ?= $(HOME)/.local/bin
 SPPROOF ?= $(SPPROOF_INSTALL_DIR)/spproof
 
@@ -33,7 +33,6 @@ check: shellcheck policy
 	@sh scripts/check-dangling-refs.sh
 	@sh scripts/check-artifact-registry.sh
 	@sh scripts/check-opencode-sync.sh
-	@sh scripts/check-agent-tools.sh
 	@sh scripts/check-no-personal-paths.sh
 	@sh scripts/test-hooks.sh
 	@sh scripts/test-install-opencode.sh
