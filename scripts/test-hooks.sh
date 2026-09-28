@@ -2,12 +2,31 @@
 # Feed fixed PostToolUse payloads to the three hooks and assert exit code and
 # output. The degraded-dependency cases are the point: the hooks were silently
 # inert without jq, so "reports nothing" must be a test failure, not a pass.
+#
+# Usage: sh scripts/test-hooks.sh [--harness claude|opencode]
+# Without --harness both run. claude feeds the hooks directly; opencode feeds
+# OpenCode-shaped tool.execute.after events through the generated adapter
+# (opencode/plugins/10x-hooks.js) and reads what it appends to the tool
+# output, which is the only channel a hook has to the model there.
 set -u
 
 REPO=$(git rev-parse --show-toplevel 2>/dev/null) || REPO=$(cd "$(dirname "$0")/.." && pwd)
 HOOKS="$REPO/plugins/10x/hooks"
+ADAPTER="$REPO/opencode/plugins/10x-hooks.js"
 WORK=$(mktemp -d) || exit 1
 trap 'rm -rf "$WORK"' EXIT
+
+HARNESS=all
+case "${1:-}" in
+  "") ;;
+  --harness)
+    case "${2:-}" in
+      claude|opencode) HARNESS=$2 ;;
+      *) echo "usage: sh scripts/test-hooks.sh [--harness claude|opencode]" >&2; exit 2 ;;
+    esac
+    ;;
+  *) echo "usage: sh scripts/test-hooks.sh [--harness claude|opencode]" >&2; exit 2 ;;
+esac
 
 fail=0
 pass=0
@@ -38,6 +57,8 @@ check() {
 
 md="$WORK/doc.md"
 printf 'clean prose line\n' > "$md"
+
+if [ "$HARNESS" != opencode ]; then
 
 # --- check-dashes.sh -------------------------------------------------------
 
@@ -147,6 +168,114 @@ EOF
     pass=$((pass + 1))
   fi
 done
+
+fi # HARNESS != opencode
+
+if [ "$HARNESS" != claude ]; then
+
+# --- OpenCode: the same hooks behind the generated adapter ------------------
+#
+# Each case is a tool.execute.after event as OpenCode sends it (tool id and
+# camelCase args) plus the tool output the model would read. The adapter
+# must leave that output untouched when no hook reports, and append the
+# hook's message when one does. The adapter is JavaScript; OpenCode runs it
+# under Bun, the suite under whichever of node or bun is installed. Neither
+# present is a failure, not a skip: a suite that skips proves nothing.
+
+JS=$(command -v node 2>/dev/null || command -v bun 2>/dev/null || true)
+if [ -z "$JS" ]; then
+  echo "FAIL opencode/runtime: node or bun is required to drive $ADAPTER"
+  fail=$((fail + 1))
+fi
+
+# oc_check <label> <expected-substring-or-empty> <<event
+# The event's "output" field is always "tool result": silence means the
+# adapter printed exactly that back.
+oc_check() {
+  label=$1 want_text=$2
+  [ -n "$JS" ] || return
+  out=$("$JS" "$ADAPTER" 2>"$WORK/stderr")
+  got=$?
+  if [ "$got" != 0 ]; then
+    echo "FAIL opencode/$label: adapter exit $got"
+    sed 's/^/  /' "$WORK/stderr"
+    fail=$((fail + 1))
+    return
+  fi
+  if [ -n "$want_text" ] && ! printf '%s' "$out" | grep -q "$want_text"; then
+    echo "FAIL opencode/$label: tool output missing '$want_text'"
+    printf '  got: %s\n' "$out"
+    fail=$((fail + 1))
+    return
+  fi
+  if [ -z "$want_text" ] && [ "$out" != "tool result" ]; then
+    echo "FAIL opencode/$label: expected the tool output untouched, got: $out"
+    fail=$((fail + 1))
+    return
+  fi
+  pass=$((pass + 1))
+}
+
+oc_check "write-violating" 'em/en dash' <<EOF
+{"tool":"write","args":{"filePath":"$md","content":"a line with an — dash"},"output":"tool result"}
+EOF
+
+oc_check "write-clean" "" <<EOF
+{"tool":"write","args":{"filePath":"$md","content":"a clean line, punctuated properly"},"output":"tool result"}
+EOF
+
+oc_check "edit-preexisting-context" "" <<EOF
+{"tool":"edit","args":{"filePath":"$md","oldString":"legacy line with — dash","newString":"legacy line with — dash\nan added clean line"},"output":"tool result"}
+EOF
+
+oc_check "edit-new-dash" 'em/en dash' <<EOF
+{"tool":"edit","args":{"filePath":"$md","oldString":"legacy line","newString":"legacy line\nfreshly written — dash"},"output":"tool result"}
+EOF
+
+oc_check "code-file-ignored" "" <<EOF
+{"tool":"write","args":{"filePath":"$WORK/x.go","content":"// a — dash in code"},"output":"tool result"}
+EOF
+
+oc_check "claude-md/triggers" '10x:plan check' <<EOF
+{"tool":"write","args":{"filePath":"$WORK/CLAUDE.md","content":"anything"},"output":"tool result"}
+EOF
+
+printf 'Run `scripts/definitely-absent-xyz.sh` to proceed.\n' > "$WORK/phantom.md"
+oc_check "refs/phantom-reported" 'Phantom reference check' <<EOF
+{"tool":"write","args":{"filePath":"$WORK/phantom.md","content":"ignored, the hook reads the file"},"output":"tool result"}
+EOF
+
+# Any other tool is none of the hooks' business, whatever its args carry.
+oc_check "other-tool-ignored" "" <<EOF
+{"tool":"bash","args":{"command":"echo — dash"},"output":"tool result"}
+EOF
+
+# The message names the hook, so the model can tell a check from the tool's
+# own output.
+oc_check "names-the-hook" '\[10x hook check-dashes.sh\]' <<EOF
+{"tool":"write","args":{"filePath":"$md","content":"a line with an — dash"},"output":"tool result"}
+EOF
+
+# install-opencode.sh links the adapter into ~/.config/opencode/plugins/; it
+# must find hooks.json from its real path, not from the link's directory.
+if [ -n "$JS" ]; then
+  mkdir -p "$WORK/plugins"
+  ln -sf "$ADAPTER" "$WORK/plugins/10x-hooks.js"
+  out=$("$JS" "$WORK/plugins/10x-hooks.js" 2>"$WORK/stderr" <<EOF
+{"tool":"write","args":{"filePath":"$md","content":"a line with an — dash"},"output":"tool result"}
+EOF
+)
+  if printf '%s' "$out" | grep -q 'em/en dash'; then
+    pass=$((pass + 1))
+  else
+    echo "FAIL opencode/via-symlink: hooks not found through the installed link"
+    printf '  got: %s\n' "$out"
+    sed 's/^/  /' "$WORK/stderr"
+    fail=$((fail + 1))
+  fi
+fi
+
+fi # HARNESS != claude
 
 echo "hooks: $pass passed, $fail failed"
 [ "$fail" -eq 0 ] || exit 1

@@ -1,9 +1,11 @@
 #!/bin/sh
 # Install (default) or remove (--uninstall) the OpenCode-facing tree as
-# symlinks under ~/.config/opencode/: generated commands and agents from
-# opencode/, and the skills straight from plugins/10x/skills/ (they are
-# OpenCode-valid at source; _shared is linked as a sibling so the skills'
-# ../_shared/references/... paths keep resolving).
+# symlinks under ~/.config/opencode/: generated commands, agents and the
+# hook adapter plugin from opencode/, and the skills straight from
+# plugins/10x/skills/ (they are OpenCode-valid at source; _shared is linked
+# as a sibling so the skills' ../_shared/references/... paths keep
+# resolving). The plugin link must stay a link: the adapter finds the hook
+# scripts from its real path in the repo.
 #
 # Idempotent. Never touches a target that exists and is not a symlink:
 # real user files are warned about and skipped, both ways. Uninstall only
@@ -84,7 +86,7 @@ unlink_one() {
 # $1 is the action: "list" prints, "prune" removes.
 sweep_orphans() {
   act=$1
-  for d in commands agents skills; do
+  for d in commands agents skills plugins; do
     for dst in "$CFG/$d"/*; do
       [ -L "$dst" ] || continue
       target=$(readlink "$dst")
@@ -135,6 +137,9 @@ each_target() {
   done
   for f in "$REPO"/opencode/agents/*.md; do
     "$act" "$f" "$CFG/agents/$(basename "$f")"
+  done
+  for f in "$REPO"/opencode/plugins/*.js; do
+    "$act" "$f" "$CFG/plugins/$(basename "$f")"
   done
   for d in "$REPO"/plugins/10x/skills/*/; do
     d=${d%/}
@@ -420,7 +425,7 @@ PY
 # Report what is installed and whether PAL is reachable, changing nothing.
 run_doctor() {
   rc=0
-  for d in commands agents skills; do
+  for d in commands agents skills plugins; do
     n=0
     # -L before -e: a dangling symlink fails -e, so testing -e first would
     # skip exactly the case worth reporting.
@@ -471,7 +476,7 @@ PY
 
 case "$MODE" in
   install)
-    mkdir -p "$CFG/commands" "$CFG/agents" "$CFG/skills"
+    mkdir -p "$CFG/commands" "$CFG/agents" "$CFG/skills" "$CFG/plugins"
     each_target link_one
     echo "done: $linked linked, $skipped skipped"
     ;;
@@ -520,7 +525,7 @@ case "$MODE" in
   *)
     cat >&2 <<'MSG'
 usage: sh scripts/install-opencode.sh [MODE]
-  (none)       link commands, agents and skills into ~/.config/opencode
+  (none)       link commands, agents, skills and the hook plugin into ~/.config/opencode
   --dry-run    print what install would do, write nothing
   --list       report every managed path as healthy, broken, foreign or absent
   --prune      remove links this repo owns whose source no longer exists

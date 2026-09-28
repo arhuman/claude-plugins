@@ -42,6 +42,12 @@ if [ "$ONLY" != "--mcp" ]; then
   [ -L "$h/.config/opencode/skills/_shared" ] && ok \
     || ko "install/shared-linked" "_shared not linked, skill references would break"
 
+  # The hook adapter is a link, not a copy: it locates the hook scripts from
+  # its real path in the repo.
+  [ -L "$h/.config/opencode/plugins/10x-hooks.js" ] \
+    && [ "$(readlink "$h/.config/opencode/plugins/10x-hooks.js")" = "$REPO/opencode/plugins/10x-hooks.js" ] \
+    && ok || ko "install/plugin-linked" "hook adapter not linked into plugins/"
+
   # Reinstall must be idempotent, not additive.
   before=$(find "$h/.config/opencode" -type l | sort)
   HOME="$h" sh "$INST" >/dev/null 2>&1
@@ -64,7 +70,7 @@ if [ "$ONLY" != "--mcp" ]; then
   [ -L "$foreign" ] && ok || ko "uninstall/leaves-foreign-symlink" "removed a link it does not own"
   [ -f "$real" ] && ok || ko "uninstall/preserves-real-file" "removed the user's real file"
 
-  n=$(find "$h/.config/opencode/agents" -type l 2>/dev/null | wc -l | tr -d ' ')
+  n=$(find "$h/.config/opencode/agents" "$h/.config/opencode/plugins" -type l 2>/dev/null | wc -l | tr -d ' ')
   [ "$n" -eq 0 ] && ok || ko "uninstall/removes-own-links" "$n managed link(s) left behind"
 fi
 
@@ -82,8 +88,10 @@ if [ "$ONLY" != "--mcp" ]; then
   # Forge what an earlier version of this repo would have left behind.
   orphan_cmd="$h/.config/opencode/commands/10x-gone.md"
   orphan_skill="$h/.config/opencode/skills/10x-old-name"
+  orphan_plugin="$h/.config/opencode/plugins/10x-old-hooks.js"
   ln -sfn "$REPO/opencode/commands/10x-gone.md" "$orphan_cmd"
   ln -sfn "$REPO/plugins/10x/skills/10x-old-name" "$orphan_skill"
+  ln -sfn "$REPO/opencode/plugins/10x-old-hooks.js" "$orphan_plugin"
 
   out=$(HOME="$h" sh "$INST" --list 2>&1)
   printf '%s' "$out" | grep -q 'orphan:.*10x-gone.md' && ok \
@@ -104,7 +112,7 @@ if [ "$ONLY" != "--mcp" ]; then
     && ko "list/foreign-not-orphan" "claimed a dangling link it does not own" || ok
 
   out=$(HOME="$h" sh "$INST" --prune 2>&1)
-  [ ! -L "$orphan_cmd" ] && [ ! -L "$orphan_skill" ] && ok \
+  [ ! -L "$orphan_cmd" ] && [ ! -L "$orphan_skill" ] && [ ! -L "$orphan_plugin" ] && ok \
     || ko "prune/removes-orphans" "$out"
   [ -L "$foreign" ] && ok || ko "prune/keeps-foreign" "pruned a dangling link it does not own"
 

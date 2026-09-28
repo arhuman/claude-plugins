@@ -49,11 +49,18 @@ silently fall behind the tree. Values:
 - `generated`: converted into the committed `opencode/` tree by
   `scripts/gen-opencode.sh`; the check confirms the generated file exists.
 - `linked`: symlinked from source by `scripts/install-opencode.sh`, unmodified.
-- `unsupported`: not delivered to that harness by this repo. Hooks are Claude
-  Code's PostToolUse shell commands; OpenCode uses a JS plugin API, and no
-  port exists yet. MCP servers marked `unsupported` are not declared by the
-  installer (`--mcp` declares `pal` only); the skills still name their tools
-  in Claude Code's id form.
+- `unsupported`: not delivered to that harness by this repo. MCP servers
+  marked `unsupported` are not declared by the installer (`--mcp` declares
+  `pal` only); the skills still name their tools in Claude Code's id form.
+
+Hooks are Claude Code's PostToolUse shell commands, declared in
+`hooks/hooks.json`. OpenCode has a JS plugin API instead, so the generated
+`opencode/plugins/10x-hooks.js` (linked by the installer) runs those same
+scripts on its `tool.execute.after` event for `write` and `edit`, rebuilding
+the payload they read, and appends what a hook reports to the tool output the
+model sees. One implementation, two harnesses; `scripts/test-hooks.sh` drives
+both. The model reads a hook's verdict either way, but under OpenCode it is a
+note appended to the tool result rather than a separate hook message.
 
 | Surface | Name | Claude Code | OpenCode |
 |---|---|---|---|
@@ -91,9 +98,9 @@ silently fall behind the tree. Values:
 | Skill | `testing` | supported | linked |
 | Skill | `thinking` | supported | linked |
 | Skill | `_shared` | supported | linked |
-| Hook | `check-claude-md` | supported | unsupported |
-| Hook | `check-dashes` | supported | unsupported |
-| Hook | `check-refs` | supported | unsupported |
+| Hook | `check-claude-md` | supported | supported (via `plugins/10x-hooks.js`) |
+| Hook | `check-dashes` | supported | supported (via `plugins/10x-hooks.js`) |
+| Hook | `check-refs` | supported | supported (via `plugins/10x-hooks.js`) |
 | MCP | `pal` | supported | supported |
 | MCP | `tree_sitter` | supported | unsupported |
 | MCP | `context7` | supported | unsupported |

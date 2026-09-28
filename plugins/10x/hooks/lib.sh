@@ -8,6 +8,11 @@
 # A hook must never block an edit because a tool is missing, so a missing
 # python3 still exits 0. It says so on stderr first: the failure mode this
 # replaces was silence, not strictness.
+#
+# The payload shape read here (tool_input.file_path, content, old_string,
+# new_string, edits[]) is the contract for both harnesses: under OpenCode the
+# generated opencode/plugins/10x-hooks.js rebuilds it from the tool.execute.after
+# event and runs these same scripts. A new key read here must be mapped there.
 
 # hook_payload: read the hook JSON from stdin into $HOOK_JSON.
 # Call once, before any other helper. Exits 0 (skipping the check) when
