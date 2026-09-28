@@ -386,5 +386,79 @@ out=$(HOME="$h" sh "$INST" --doctor 2>&1)
 [ "$?" != 0 ] && printf '%s' "$out" | grep -q 'missing on disk' && ok \
   || ko "doctor/reports-missing-binary" "$out"
 
+# --- uninstall config handling -----------------------------------------------
+#
+# P29: uninstall leaves mcp.pal and model bindings by default, and provides
+# --purge-config to remove them explicitly. Unrelated config keys must survive.
+
+h=$(fresh_home uninstall-config)
+rm -f "$h/.config/opencode/opencode.json"
+
+# Install links, then --mcp and --models to populate config entries.
+HOME="$h" sh "$INST" >/dev/null 2>&1
+HOME="$h" sh "$INST" --mcp --pal-path "$pal" >/dev/null 2>&1
+HOME="$h" sh "$INST" --models >/dev/null 2>&1
+
+# Plant a marker key that uninstall must not touch.
+python3 - "$h/.config/opencode/opencode.json" <<'PY'
+import json, sys
+cfg = sys.argv[1]
+with open(cfg, "r") as f:
+    doc = json.load(f)
+doc["my_custom_key"] = "preserve me"
+with open(cfg, "w") as f:
+    json.dump(doc, f, indent=2)
+    f.write("\n")
+PY
+
+# Verify both mcp.pal and model bindings exist before plain uninstall.
+if python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
+import json, sys
+doc = json.load(open(sys.argv[1], "r"))
+assert "pal" in doc.get("mcp", {}), "mcp.pal missing"
+assert any("model" in doc.get("agent", {}).get(n, {})
+           for n in ["coder-agent", "fixer-agent", "tester-agent"]), "no agent models"
+PY
+then ok; else ko "uninstall-config/setup" "config not populated correctly"; fi
+
+# Plain --uninstall must leave both mcp.pal and model bindings.
+out=$(HOME="$h" sh "$INST" --uninstall 2>&1)
+if python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
+import json, sys
+doc = json.load(open(sys.argv[1], "r"))
+assert "pal" in doc.get("mcp", {}), "mcp.pal was removed"
+assert any("model" in doc.get("agent", {}).get(n, {})
+           for n in ["coder-agent", "fixer-agent", "tester-agent"]), "model bindings were removed"
+PY
+then ok; else ko "uninstall-config/leaves-mcp-pal" "mcp.pal or models were removed"; fi
+
+if python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
+import json, sys
+doc = json.load(open(sys.argv[1], "r"))
+assert doc.get("my_custom_key") == "preserve me", "marker key was modified"
+PY
+then ok; else ko "uninstall-config/preserves-marker" "marker key was not preserved"; fi
+
+printf '%s' "$out" | grep -q 'opencode.json still declares.*mcp.pal.*model binding' && ok \
+  || ko "uninstall-config/warns-about-leftovers" "warning not printed: $out"
+
+# --uninstall --purge-config must remove both.
+out=$(HOME="$h" sh "$INST" --uninstall --purge-config 2>&1)
+if python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
+import json, sys
+doc = json.load(open(sys.argv[1], "r"))
+assert "pal" not in doc.get("mcp", {}), "mcp.pal was not removed"
+assert not any("model" in doc.get("agent", {}).get(n, {})
+               for n in ["coder-agent", "fixer-agent", "tester-agent"]), "model bindings were not removed"
+PY
+then ok; else ko "uninstall-config/purge-removes-config" "mcp.pal or models were not removed"; fi
+
+if python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
+import json, sys
+doc = json.load(open(sys.argv[1], "r"))
+assert doc.get("my_custom_key") == "preserve me", "marker key was modified"
+PY
+then ok; else ko "uninstall-config/purge-preserves-marker" "marker key was not preserved after purge"; fi
+
 echo "install-opencode: $pass passed, $fail failed"
 [ "$fail" -eq 0 ] || exit 1

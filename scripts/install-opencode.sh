@@ -489,6 +489,69 @@ PY
   return $rc
 }
 
+# Check for and optionally remove mcp.pal and agent model bindings from opencode.json.
+# purge_config [--purge] removes them; without --purge, just reports what was left.
+purge_config() {
+  purge=${1:-}
+  if [ ! -f "$CFG/opencode.json" ]; then
+    return 0
+  fi
+  python3 - "$CFG/opencode.json" "$REPO" "$purge" <<'PY'
+import json, os, sys
+
+target, repo, purge = sys.argv[1], sys.argv[2], sys.argv[3]
+
+try:
+    with open(target, encoding="utf-8") as fh:
+        doc = json.load(fh)
+except (FileNotFoundError, ValueError):
+    sys.exit(0)
+
+def stems(subdir):
+    d = os.path.join(repo, "plugins", "10x", subdir)
+    try:
+        return sorted(f[:-3] for f in os.listdir(d) if f.endswith(".md"))
+    except OSError:
+        return []
+
+has_pal = "mcp" in doc and "pal" in doc.get("mcp", {})
+agents = stems("agents")
+agent_entries = doc.get("agent", {})
+model_bindings = [n for n in agents if n in agent_entries and "model" in agent_entries[n]]
+
+if purge == "--purge":
+    if has_pal or model_bindings:
+        if has_pal:
+            del doc["mcp"]["pal"]
+            if not doc["mcp"]:
+                del doc["mcp"]
+        for name in model_bindings:
+            del doc["agent"][name]["model"]
+            if not doc["agent"][name]:
+                del doc["agent"][name]
+            if not doc["agent"]:
+                del doc["agent"]
+
+        tmp = target + ".10x-tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(doc, fh, indent=2)
+            fh.write("\n")
+        os.replace(tmp, target)
+else:
+    if has_pal or model_bindings:
+        parts = []
+        if has_pal:
+            parts.append("mcp.pal")
+        if model_bindings:
+            count = len(model_bindings)
+            binding_text = "model binding(s)" if count != 1 else "model binding"
+            parts.append(f"{count} {binding_text}")
+
+        what = " and ".join(parts)
+        print(f"opencode.json still declares {what}; remove by hand or see --uninstall --purge-config")
+PY
+}
+
 case "$MODE" in
   install)
     mkdir -p "$CFG/commands" "$CFG/agents" "$CFG/skills" "$CFG/plugins"
@@ -501,6 +564,11 @@ case "$MODE" in
     # leaving it behind is what made uninstall incomplete.
     sweep_orphans prune
     echo "done: $removed removed, $skipped skipped"
+    if [ "${2:-}" = "--purge-config" ]; then
+      purge_config --purge
+    else
+      purge_config
+    fi
     ;;
   --list)
     each_target list_one
@@ -544,7 +612,8 @@ usage: sh scripts/install-opencode.sh [MODE]
   --dry-run    print what install would do, write nothing
   --list       report every managed path as healthy, broken, foreign or absent
   --prune      remove links this repo owns whose source no longer exists
-  --uninstall  remove this repo's links, orphans included
+  --uninstall [--purge-config]  remove this repo's links, orphans included;
+               --purge-config also removes mcp.pal and agent model bindings
   --mcp [--pal-path DIR]  declare the PAL MCP server
   --models [FILE]  bind agents to model ids in opencode.json,
                from scripts/opencode-models.json plus FILE (default:
