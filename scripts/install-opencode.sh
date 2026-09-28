@@ -8,6 +8,14 @@
 # Idempotent. Never touches a target that exists and is not a symlink:
 # real user files are warned about and skipped, both ways. Uninstall only
 # removes symlinks that resolve into this repo.
+#
+# --models binds each agent to a model id in opencode.json. The generated tree
+# carries no model: an agent file's model: line overrides opencode.json
+# (config.ts merges agent Markdown over the JSON), so a pinned id there could
+# never be changed by the user. Binding in the JSON keeps the tree
+# provider-neutral and the choice local. Commands are not bound: OpenCode's
+# schema requires a full definition (template) on any command.<name> entry, so
+# a JSON entry carrying only a model invalidates the whole config.
 set -u
 
 REPO=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -254,6 +262,161 @@ os.replace(tmp, target)
 PY
 }
 
+# Bind every agent to a model id in the user's opencode.json.
+#
+# Resolution: the override file (argument, else $CFG/10x-models.json when it
+# exists) is merged key by key over scripts/opencode-models.json; an agent
+# then takes its `agents` entry, else the entry of its tier under `tiers`.
+# The tier is read from the plugin source frontmatter (model: opus|sonnet|
+# haiku), the same word Claude Code consumes natively.
+#
+# The bound entries are owned by this installer and rewritten on every run:
+# a value the user wants to keep belongs in the override file, not in
+# opencode.json by hand. Every other key of the config is preserved.
+# install_models [OVERRIDE_FILE]
+install_models() {
+  override=${1:-}
+  if [ -z "$override" ] && [ -f "$CFG/10x-models.json" ]; then
+    override="$CFG/10x-models.json"
+  fi
+  if [ -n "$override" ] && [ ! -f "$override" ]; then
+    echo "models override file not found: $override" >&2
+    exit 2
+  fi
+  mkdir -p "$CFG"
+  python3 - "$CFG/opencode.json" "$REPO" "$override" <<'PY'
+import json, os, sys
+
+target, repo, override = sys.argv[1], sys.argv[2], sys.argv[3]
+KEYS = ("tiers", "agents")
+
+
+def load_table(path, label):
+    with open(path, encoding="utf-8") as fh:
+        table = json.load(fh)
+    if not isinstance(table, dict):
+        sys.exit("%s: expected a JSON object" % label)
+    unknown = sorted(set(table) - set(KEYS))
+    if unknown:
+        sys.exit("%s: unknown key(s) %s; allowed: %s"
+                 % (label, ", ".join(unknown), ", ".join(KEYS)))
+    for key in KEYS:
+        block = table.setdefault(key, {})
+        if not isinstance(block, dict):
+            sys.exit("%s: %s must be an object" % (label, key))
+        for name, model in block.items():
+            if not isinstance(model, str) or not model.strip():
+                sys.exit("%s: %s.%s must be a non-empty model id" % (label, key, name))
+            if "/" not in model:
+                sys.exit("%s: %s.%s = %r is not provider/model" % (label, key, name, model))
+    return table
+
+
+def tier_of(path):
+    with open(path, encoding="utf-8") as fh:
+        lines = fh.read().split("\n")
+    if not lines or lines[0] != "---":
+        return None
+    for line in lines[1:]:
+        if line == "---":
+            return None
+        if line.startswith("model:"):
+            return line[len("model:"):].strip() or None
+    return None
+
+
+def stems(subdir):
+    d = os.path.join(repo, "plugins", "10x", subdir)
+    return sorted(f[:-3] for f in os.listdir(d) if f.endswith(".md"))
+
+
+table = load_table(os.path.join(repo, "scripts", "opencode-models.json"), "opencode-models.json")
+if override:
+    extra = load_table(override, override)
+    for key in KEYS:
+        table[key].update(extra[key])
+
+agents = stems("agents")
+unknown = sorted(set(table["agents"]) - set(agents))
+if unknown:
+    sys.exit("%s names agents the repo does not ship: %s"
+             % (override or "opencode-models.json", ", ".join(unknown)))
+
+wanted = {"agent": {}}
+for name in agents:
+    tier = tier_of(os.path.join(repo, "plugins", "10x", "agents", name + ".md"))
+    if tier is None:
+        sys.exit("agents/%s.md declares no model tier" % name)
+    model = table["agents"].get(name) or table["tiers"].get(tier)
+    if not model:
+        sys.exit("no model for tier %r (agent %s); add tiers.%s to %s"
+                 % (tier, name, tier, override or "the override file"))
+    wanted["agent"][name] = model
+
+try:
+    with open(target, encoding="utf-8") as fh:
+        doc = json.load(fh)
+except FileNotFoundError:
+    doc = {"$schema": "https://opencode.ai/config.json"}
+except ValueError as exc:
+    sys.exit("%s is not valid JSON (%s); fix or move it first" % (target, exc))
+
+changed = 0
+for section, entries in wanted.items():
+    block = doc.setdefault(section, {})
+    if not isinstance(block, dict):
+        sys.exit("%s has a non-object \"%s\" key; fix it first" % (target, section))
+    for name, model in entries.items():
+        entry = block.setdefault(name, {})
+        if not isinstance(entry, dict):
+            sys.exit("%s: %s.%s is not an object; fix it first" % (target, section, name))
+        current = entry.get("model")
+        if current == model:
+            print("unchanged: %s.%s.model = %s" % (section, name, model))
+            continue
+        entry["model"] = model
+        changed += 1
+        if current is None:
+            print("bound:     %s.%s.model -> %s" % (section, name, model))
+        else:
+            print("replaced:  %s.%s.model %s -> %s" % (section, name, current, model))
+
+if changed:
+    tmp = target + ".10x-tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(doc, fh, indent=2)
+        fh.write("\n")
+    os.replace(tmp, target)
+print("done: %d binding(s) written to %s" % (changed, target))
+PY
+}
+
+# Report the model bound to each shipped agent, changing nothing.
+doctor_models() {
+  python3 - "$CFG/opencode.json" "$REPO" <<'PY'
+import json, os, sys
+target, repo = sys.argv[1], sys.argv[2]
+try:
+    with open(target, encoding="utf-8") as fh:
+        doc = json.load(fh)
+except (FileNotFoundError, ValueError):
+    doc = {}
+unbound = 0
+d = os.path.join(repo, "plugins", "10x", "agents")
+for f in sorted(os.listdir(d)):
+    if not f.endswith(".md"):
+        continue
+    name = f[:-3]
+    model = ((doc.get("agent") or {}).get(name) or {}).get("model")
+    if model:
+        print("model: agent.%s -> %s" % (name, model))
+    else:
+        print("model: agent.%s unbound, inherits the primary agent's model (run --models)" % name)
+        unbound += 1
+sys.exit(1 if unbound else 0)
+PY
+}
+
 # Report what is installed and whether PAL is reachable, changing nothing.
 run_doctor() {
   rc=0
@@ -280,6 +443,7 @@ run_doctor() {
 
   if [ ! -f "$CFG/opencode.json" ]; then
     echo "mcp.pal: no $CFG/opencode.json (run --mcp)"
+    doctor_models
     return 1
   fi
   python3 - "$CFG/opencode.json" <<'PY' || rc=1
@@ -301,6 +465,7 @@ if cfg.get("enabled") is False:
 else:
     print("mcp.pal: declared and resolvable (%s)" % " ".join(cmd))
 PY
+  doctor_models || rc=1
   return $rc
 }
 
@@ -342,6 +507,13 @@ case "$MODE" in
       *) echo "usage: sh scripts/install-opencode.sh --mcp [--pal-path DIR]" >&2; exit 2 ;;
     esac
     ;;
+  --models)
+    case "${2:-}" in
+      "") install_models ;;
+      -*) echo "usage: sh scripts/install-opencode.sh --models [FILE]" >&2; exit 2 ;;
+      *) install_models "$2" ;;
+    esac
+    ;;
   --doctor)
     run_doctor
     ;;
@@ -354,7 +526,10 @@ usage: sh scripts/install-opencode.sh [MODE]
   --prune      remove links this repo owns whose source no longer exists
   --uninstall  remove this repo's links, orphans included
   --mcp [--pal-path DIR]  declare the PAL MCP server
-  --doctor     report install and PAL health, write nothing
+  --models [FILE]  bind agents to model ids in opencode.json,
+               from scripts/opencode-models.json plus FILE (default:
+               ~/.config/opencode/10x-models.json when it exists)
+  --doctor     report install, PAL and model bindings, write nothing
 MSG
     exit 2
     ;;

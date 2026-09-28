@@ -1,7 +1,6 @@
 ---
 description: 'Senior implementation agent for Go and TypeScript. Non-trivial code, design, and best practices. Detects the project language and applies the appropriate lang-* skill. Not for mechanical, fully-specified edits: use fixer-agent.'
 mode: subagent
-model: anthropic/claude-opus-4-1
 permission:
   edit: allow
   bash: allow

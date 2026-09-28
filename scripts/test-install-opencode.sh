@@ -224,6 +224,102 @@ assert cfg["command"] == ["/env/python", "/env/server.py"], cfg
 PY
 then ok; else ko "mcp/env-precedence" "PAL_PYTHON did not win over --pal-path"; fi
 
+# --- model binding --------------------------------------------------------
+#
+# The generated agents carry no model: OpenCode merges agent Markdown over
+# opencode.json, so a model there could never be overridden. --models writes
+# the binding into opencode.json from the repo table plus a local override.
+# Commands are never written: OpenCode refuses a command.<name> entry without
+# a template, so binding one there invalidated the whole config (seen live).
+
+OPUS_DEFAULT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["tiers"]["opus"])' \
+  "$REPO/scripts/opencode-models.json")
+
+# No config at all: --models creates one carrying the default bindings.
+h=$(fresh_home models-fresh)
+rm -f "$h/.config/opencode/opencode.json"
+out=$(HOME="$h" sh "$INST" --models 2>&1)
+if OPUS_DEFAULT="$OPUS_DEFAULT" python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
+import json, os, sys
+doc = json.load(open(sys.argv[1], encoding="utf-8"))
+assert doc["agent"]["coder-agent"]["model"] == os.environ["OPUS_DEFAULT"], doc
+assert doc["agent"]["fixer-agent"]["model"] != doc["agent"]["coder-agent"]["model"], doc
+assert "command" not in doc, doc
+PY
+then ok; else ko "models/creates-config" "$out"; fi
+
+# Running it twice must not report a change the second time.
+out=$(HOME="$h" sh "$INST" --models 2>&1)
+printf '%s' "$out" | grep -q 'done: 0 binding' && ok \
+  || ko "models/idempotent" "second run wrote again: $out"
+
+# An existing config keeps its own keys, including other fields of the same
+# agent entry: the binding sets one field, never replaces the object.
+h=$(fresh_home models-merge)
+cat > "$h/.config/opencode/opencode.json" <<'JSON'
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "opencode/big-pickle",
+  "provider": {"ollama": {"name": "Ollama"}},
+  "agent": {"coder-agent": {"prompt": "keep me"}, "mine": {"model": "ollama/mine"}}
+}
+JSON
+out=$(HOME="$h" sh "$INST" --models 2>&1)
+if python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
+import json, sys
+doc = json.load(open(sys.argv[1], encoding="utf-8"))
+assert doc["model"] == "opencode/big-pickle", doc
+assert doc["provider"]["ollama"]["name"] == "Ollama", doc
+assert doc["agent"]["coder-agent"]["prompt"] == "keep me", doc
+assert "model" in doc["agent"]["coder-agent"], doc
+assert doc["agent"]["mine"] == {"model": "ollama/mine"}, doc
+PY
+then ok; else ko "models/preserves-existing-keys" "$out"; fi
+
+# A tier override rebinds every agent of that tier and no other.
+h=$(fresh_home models-tier)
+printf '{"tiers": {"opus": "openai/gpt-5.5"}}\n' > "$h/tiers.json"
+out=$(HOME="$h" sh "$INST" --models "$h/tiers.json" 2>&1)
+if OPUS_DEFAULT="$OPUS_DEFAULT" python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
+import json, os, sys
+doc = json.load(open(sys.argv[1], encoding="utf-8"))
+assert doc["agent"]["coder-agent"]["model"] == "openai/gpt-5.5", doc
+assert doc["agent"]["tester-agent"]["model"] != "openai/gpt-5.5", doc
+PY
+then ok; else ko "models/tier-override" "$out"; fi
+
+# A per-agent entry wins over the agent's tier.
+printf '{"tiers": {"opus": "openai/gpt-5.5"}, "agents": {"coder-agent": "ollama/local"}}\n' > "$h/agents.json"
+out=$(HOME="$h" sh "$INST" --models "$h/agents.json" 2>&1)
+grep -q '"model": "ollama/local"' "$h/.config/opencode/opencode.json" && ok \
+  || ko "models/agent-override" "$out"
+
+# Without an argument, ~/.config/opencode/10x-models.json is the override.
+h=$(fresh_home models-implicit)
+printf '{"tiers": {"haiku": "ollama/small"}}\n' > "$h/.config/opencode/10x-models.json"
+out=$(HOME="$h" sh "$INST" --models 2>&1)
+grep -q '"model": "ollama/small"' "$h/.config/opencode/opencode.json" && ok \
+  || ko "models/implicit-override-file" "$out"
+
+# Refusals write nothing: an unknown top-level key, a name the repo does not
+# ship (a typo would otherwise bind nothing and say so nowhere), an id that
+# is not provider/model, and a missing override file.
+h=$(fresh_home models-refuse)
+rm -f "$h/.config/opencode/opencode.json"
+for case in 'unknown-key {"tier": {}}' \
+            'commands-key {"commands": {"10x-manual": "x/y"}}' \
+            'unknown-agent {"agents": {"coder": "x/y"}}' \
+            'bad-id {"tiers": {"opus": "gpt-5.5"}}'; do
+  name=${case%% *}
+  printf '%s\n' "${case#* }" > "$h/$name.json"
+  out=$(HOME="$h" sh "$INST" --models "$h/$name.json" 2>&1)
+  rc=$?
+  [ "$rc" != 0 ] && [ ! -f "$h/.config/opencode/opencode.json" ] && ok \
+    || ko "models/refuses-$name" "rc=$rc: $out"
+done
+out=$(HOME="$h" sh "$INST" --models "$h/absent.json" 2>&1)
+[ "$?" = 2 ] && ok || ko "models/missing-file-is-usage-error" "$out"
+
 # --- doctor ---------------------------------------------------------------
 
 h=$(fresh_home doctor-missing)
@@ -236,10 +332,22 @@ h=$(fresh_home doctor-ok)
 rm -f "$h/.config/opencode/opencode.json"
 HOME="$h" sh "$INST" >/dev/null 2>&1
 HOME="$h" sh "$INST" --mcp --pal-path "$pal" >/dev/null 2>&1
+HOME="$h" sh "$INST" --models >/dev/null 2>&1
 out=$(HOME="$h" sh "$INST" --doctor 2>&1)
 rc=$?
 [ "$rc" = 0 ] && printf '%s' "$out" | grep -q 'declared and resolvable' && ok \
   || ko "doctor/reports-healthy" "rc=$rc: $out"
+printf '%s' "$out" | grep -q 'model: agent.coder-agent -> ' && ok \
+  || ko "doctor/reports-bindings" "$out"
+
+# An agent left unbound inherits the primary model silently; doctor must say so.
+h=$(fresh_home doctor-unbound)
+rm -f "$h/.config/opencode/opencode.json"
+HOME="$h" sh "$INST" >/dev/null 2>&1
+HOME="$h" sh "$INST" --mcp --pal-path "$pal" >/dev/null 2>&1
+out=$(HOME="$h" sh "$INST" --doctor 2>&1)
+[ "$?" != 0 ] && printf '%s' "$out" | grep -q 'coder-agent unbound' && ok \
+  || ko "doctor/reports-unbound" "$out"
 
 # A declared command that is not on disk must be reported, not called healthy.
 h=$(fresh_home doctor-broken)

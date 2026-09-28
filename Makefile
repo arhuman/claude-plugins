@@ -38,9 +38,10 @@ help:
 	@echo 'Usage:'
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' | sed -e 's/^/ /'
 
-## install-opencode: symlink the generated tree and skills into ~/.config/opencode
+## install-opencode: symlink the generated tree and skills into ~/.config/opencode, then bind models
 install-opencode:
 	@sh scripts/install-opencode.sh
+	@sh scripts/install-opencode.sh --models
 
 ## uninstall-opencode: remove the symlinks install-opencode created
 uninstall-opencode:

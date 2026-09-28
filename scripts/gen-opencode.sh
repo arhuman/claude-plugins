@@ -10,24 +10,16 @@
 # live in the dual-consumption plan; the load-bearing ones:
 # - command filenames gain a 10x- prefix (OpenCode has no plugin namespace),
 #   the stem is otherwise kept verbatim so names match across both tools;
-# - model tier words map to pinned ids in map_model (one place to update);
+# - the model tier is NOT emitted: an OpenCode agent file's model: overrides
+#   opencode.json, so a pinned id here could never be changed by a user.
+#   install-opencode.sh --models binds tier to id in opencode.json instead,
+#   from scripts/opencode-models.json and the user's own override;
 # - path references into the plugin tree are rewritten to the one location
 #   the installer guarantees: ~/.config/opencode/skills/.
 set -u
 
 SRC=plugins/10x
 OUT=${1:-opencode}
-
-# Pinned 2026-09-18. Tier words come from the Claude agent/command
-# frontmatter; ids age with Anthropic releases and are expected maintenance.
-map_model() {
-  case "$1" in
-    opus) echo "anthropic/claude-opus-4-1" ;;
-    sonnet) echo "anthropic/claude-sonnet-4-5" ;;
-    haiku) echo "anthropic/claude-haiku-4-5" ;;
-    *) echo "unknown model tier: $1" >&2; exit 1 ;;
-  esac
-}
 
 # Print a frontmatter field's line from the first --- block only.
 fm_line() {
@@ -90,11 +82,9 @@ for f in "$SRC"/commands/*.md; do
   desc=$(fm_line "$f" description)
   [ -n "$desc" ] || { echo "missing description in $f" >&2; exit 1; }
   guard_desc "$desc" "$f"
-  tier=$(fm_line "$f" model | sed 's/^model: *//')
   {
     echo "---"
     echo "$desc"
-    [ -n "$tier" ] && echo "model: $(map_model "$tier")"
     echo "---"
     body_of "$f" | rewrite_paths | rewrite_tool_ids
   } > "$out"
@@ -106,6 +96,8 @@ for f in "$SRC"/agents/*.md; do
   desc=$(fm_line "$f" description)
   [ -n "$desc" ] || { echo "missing description in $f" >&2; exit 1; }
   guard_desc "$desc" "$f"
+  # The tier is not written out (see the header) but the installer resolves
+  # it from this source file, so an agent without one is still a defect.
   tier=$(fm_line "$f" model | sed 's/^model: *//')
   [ -n "$tier" ] || { echo "missing model tier in $f" >&2; exit 1; }
   tools=$(fm_line "$f" tools | sed 's/^tools: *//')
@@ -125,7 +117,6 @@ for f in "$SRC"/agents/*.md; do
     echo "---"
     echo "$desc"
     echo "mode: subagent"
-    echo "model: $(map_model "$tier")"
     echo "permission:"
     echo "  edit: $edit"
     echo "  bash: $bash"

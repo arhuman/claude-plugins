@@ -1,7 +1,6 @@
 ---
 description: 'Use for creating or modifying Dockerfiles and docker-compose files, optimizing builds, setting up development environments, or troubleshooting Docker issues. Not for non-Docker implementation work: use coder-agent or fixer-agent.'
 mode: subagent
-model: anthropic/claude-sonnet-4-5
 permission:
   edit: allow
   bash: allow

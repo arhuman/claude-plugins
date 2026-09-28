@@ -1,6 +1,5 @@
 ---
 description: 'Run the mechanical CSS-contract audit (tokens, literals, breakpoints, theme-structure, coupling, states, bg-color) on a repo and report the findings as a migration worklist. Read-only except `baseline`, which records the literal-count ratchet.'
-model: anthropic/claude-sonnet-4-5
 ---
 
 ## Usage

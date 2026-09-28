@@ -1,7 +1,6 @@
 ---
 description: 'A specialized agent for all testing tasks. Use for writing tests, analyzing coverage, debugging test failures, and running performance or security audits. Not for a strict red-green-refactor loop: use the tdd skill. Not for the single inline test a loop bugfix phase writes: that stays in the phase.'
 mode: subagent
-model: anthropic/claude-sonnet-4-5
 permission:
   edit: allow
   bash: allow

@@ -30,7 +30,45 @@ sh scripts/install-opencode.sh
 This symlinks into `~/.config/opencode/`: the 11 commands (as `/10x-<name>`),
 the 6 agents, and the 16 skills plus their shared `_shared` references.
 `sh scripts/install-opencode.sh --uninstall` reverses it, removing only
-symlinks that point into this repo.
+symlinks that point into this repo. `make install-opencode` runs the install
+and the model binding below in one step.
+
+### Models under OpenCode
+
+Each agent declares a model *tier* in its source frontmatter (`model: opus`,
+`sonnet` or `haiku`), the vocabulary Claude Code consumes natively. The
+generated OpenCode files carry no model at all: OpenCode merges an agent's
+Markdown over `opencode.json`, so an id written there could never be
+overridden by you. The binding is written into `opencode.json` instead:
+
+```bash
+sh scripts/install-opencode.sh --models              # repo defaults, plus ~/.config/opencode/10x-models.json if present
+sh scripts/install-opencode.sh --models my-models.json
+```
+
+`scripts/opencode-models.json` maps each tier to a public model id. Your
+override file uses the same shape and wins key by key; a per-agent entry wins
+over the agent's tier:
+
+```json
+{
+  "tiers": {"opus": "opencode/gpt-5.6-sol", "haiku": "ollama/qwen3:4b"},
+  "agents": {"tester-agent": "anthropic/claude-sonnet-4-5"}
+}
+```
+
+Ids are `provider/model` as your `opencode.json` declares them. The command
+sets `agent.<name>.model`, preserves every other key of the config, and
+rewrites those entries on every run: a choice you want to keep belongs in the
+override file, not in `opencode.json` by hand. It refuses a file naming an
+agent the repo does not ship, an unknown key, or an id without a provider.
+Agents left unbound inherit the primary agent's model; `--doctor` reports each
+binding and flags the unbound ones.
+
+Commands are not bound. The two that declare a tier (`audit_ui`, `manual`) run
+with the session's model under OpenCode: its config schema requires a full
+definition (`template`) on any `command.<name>` entry, so a model alone there
+invalidates the whole config.
 
 ### PAL under OpenCode
 
@@ -43,7 +81,7 @@ declares the server.
 
 ```bash
 sh scripts/install-opencode.sh --mcp     # declare mcp.pal in ~/.config/opencode/opencode.json
-sh scripts/install-opencode.sh --doctor  # report managed links and whether PAL resolves
+sh scripts/install-opencode.sh --doctor  # report managed links, PAL, and model bindings
 ```
 
 `--mcp` merges one `mcp.pal` block into your existing config, preserving every

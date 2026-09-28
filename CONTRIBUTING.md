@@ -92,6 +92,13 @@ regenerate the OpenCode tree in the same commit; never edit `opencode/` by hand.
 make gen
 ```
 
+An agent's `model:` is a tier word (`opus`, `sonnet`, `haiku`), never a model
+id: Claude Code reads the tier natively and `install-opencode.sh --models`
+binds it per user from `scripts/opencode-models.json`. Every agent must declare
+one. A command may declare one too, but it only reaches Claude Code: OpenCode
+cannot carry a command model outside the command definition. A new tier word
+needs a row in that file.
+
 ## Version control
 
 This repo uses [jj](https://github.com/martinvonz/jj) (Jujutsu) with git colocated.
