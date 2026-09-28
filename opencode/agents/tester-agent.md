@@ -24,7 +24,7 @@ Use the appropriate mode based on the request:
 2. Map existing tests with tree-sitter `get_symbols(symbol_types: ["functions"])` across test files to get all test names and signatures in one pass: then read only the files relevant to the task
 3. Write or fix tests following the `testing` skill references
 4. Run tests: analyze failures systematically, do not retry blindly
-5. For persistent failures, use `pal_debug` to investigate root cause
+5. For persistent failures, consult PAL; the tool is chosen per `~/.config/opencode/skills/_shared/references/pal-routing.md`
 6. Report coverage gaps and anti-patterns found
 
 ## Delegation
@@ -33,4 +33,4 @@ Use the appropriate mode based on the request:
 |------|-------------|
 | Bug fixes | `coder-agent` |
 | Test setup documentation | `documentation-agent` |
-| Root cause analysis | `pal_debug` |
+| Root cause analysis | PAL, tool per `~/.config/opencode/skills/_shared/references/pal-routing.md` |

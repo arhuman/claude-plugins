@@ -15,15 +15,18 @@ permission globs like `pal_*` match).
 
 | Claude Code | OpenCode | Used by |
 |---|---|---|
-| `mcp__pal__chat` | `pal_chat` | /tellme, /evaluate |
-| `mcp__pal__consensus` | `pal_consensus` | coder-agent, /tellme |
-| `mcp__pal__thinkdeep` | `pal_thinkdeep` | coder-agent, /tellme |
-| `mcp__pal__debug` | `pal_debug` | coder-agent, tester-agent |
-| `mcp__pal__listmodels` | `pal_listmodels` | /tellme, /evaluate |
+| `mcp__pal__chat` | `pal_chat` | `pal-routing.md` callers, /evaluate |
+| `mcp__pal__consensus` | `pal_consensus` | `pal-routing.md` callers |
+| `mcp__pal__thinkdeep` | `pal_thinkdeep` | `pal-routing.md` callers |
+| `mcp__pal__debug` | `pal_debug` | `pal-routing.md` callers |
+| `mcp__pal__listmodels` | `pal_listmodels` | `pal-routing.md` callers, /evaluate |
 
-Only ids appearing in a generated surface (`plugins/10x/commands/`,
-`plugins/10x/agents/`) need a row: the generator fails on any `mcp__` it cannot
-rewrite, so an id used in a new command or agent must be added here first.
+The routing itself (which tool for which need) is `pal-routing.md`, written
+with bare tool names so it stays valid under both harnesses: `_shared` ships
+as-is to OpenCode and is not rewritten. Any id appearing in a generated
+surface (`plugins/10x/commands/`, `plugins/10x/agents/`) still needs a row:
+the generator fails on any `mcp__` it cannot rewrite, so an id used in a new
+command or agent must be added here first.
 
 `plugins/10x/README.md` keeps the Claude Code form and is not rewritten: it
 documents Claude Code's permission prefix (`mcp__pal__*`), which is a fact about

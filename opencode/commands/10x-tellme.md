@@ -36,9 +36,8 @@ Technical Q&A command for architectural guidance, code analysis, and technology 
 "Should we use X or Y?" / "What's the best approach for Z?" / "How to structure W?"
 
 **Tools:**
-1. PAL MCP chat - Single model quick answer
-2. PAL MCP consensus - Multi-model for important decisions
-3. tree_sitter - Analyze existing patterns
+1. PAL, tool per `~/.config/opencode/skills/_shared/references/pal-routing.md`
+2. tree_sitter - Analyze existing patterns
 
 **Optional**: Delegate to coder-agent for Go-specific architecture
 
@@ -47,7 +46,7 @@ Technical Q&A command for architectural guidance, code analysis, and technology 
 
 **Tools:**
 1. tree_sitter - Analyze complexity and structure
-2. PAL MCP thinkdeep - Systematic investigation
+2. PAL, tool per `~/.config/opencode/skills/_shared/references/pal-routing.md`
 3. Built-in /code-review for comprehensive review
 
 ## Verification cascade
@@ -73,7 +72,7 @@ Determine question type and select appropriate tools.
 ### 3. Research
 Execute tool queries:
 - Context7 for library docs
-- PAL MCP for architectural insights
+- PAL for architectural insights, tool per `~/.config/opencode/skills/_shared/references/pal-routing.md`
 - tree_sitter for code relationships
 
 ### 4. Analyze
@@ -125,7 +124,7 @@ Done when:
 → Use tree_sitter to find middleware, Read to examine, explain functionality
 
 `/tellme Should we use PostgreSQL or MongoDB for user data?`
-→ Use PAL MCP consensus for multi-perspective analysis, provide recommendation
+→ PAL per the routing table (a decision between alternatives), provide recommendation
 
 `/tellme How to implement rate limiting in Go?`
 → Context7 for Go rate limiting libraries, provide examples and recommendations

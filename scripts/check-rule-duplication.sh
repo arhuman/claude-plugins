@@ -21,7 +21,10 @@ only when it reduces that amount of context|plugins/10x/skills/thinking/
 does not automatically deserve a package|plugins/10x/skills/thinking/
 inverts a genuine external dependency|plugins/10x/skills/lang-go/
 one line, two at most|plugins/10x/skills/documentation-rules/
-a lead, not a verdict|plugins/10x/skills/conform/'
+a lead, not a verdict|plugins/10x/skills/conform/
+needs no deliberation|plugins/10x/skills/_shared/
+more than one defensible answer|plugins/10x/skills/_shared/
+still unknown after the obvious checks|plugins/10x/skills/_shared/'
 
 offenders=$(
   printf '%s\n' "$RULES" | while IFS='|' read -r phrase owner; do
