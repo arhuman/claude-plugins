@@ -25,6 +25,9 @@ check:
 	@sh scripts/check-opencode-sync.sh
 	@sh scripts/check-agent-tools.sh
 	@sh scripts/check-frontmatter-parses.sh
+	@sh scripts/check-no-personal-paths.sh
+	@sh scripts/test-hooks.sh
+	@sh scripts/test-install-opencode.sh
 
 ## gen: regenerate the OpenCode commands and agents from plugin source
 gen:

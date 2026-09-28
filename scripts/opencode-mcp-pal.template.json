@@ -1,0 +1,7 @@
+{
+  "pal": {
+    "type": "local",
+    "command": ["__PAL_PYTHON__", "__PAL_SERVER__"],
+    "enabled": true
+  }
+}
