@@ -4,6 +4,7 @@
 import argparse
 import importlib.metadata
 import json
+import re
 from pathlib import Path
 
 import tiktoken
@@ -25,13 +26,75 @@ def measure(root):
     return {"totals": totals, "skills": skills}
 
 
+def frontmatter_field(text, key):
+    """Read one top-level `key: value` line from a Markdown frontmatter block."""
+    in_frontmatter = False
+    for line in text.splitlines():
+        if line.strip() == "---":
+            if in_frontmatter:
+                break
+            in_frontmatter = True
+            continue
+        if in_frontmatter and line.startswith(f"{key}:"):
+            return line[len(key) + 1 :].strip().strip("'\"")
+    return ""
+
+
+def report(root):
+    """Per-harness always-loaded context: skill descriptions (both harnesses)
+    plus, on OpenCode, the generated 'Read these skills first' preamble every
+    agent declaring `skills:` carries (gen-opencode.sh, rewrite step)."""
+    encoder = tiktoken.get_encoding("cl100k_base")
+    skills_dir = root / "plugins/10x/skills"
+    description_tokens = 0
+    per_skill = {}
+    for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
+        name = skill_md.parent.name
+        desc = frontmatter_field(skill_md.read_text(), "description")
+        tokens = len(encoder.encode(desc, disallowed_special=()))
+        per_skill[name] = tokens
+        description_tokens += tokens
+
+    preamble_tokens = 0
+    per_agent_preamble = {}
+    for agent_md in sorted((root / "plugins/10x/agents").glob("*.md")):
+        skills_line = frontmatter_field(agent_md.read_text(), "skills")
+        if not skills_line:
+            continue
+        names = re.sub(r"\s+", ", ", skills_line.strip())
+        preamble = f"Read these skills first: {names}."
+        tokens = len(encoder.encode(preamble, disallowed_special=()))
+        per_agent_preamble[agent_md.stem] = tokens
+        preamble_tokens += tokens
+
+    return {
+        "claude_code": {
+            "always_loaded": description_tokens,
+            "skill_descriptions": per_skill,
+        },
+        "opencode": {
+            "always_loaded": description_tokens + preamble_tokens,
+            "skill_descriptions": per_skill,
+            "agent_preambles": per_agent_preamble,
+        },
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--measure", action="store_true", help="Print counts without enforcing budgets")
+    parser.add_argument(
+        "--report",
+        action="store_true",
+        help="Print per-harness always-loaded context cost (measurement only, no budget)",
+    )
     args = parser.parse_args()
     if importlib.metadata.version("tiktoken") != "0.12.0":
         parser.error("Install tiktoken==0.12.0 for reproducible counts")
     root = Path(__file__).resolve().parent.parent
+    if args.report:
+        print(json.dumps(report(root), indent=2))
+        return 0
     current = measure(root)
     print(json.dumps(current, indent=2))
     if args.measure:

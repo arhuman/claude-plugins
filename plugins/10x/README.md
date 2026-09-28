@@ -108,6 +108,26 @@ note appended to the tool result rather than a separate hook message.
 Agents under OpenCode also take their model from `opencode.json`, bound by
 `scripts/install-opencode.sh --models` (see the repository README).
 
+## Context cost per harness
+
+What is always loaded into context before any skill or agent is invoked,
+measured by `python3 scripts/check-skill-tokens.py --report` (`cl100k_base`
+via `tiktoken==0.12.0`, same tokenizer as the budget check above). This is a
+measurement, not a budget: it does not enforce a limit, and the numbers move
+as skill descriptions and agent rosters change.
+
+| Harness | Always loaded | What it is |
+|---|---|---|
+| Claude Code | 969 tokens | The 16 skill `description:` fields only; skill bodies load lazily on invocation. |
+| OpenCode | 1,035 tokens | The same 16 descriptions, plus the generated `Read these skills first: ...` preamble line every agent declaring `skills:` carries in `opencode/agents/*.md`. |
+
+OpenCode's fixed floor is about 7% above Claude Code's for this repo today:
+66 tokens across the 6 generated agent preambles (`coder-agent` 17,
+`conform-agent` 12, `fixer-agent` 12, `documentation-agent` 9,
+`tester-agent` 9, `docker-agent` 7). Both numbers are small relative to the
+skill-body budget above; optimizing this floor is not warranted by these
+numbers and is deliberately out of scope here.
+
 ## Prerequisites
 
 The plugin's skills and agents rely on three MCP servers. None are bundled: bundling would start duplicate server instances (and duplicate tool schemas) for users who already register them globally. Register them once in `~/.claude.json` under `mcpServers`:
