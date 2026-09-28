@@ -2,8 +2,16 @@
 # PostToolUse hook: after a Write/Edit on a prose file, warn about referenced
 # scripts that exist nowhere in the repo (the documented-but-nonexistent class).
 # Warning only, and scripts only: a path checker that cries wolf gets disabled.
-command -v jq >/dev/null 2>&1 || exit 0
-fp=$(jq -r '.tool_input.file_path // empty' 2>/dev/null)
+# Resolve through symlinks: the installer links these hooks into a config tree,
+# where dirname "$0" is the link's directory and lib.sh would not be found.
+_self=$0
+while [ -L "$_self" ]; do
+  _link=$(readlink "$_self")
+  case "$_link" in /*) _self=$_link ;; *) _self=$(dirname "$_self")/$_link ;; esac
+done
+. "$(dirname "$_self")/lib.sh"
+hook_payload
+fp=$(hook_field file_path)
 case "$fp" in
   *.md|*.html) [ -f "$fp" ] || exit 0 ;;
   *) exit 0 ;;

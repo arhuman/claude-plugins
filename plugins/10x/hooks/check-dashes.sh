@@ -6,17 +6,22 @@
 # Checks the written payload, not the whole file, so pre-existing dashes in a
 # legacy document do not nag on every unrelated edit. Prose extensions only:
 # a dash inside code or data can be load-bearing.
-command -v jq >/dev/null 2>&1 || exit 0
-input=$(cat)
-fp=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
+# Resolve through symlinks: the installer links these hooks into a config tree,
+# where dirname "$0" is the link's directory and lib.sh would not be found.
+_self=$0
+while [ -L "$_self" ]; do
+  _link=$(readlink "$_self")
+  case "$_link" in /*) _self=$_link ;; *) _self=$(dirname "$_self")/$_link ;; esac
+done
+. "$(dirname "$_self")/lib.sh"
+hook_payload
+fp=$(hook_field file_path)
 case "$fp" in
   *.md|*.html|*.txt|*.tmpl) ;;
   *) exit 0 ;;
 esac
 
-written=$(printf '%s' "$input" | jq -r '
-  [.tool_input.content?, .tool_input.new_string?, (.tool_input.edits[]?.new_string?)]
-  | map(select(. != null)) | join("\n")' 2>/dev/null)
+written=$(hook_strings new)
 [ -n "$written" ] || { [ -f "$fp" ] && written=$(cat "$fp"); }
 [ -n "$written" ] || exit 0
 
@@ -26,9 +31,7 @@ written=$(printf '%s' "$input" | jq -r '
 # pre-existing prose whenever an edit lands near it, which is the "cries wolf"
 # failure that gets a checker disabled. Line-level, so a line genuinely edited
 # to keep its dash still reports.
-kept=$(printf '%s' "$input" | jq -r '
-  [.tool_input.old_string?, (.tool_input.edits[]?.old_string?)]
-  | map(select(. != null)) | join("\n")' 2>/dev/null)
+kept=$(hook_strings old)
 if [ -n "$kept" ]; then
   keptfile=$(mktemp) || exit 0
   printf '%s\n' "$kept" > "$keptfile"
