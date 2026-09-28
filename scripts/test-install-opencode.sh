@@ -72,6 +72,26 @@ if [ "$ONLY" != "--mcp" ]; then
 
   n=$(find "$h/.config/opencode/agents" "$h/.config/opencode/plugins" -type l 2>/dev/null | wc -l | tr -d ' ')
   [ "$n" -eq 0 ] && ok || ko "uninstall/removes-own-links" "$n managed link(s) left behind"
+
+  # A symlink pointing into another checkout must not be relinked during install.
+  # This test plants a foreign symlink at a destination that matches a managed
+  # skill name, so link_one will encounter it.
+  h=$(fresh_home foreign-install)
+  other_repo=$(mktemp -d) || exit 1
+  trap 'rm -rf "$ROOT" "$other_repo"' EXIT
+  mkdir -p "$other_repo/skills/loop"
+  printf 'other skill\n' > "$other_repo/skills/loop/SKILL.md"
+  mkdir -p "$h/.config/opencode/skills"
+  foreign_skill="$h/.config/opencode/skills/loop"
+  ln -sfn "$other_repo/skills/loop" "$foreign_skill"
+  # Verify the symlink exists and points to the other repo before install.
+  [ "$(readlink "$foreign_skill")" = "$other_repo/skills/loop" ] || exit 1
+  out=$(HOME="$h" sh "$INST" 2>&1)
+  # After install, it should still point to the other repo, not be relinked to the current repo.
+  [ "$(readlink "$foreign_skill")" = "$other_repo/skills/loop" ] && ok \
+    || ko "install/leaves-foreign-symlink-untouched" "relinked a foreign symlink: $(readlink "$foreign_skill")"
+  printf '%s' "$out" | grep -q 'skip (foreign symlink.*loop' && ok \
+    || ko "install/reports-foreign-symlink-skip" "did not report the foreign symlink as skipped in install output"
 fi
 
 # --- orphan links ---------------------------------------------------------

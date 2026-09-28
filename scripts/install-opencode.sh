@@ -8,8 +8,9 @@
 # scripts from its real path in the repo.
 #
 # Idempotent. Never touches a target that exists and is not a symlink:
-# real user files are warned about and skipped, both ways. Uninstall only
-# removes symlinks that resolve into this repo.
+# real user files are warned about and skipped, both ways. Also never touches
+# a symlink pointing into a different checkout: foreign symlinks are left alone.
+# Uninstall only removes symlinks that resolve into this repo.
 #
 # --models binds each agent to a model id in opencode.json. The generated tree
 # carries no model: an agent file's model: line overrides opencode.json
@@ -37,6 +38,20 @@ link_one() {
     echo "skip (exists, not a symlink): $dst"
     skipped=$((skipped + 1))
     return
+  fi
+  if [ -L "$dst" ]; then
+    target=$(readlink "$dst")
+    case "$target" in
+      "$REPO"/*)
+        # Symlink is already owned by this repo; safe to relink if source changed.
+        ;;
+      *)
+        # Symlink points into a different checkout or elsewhere; leave it alone.
+        echo "skip (foreign symlink, points into another checkout): $dst -> $target"
+        skipped=$((skipped + 1))
+        return
+        ;;
+    esac
   fi
   ln -sfn "$src" "$dst"
   echo "linked: $dst -> $src"
