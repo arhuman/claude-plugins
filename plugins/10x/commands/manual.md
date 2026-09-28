@@ -2,7 +2,7 @@
 description: 'What 10x offers and where this project stands: the commands, the concepts, the files the system manages, plus the current plan, its phases, and what the verifiers say. Read-only: derives the catalogue from the plugin files rather than reciting a list.'
 argument-hint: "[question | command | concept]"
 disable-model-invocation: true
-model: sonnet
+model: haiku
 ---
 
 ## Usage

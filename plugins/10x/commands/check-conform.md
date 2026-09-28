@@ -2,6 +2,7 @@
 description: 'Diagnose a repo against the 10x engineering standard (Makefile, CI, Docker, versioning, tests, governance, security headers, supply chain) and report drift. Read-only: never modifies the repo.'
 argument-hint: "[repo-path]"
 disable-model-invocation: true
+model: haiku
 ---
 
 ## Usage

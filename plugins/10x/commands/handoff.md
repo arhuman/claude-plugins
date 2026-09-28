@@ -2,6 +2,7 @@
 description: 'Save or restore the thread of an interrupted phase. Writes .claude/handoff.md with where the work stands and what comes next, or reads it back and reconciles it against the repo. Private, never tracked.'
 argument-hint: "[--resume]"
 disable-model-invocation: true
+model: haiku
 ---
 
 ## Usage
