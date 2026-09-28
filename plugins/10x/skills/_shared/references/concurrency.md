@@ -64,8 +64,51 @@ unaffected.
 
 ## What this deliberately does not add
 
-No lock server, no daemon, no auto-provisioning script, no scripted
-two-session test harness. The mechanism stays prose-and-jj-native: two
-commands to set up, one to clean up, and the claim protocol does the rest. A
-thin helper script is worth adding only if the manual setup proves to be a
-real adoption barrier.
+No lock server, no daemon, no auto-provisioning script. The mechanism stays
+prose-and-jj-native: two commands to set up, one to clean up, and the claim
+protocol does the rest. A thin helper script is worth adding only if the
+manual setup proves to be a real adoption barrier. `scripts/test-claim.sh`
+(P21) is not that kind of script: it proves the mutex/token protocol itself
+against a toy plan, sequentially, which exercises the same compare-and-swap
+code path as a genuine race (`mkdir` is atomic; a backgrounded two-process
+race was checked by hand while writing it and confirmed the same
+exactly-one-wins result) without the flakiness of timing two real processes
+in CI.
+
+## What differs under OpenCode (checked 2026-09-28, P21)
+
+A two-phase toy plan (`.claude/plan/toy.md`) in a scratch project, driven by
+`opencode run --dir <toy> --command 10x-loop`:
+
+- **`.claude/plan/` is reachable.** It is a plain directory; nothing in
+  either harness treats `.claude/` specially. `opencode run --dir` resolves
+  paths relative to the given directory the same way Claude Code resolves
+  them relative to its working directory, so plan resolution itself needs no
+  harness-specific handling.
+- **The session id has no harness-provided source, under either harness.**
+  `loop/SKILL.md` referenced `"$SESSION"` as if it were an environment
+  variable; neither Claude Code nor OpenCode exposes one to the model. Fixed
+  in this phase: the skill now says to construct one (`loop-$(date +%s)`)
+  rather than read one that does not exist. This was not an OpenCode-only
+  gap, it was a doc gap latent under both harnesses; running the loop for
+  real under OpenCode is what surfaced it, because a fresh session with no
+  prior convention has nothing to imitate.
+- **Which step the OpenCode agent could not perform: none, mechanically.**
+  The loop got no further than model dispatch: this installation's bound
+  models (`opencode.json`, from `scripts/opencode-models.json` and the local
+  `10x-models.json` override) resolved to a provider id the account could not
+  reach (`Insufficient account funds` on the first model that did resolve;
+  the agent's own default tier resolved to a stale id, `openai/gpt-5.5:latest`,
+  that does not match the override file's `openai/gpt-5.6-*` tiers at all,
+  itself worth a look outside this phase). No loop step, hook, or claim
+  operation failed; the run never reached a point where any of those would
+  execute. Recorded here rather than fixed, since it is a local account/model
+  binding issue, not a defect in `claim.sh`, `loop/SKILL.md`, or the install
+  path, and this phase's Steps say to fix only `claim.sh` and session-id
+  issues, everything else becomes a new phase.
+- One incidental environment note, not a 10x defect: a plain shell `cd` into
+  a scratch directory outside this repo did not persist across tool calls in
+  this session (the harness resets its cwd), which is why the OpenCode run
+  above used `opencode run --dir` explicitly rather than relying on a prior
+  `cd`. Worth knowing if a future loop turn needs to drive OpenCode from a
+  scratch checkout.

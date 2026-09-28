@@ -38,6 +38,7 @@ check: shellcheck policy
 	@sh scripts/check-naming.sh
 	@sh scripts/test-hooks.sh
 	@sh scripts/test-install-opencode.sh
+	@sh scripts/test-claim.sh
 
 ## gen: regenerate the OpenCode commands and agents from plugin source
 gen:

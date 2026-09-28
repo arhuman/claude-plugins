@@ -42,10 +42,15 @@ Read the resolved plan. Take the first eligible `todo` in file order: all `Depen
 
 Never invent a phase, label or acceptance criterion. A requested phase absent from the plan is a stop.
 
-Before other work, acquire:
+Before other work, acquire. Neither harness exposes a session id to the
+model, so construct one deterministically for this turn (a short label plus
+the current timestamp, e.g. `loop-$(date +%s)`) and keep it fixed for the
+rest of the turn, rather than reading it from an environment variable that
+does not exist:
 
 ```sh
-token=$(../_shared/references/claim.sh acquire <plan> <phase-id> "$SESSION")
+session="loop-$(date +%s)"
+token=$(../_shared/references/claim.sh acquire <plan> <phase-id> "$session")
 ```
 
 Non-zero: lost race, yield and try the next eligible phase without editing other files. On success retain the opaque token throughout the turn for renew/verify; claim release and stale reclaim use the shared protocol, never a hand-written claim. Quote the selected id and its verbatim acceptance command from the plan. Proceed only with exactly one phase and a successful claim.
