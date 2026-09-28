@@ -15,6 +15,14 @@ jobs:
       # when their import is missing, which would pass silently here.
       - name: Check dependencies
         run: python3 -m pip install --quiet tiktoken==0.12.0 pyyaml
+      # Pinned, not the runner's preinstalled copy: a lint gate that moves
+      # with the image changes its verdict without a commit to blame.
+      - name: Install shellcheck
+        run: |
+          curl -sSL https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz \
+            | tar -xJ
+          sudo mv shellcheck-v0.11.0/shellcheck /usr/local/bin/shellcheck
+          shellcheck --version
       - name: Static checks
         run: make check
       - name: Validate plugin manifests (strict)

@@ -76,14 +76,20 @@ make check
 It runs the same static checks as CI, in the same order, and stops on the first
 failure. `make help` lists every target.
 
-Two checks degrade instead of failing when a python module is missing, and say
-so on stdout: the token budget needs `tiktoken`, the frontmatter parse prefers
-`pyyaml` (it falls back to a narrower grep without it). CI installs both before
-running `make check`, so a local `SKIP` line never means CI skipped it too.
+Three checks degrade instead of failing when a tool is missing, and say so on
+stdout: the token budget needs `tiktoken`, the frontmatter parse prefers
+`pyyaml` (it falls back to a narrower grep without it), and the shell lint
+needs `shellcheck`. CI installs all three before running `make check`, so a
+local `SKIP` line never means CI skipped it too.
 
 ```bash
 python3 -m pip install tiktoken==0.12.0 pyyaml
+brew install shellcheck   # or your package manager; CI pins 0.11.0
 ```
+
+Shell scripts are POSIX sh and linted with `shellcheck -s sh -S warning`. Fix a
+finding rather than disabling it; when a disable is the right call, put the
+reason on the same line.
 
 After changing anything under `plugins/10x/commands/` or `plugins/10x/agents/`,
 regenerate the OpenCode tree in the same commit; never edit `opencode/` by hand.

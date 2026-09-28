@@ -23,7 +23,7 @@
 # verify-plan.sh already documented via PRD/UX/ADR.
 set -eu
 
-HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+HERE=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 OWNERSHIP_SH="$HERE/../../steering/references/ownership.sh"
 
 REPO="${1:-}"

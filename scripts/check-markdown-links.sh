@@ -12,18 +12,17 @@
 # placeholders ({...}). A trailing #anchor on a relative link is stripped
 # before the check.
 set -u
-fail=0
-for file in $(find plugins -name '*.md' -not -path '*/node_modules/*'); do
+# The loop runs in a pipe, so a flag set inside it would be lost to the
+# subshell; the verdict is the captured report instead.
+broken=$(find plugins -name '*.md' -not -path '*/node_modules/*' | while read -r file; do
   dir=$(dirname "$file")
   links=$(awk '/^ *(```|~~~)/ { infence = !infence; next } !infence' "$file" \
     | sed -E 's/`[^`]*`//g' \
     | grep -oE '\]\(([^)]+)\)' | sed -E 's/^\]\(//; s/\)$//; s/#.*$//' \
     | grep -vE '^$|^[a-z][a-z0-9+.-]*:|^/|[{ ]' || true)
   for link in $links; do
-    if [ ! -e "$dir/$link" ]; then
-      echo "BROKEN LINK: $file -> $link"
-      fail=1
-    fi
+    [ -e "$dir/$link" ] || echo "BROKEN LINK: $file -> $link"
   done
-done
-exit $fail
+done)
+[ -z "$broken" ] || { echo "$broken"; exit 1; }
+exit 0
