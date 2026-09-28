@@ -440,26 +440,28 @@ PY
 # Report what is installed and whether PAL is reachable, changing nothing.
 run_doctor() {
   rc=0
+
+  # Use each_target list_one to walk the current repo's surface and report
+  # every expected destination, including any that are absent (never linked).
+  # This mirrors --list's categories (healthy/broken/foreign/absent) so missing
+  # entries are visible, not hidden by an independent glob that only sees
+  # what is already on disk.
+  list_out=$(each_target list_one 2>&1)
+  echo "$list_out"
+
+  # Count and report managed links per directory.
   for d in commands agents skills plugins; do
-    n=0
-    # -L before -e: a dangling symlink fails -e, so testing -e first would
-    # skip exactly the case worth reporting.
-    for f in "$CFG/$d"/*; do
-      [ -L "$f" ] || continue
-      target=$(readlink "$f")
-      case "$target" in
-        "$REPO"/*)
-          if [ -e "$f" ]; then
-            n=$((n + 1))
-          else
-            echo "dangling: $f -> $target"
-            rc=1
-          fi
-          ;;
-      esac
-    done
+    n=$(echo "$list_out" | grep "^healthy: *$CFG/$d/" | wc -l | tr -d ' ')
     echo "$d: $n managed link(s)"
   done
+
+  # Fail if any absent or broken entries were found.
+  if echo "$list_out" | grep -q "^absent:"; then
+    rc=1
+  fi
+  if echo "$list_out" | grep -q "^broken:"; then
+    rc=1
+  fi
 
   if [ ! -f "$CFG/opencode.json" ]; then
     echo "mcp.pal: no $CFG/opencode.json (run --mcp)"

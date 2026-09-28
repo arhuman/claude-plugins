@@ -460,5 +460,69 @@ assert doc.get("my_custom_key") == "preserve me", "marker key was modified"
 PY
 then ok; else ko "uninstall-config/purge-preserves-marker" "marker key was not preserved after purge"; fi
 
+# --- doctor detecting absent entries ----------------------------------------
+#
+# P30: --doctor must report entries that exist in the repo's shipped surface
+# but have never been linked (no link in the config tree). This closes the gap
+# where a new command/agent/skill could be added without reinstalling and
+# doctor would silently pass, only --list showing the problem.
+
+h=$(fresh_home doctor-absent)
+rm -f "$h/.config/opencode/opencode.json"
+# Install everything that exists in the repo now.
+HOME="$h" sh "$INST" >/dev/null 2>&1
+HOME="$h" sh "$INST" --mcp --pal-path "$pal" >/dev/null 2>&1
+HOME="$h" sh "$INST" --models >/dev/null 2>&1
+
+# Doctor should pass: all shipped artifacts are linked and models are bound.
+out=$(HOME="$h" sh "$INST" --doctor 2>&1)
+rc=$?
+[ "$rc" = 0 ] && printf '%s' "$out" | grep -q 'declared and resolvable' && ok \
+  || ko "doctor/healthy-after-install" "expected exit 0 with healthy doctor; rc=$rc; out=$out"
+
+# P30 test: when a new command/agent/skill is added to the repo without
+# reinstalling, doctor should report it as absent.
+# We cannot directly add to REPO, so we monkey-patch each_target to include
+# an extra artifact, then verify doctor reports it as absent.
+h=$(fresh_home doctor-absent-check)
+rm -f "$h/.config/opencode/opencode.json"
+
+# Install everything that exists in the repo now.
+HOME="$h" sh "$INST" >/dev/null 2>&1
+HOME="$h" sh "$INST" --mcp --pal-path "$pal" >/dev/null 2>&1
+HOME="$h" sh "$INST" --models >/dev/null 2>&1
+
+# Create a temporary wrapper script that simulates a new command existing in the repo.
+# We'll add a temporary file to the repo's opencode tree, then run doctor.
+# To avoid polluting the real REPO, we use a simple approach:
+# Create a fake artifact by modifying each_target on the fly via a wrapper.
+# Instead, let's just manually add an absent entry to test it.
+
+# Simpler approach: manually craft a list output with an absent: entry and test that
+# doctor correctly reports it as a failure. But we need the real doctor to encounter it.
+# The safest approach: add a temporary command file to REPO, run doctor, then remove it.
+temp_cmd="$REPO/opencode/commands/10x-test-absent-cmd.md"
+cat > "$temp_cmd" <<'CMD'
+---
+title: Temp Test Command
+model: haiku
+tools:
+---
+Temporary test command.
+CMD
+
+# Now run doctor; it should report the new command as absent since we didn't reinstall.
+out=$(HOME="$h" sh "$INST" --doctor 2>&1)
+rc=$?
+
+# Clean up the temp file immediately.
+rm -f "$temp_cmd"
+
+if [ "$rc" != 0 ] && printf '%s' "$out" | grep -q 'absent:.*10x-test-absent-cmd.md'; then
+  ok
+else
+  ko "doctor/reports-absent-command" "expected non-zero rc and absent line; rc=$rc; out=$out"
+fi
+
 echo "install-opencode: $pass passed, $fail failed"
 [ "$fail" -eq 0 ] || exit 1
