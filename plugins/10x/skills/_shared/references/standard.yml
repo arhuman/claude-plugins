@@ -198,8 +198,8 @@ checks:
     applies_to: [go]
     severity: P1
     probe: '! grep -qsE "^[A-Za-z_]+_VERSION *\?=" Makefile || ! grep -qsE "which +[a-z-]+ .*(MAKE). *tools" Makefile'
-    expected: "A target that pins a tool version verifies the INSTALLED version against the pin, never merely that the binary exists. `which <tool> >/dev/null || $(MAKE) tools` installs the pin only where the tool is absent, so a developer with an older copy on PATH runs a different linter than CI does, and the local gate silently becomes the weaker one. Compare the version and reinstall on mismatch."
-    remediation: {skill: makefile, ref: makefile-go.md}
+    expected: "A target that pins a tool version verifies the INSTALLED version against the pin, never merely that the binary exists. `which <tool> >/dev/null || $(MAKE) tools` installs the pin only where the tool is absent, so a developer with an older copy on PATH runs a different linter than CI does, and the local gate silently becomes the weaker one. Compare the version and reinstall on mismatch. The pin's value comes from _shared/references/versions.md, which every consumer copies rather than references, so the Makefile, the CI workflow and any committed config are all expected to name the same version: a disagreement between them is the defect, and consolidating them into one copy is a deviation from the standard rather than a fix for it."
+    remediation: {skill: makefile, ref: versions.md}
 
   - id: coverage.gate
     dimension: makefile
