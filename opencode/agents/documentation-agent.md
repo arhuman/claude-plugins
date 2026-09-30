@@ -5,6 +5,7 @@ permission:
   edit: allow
   bash: allow
   webfetch: allow
+  task: deny
 ---
 Read these skills first: documentation-rules.
 

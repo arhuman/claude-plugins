@@ -5,6 +5,7 @@ permission:
   edit: allow
   bash: allow
   webfetch: allow
+  task: allow
 ---
 Read these skills first: docker.
 

@@ -5,6 +5,7 @@ permission:
   edit: deny
   bash: allow
   webfetch: allow
+  task: allow
 ---
 Read these skills first: conform, thinking, lang-go.
 

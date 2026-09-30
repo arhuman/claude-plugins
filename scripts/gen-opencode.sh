@@ -14,6 +14,11 @@
 #   opencode.json, so a pinned id here could never be changed by a user.
 #   install-opencode.sh --models binds tier to id in opencode.json instead,
 #   from scripts/opencode-models.json and the user's own override;
+# - a Claude Code tools: list becomes OpenCode permission keys, task included:
+#   OpenCode denies task in every spawned subagent session unless the subagent
+#   declares its own rule, so an agent that delegates needs task: allow written
+#   out or its delegation table is inert. subagent_depth is the other half and
+#   lives in opencode.json (install-opencode.sh), not here;
 # - path references into the plugin tree are rewritten to the one location
 #   the installer guarantees: ~/.config/opencode/skills/;
 # - the PostToolUse hooks are not converted: OpenCode has a JS plugin API,
@@ -108,12 +113,23 @@ for f in "$SRC"/agents/*.md; do
 
   # No tools: line in Claude Code means full inheritance; the port
   # preserves behavior, it never silently tightens.
+  #
+  # task is the one permission that must be emitted even when it is allowed:
+  # OpenCode injects `task: deny` into every spawned subagent's session unless
+  # that subagent declares its own task rule, so an agent whose prompt tells it
+  # to dispatch another agent needs the rule written out or the instruction is
+  # dead. Depth is the second gate and is not per-agent: install-opencode.sh
+  # sets subagent_depth in opencode.json, since the default 1 blocks the second
+  # hop whatever the permissions say.
   if [ -z "$tools" ]; then
-    edit=allow bash=allow webfetch=allow
+    edit=allow bash=allow webfetch=allow task=allow
   else
     case "$tools" in *Edit*) edit=allow ;; *) edit=deny ;; esac
     case "$tools" in *Bash*) bash=allow ;; *) bash=deny ;; esac
     case "$tools" in *WebFetch*|*WebSearch*) webfetch=allow ;; *) webfetch=deny ;; esac
+    # Anchored on the list delimiters: a bare Task, not a TaskOutput/TaskStop
+    # that happens to share the prefix.
+    case ", $tools," in *", Task,"*) task=allow ;; *) task=deny ;; esac
   fi
 
   {
@@ -124,6 +140,7 @@ for f in "$SRC"/agents/*.md; do
     echo "  edit: $edit"
     echo "  bash: $bash"
     echo "  webfetch: $webfetch"
+    echo "  task: $task"
     echo "---"
     if [ -n "$skills" ]; then
       echo "Read these skills first: $(printf '%s' "$skills" | sed 's/  */, /g')."
@@ -149,6 +166,10 @@ cat > "$OUT/plugins/10x-hooks.js" <<'JS'
 // hook reports to the tool output the model reads. The shell scripts stay
 // the one implementation for both harnesses.
 //
+// OpenCode 2.x plugin contract: the module default-exports { id, setup }, and
+// setup subscribes with ctx.tool.hook("execute.after", ...). The pre-2.0 shape
+// (a named export returning a "tool.execute.after" map) no longer loads.
+//
 // Loaded from ~/.config/opencode/plugins/ (install-opencode.sh links it
 // there). Run directly with an event on stdin to see what a hook would add:
 //   printf '{"tool":"write","args":{"filePath":"/tmp/x.md","content":"a"},"output":""}' \
@@ -165,22 +186,30 @@ const PLUGIN_ROOT = resolve(dirname(SELF), "..", "..", "plugins", "10x");
 const MANIFEST = join(PLUGIN_ROOT, "hooks", "hooks.json");
 
 // OpenCode tool id to Claude Code tool name, and the argument names the
-// hooks read (lib.sh: file_path, content, old_string, new_string).
+// hooks read (lib.sh: file_path, content, old_string, new_string). The path
+// argument is `path` in OpenCode 2.x and was `filePath` before it, so both
+// spellings are accepted: the first one present wins.
 const TOOLS = {
-  write: { name: "Write", args: { filePath: "file_path", content: "content" } },
+  write: { name: "Write", args: { path: "file_path", filePath: "file_path", content: "content" } },
   edit: {
     name: "Edit",
-    args: { filePath: "file_path", oldString: "old_string", newString: "new_string" },
+    args: {
+      path: "file_path",
+      filePath: "file_path",
+      oldString: "old_string",
+      newString: "new_string",
+    },
   },
 };
 
-function payloadFor(tool, args) {
+function payloadFor(tool, input) {
   const spec = TOOLS[tool];
-  if (!spec || !args || typeof args !== "object") return null;
+  if (!spec || !input || typeof input !== "object") return null;
   const toolInput = {};
   for (const [from, to] of Object.entries(spec.args)) {
-    if (args[from] !== undefined) toolInput[to] = args[from];
+    if (input[from] !== undefined && toolInput[to] === undefined) toolInput[to] = input[from];
   }
+  if (toolInput.file_path === undefined) return null;
   return { tool_name: spec.name, tool_input: toolInput };
 }
 
@@ -230,18 +259,52 @@ function reportOf(command, payload, cwd) {
   }
 }
 
-async function afterTool(input, output, cwd) {
-  const payload = payloadFor(input.tool, input.args);
-  if (!payload) return;
+// `event` is OpenCode's execute.after payload: the tool id, the arguments the
+// model passed as `input`, and `result`. A failed call carries no result, so
+// there is nothing to append to.
+//
+// What the model reads is result.content, an array of parts; result.output is
+// structured data OpenCode only falls back to (JSON-stringified) when content
+// is empty. So a report is appended as a text part, and output is left alone:
+// concatenating onto output would stringify the object into "[object Object]"
+// and destroy the tool result.
+async function afterTool(event, cwd) {
+  const payload = payloadFor(event.tool, event.input);
+  if (!payload || !event.result) return;
+  const reports = [];
   for (const command of commandsFor(payload.tool_name)) {
     const text = reportOf(command, payload, cwd);
-    if (text) output.output += `\n\n[10x hook ${basename(command)}] ${text}`;
+    if (text) reports.push(`[10x hook ${basename(command)}] ${text}`);
+  }
+  if (!reports.length) return;
+  const result = event.result;
+  const parts = Array.isArray(result.content) && result.content.length
+    ? [...result.content]
+    : [{ type: "text", text: asText(result.output) }];
+  result.content = [...parts, { type: "text", text: reports.join("\n\n") }];
+}
+
+// The fallback OpenCode itself applies to a non-string output.
+function asText(output) {
+  if (typeof output === "string") return output;
+  if (output === undefined) return "";
+  try {
+    return JSON.stringify(output) ?? String(output);
+  } catch {
+    return String(output);
   }
 }
 
-export const TenXHooks = async ({ directory }) => ({
-  "tool.execute.after": (input, output) => afterTool(input, output, directory),
-});
+// setup receives the context once and registers the hook; what it returns is
+// treated as a dispose callback, so it must return nothing. The hooks run from
+// the project directory, which 2.x carries on ctx.location.
+export default {
+  id: "10x-hooks",
+  setup: (ctx) => {
+    const cwd = ctx.location?.directory ?? ctx.directory ?? process.cwd();
+    ctx.tool.hook("execute.after", (event) => afterTool(event, cwd));
+  },
+};
 
 // Direct invocation (node or bun): one event on stdin, the tool output the
 // model would read on stdout. This is what test-hooks.sh --harness opencode
@@ -253,10 +316,15 @@ try {
   direct = false;
 }
 if (direct) {
-  const event = JSON.parse(readFileSync(0, "utf8"));
-  const output = { title: "", output: event.output ?? "", metadata: {} };
-  await afterTool({ tool: event.tool, args: event.args }, output, process.cwd());
-  process.stdout.write(output.output);
+  const stdin = JSON.parse(readFileSync(0, "utf8"));
+  const event = {
+    tool: stdin.tool,
+    input: stdin.input ?? stdin.args,
+    result: { output: stdin.output ?? "" },
+  };
+  await afterTool(event, process.cwd());
+  const parts = event.result.content ?? [{ type: "text", text: asText(event.result.output) }];
+  process.stdout.write(parts.map((part) => part.text ?? "").join("\n\n"));
 }
 JS
 

@@ -293,6 +293,10 @@ PY
 # The bound entries are owned by this installer and rewritten on every run:
 # a value the user wants to keep belongs in the override file, not in
 # opencode.json by hand. Every other key of the config is preserved.
+#
+# Also raises subagent_depth to 2 when it is lower, since agent-to-agent
+# delegation is dead at OpenCode's default of 1. Grouped here because this is
+# the mode that already owns opencode.json and needs no path resolution.
 # install_models [OVERRIDE_FILE]
 install_models() {
   override=${1:-}
@@ -382,6 +386,31 @@ except ValueError as exc:
     sys.exit("%s is not valid JSON (%s); fix or move it first" % (target, exc))
 
 changed = 0
+
+# Agents that delegate (coder, tester, conform) need two gates open under
+# OpenCode: a task permission, which gen-opencode.sh writes per agent, and a
+# subagent_depth above the default 1, which is global and belongs here. At 1 a
+# primary may spawn a subagent but that subagent may not spawn another, so
+# conform-agent's [Fix] dispatch and the coder/tester handoffs are inert.
+# Raised when too low, never lowered: a higher value is the user's choice.
+MIN_SUBAGENT_DEPTH = 2
+depth = doc.get("subagent_depth")
+if depth is None:
+    doc["subagent_depth"] = MIN_SUBAGENT_DEPTH
+    changed += 1
+    print("set:       subagent_depth -> %d (agent delegation needs >= 2)"
+          % MIN_SUBAGENT_DEPTH)
+elif not isinstance(depth, int) or isinstance(depth, bool):
+    sys.exit("%s: subagent_depth = %r is not an integer; fix it first"
+             % (target, depth))
+elif depth < MIN_SUBAGENT_DEPTH:
+    doc["subagent_depth"] = MIN_SUBAGENT_DEPTH
+    changed += 1
+    print("raised:    subagent_depth %d -> %d (agent delegation needs >= 2)"
+          % (depth, MIN_SUBAGENT_DEPTH))
+else:
+    print("unchanged: subagent_depth = %d" % depth)
+
 for section, entries in wanted.items():
     block = doc.setdefault(section, {})
     if not isinstance(block, dict):

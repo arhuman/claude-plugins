@@ -304,6 +304,44 @@ assert doc["agent"]["mine"] == {"model": "ollama/mine"}, doc
 PY
 then ok; else ko "models/preserves-existing-keys" "$out"; fi
 
+# subagent_depth gates agent-to-agent delegation: OpenCode's default of 1 lets
+# a primary spawn a subagent but stops that subagent spawning another, which
+# kills conform-agent's [Fix] dispatch. Absent or too low is raised to 2; a
+# higher value the user chose is left alone.
+h=$(fresh_home models-depth)
+out=$(HOME="$h" sh "$INST" --models 2>&1)
+if python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
+import json, sys
+assert json.load(open(sys.argv[1], encoding="utf-8"))["subagent_depth"] == 2
+PY
+then ok; else ko "models/depth-set-when-absent" "$out"; fi
+
+h=$(fresh_home models-depth-low)
+printf '{"subagent_depth": 1}\n' > "$h/.config/opencode/opencode.json"
+out=$(HOME="$h" sh "$INST" --models 2>&1)
+if python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
+import json, sys
+assert json.load(open(sys.argv[1], encoding="utf-8"))["subagent_depth"] == 2
+PY
+then ok; else ko "models/depth-raised-from-default" "$out"; fi
+
+h=$(fresh_home models-depth-high)
+printf '{"subagent_depth": 5}\n' > "$h/.config/opencode/opencode.json"
+out=$(HOME="$h" sh "$INST" --models 2>&1)
+if python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
+import json, sys
+assert json.load(open(sys.argv[1], encoding="utf-8"))["subagent_depth"] == 5
+PY
+then ok; else ko "models/depth-preserves-higher" "$out"; fi
+
+# A non-integer is the user's typo, not ours to coerce.
+h=$(fresh_home models-depth-bad)
+printf '{"subagent_depth": "2"}\n' > "$h/.config/opencode/opencode.json"
+out=$(HOME="$h" sh "$INST" --models 2>&1)
+rc=$?
+[ "$rc" != 0 ] && printf '%s' "$out" | grep -q 'is not an integer' && ok \
+  || ko "models/depth-rejects-non-integer" "$out"
+
 # A tier override rebinds every agent of that tier and no other.
 h=$(fresh_home models-tier)
 printf '{"tiers": {"opus": "openai/gpt-5.5"}}\n' > "$h/tiers.json"
