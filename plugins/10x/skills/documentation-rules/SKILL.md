@@ -74,11 +74,15 @@ Never include previous values/cost history, re-derived reasoning chains, benchma
 
 ### Register
 
-- Assume two years of language experience but no project/runtime/incident context. Preserve precision rather than compressing into jargon.
-- Gloss or drop insider terms; use plain verbs and concrete subjects/identifiers, not system/layer/flow. Lead with outcome before mechanism; prefer shorter equally accurate wording.
-- Two-term test: if one sentence has at least two terms outsiders cannot define, split it and define one.
-- Portability test: if reusable unchanged in 20 unrelated codebases, delete it. Falsifiability test: retain only claims that could be wrong. Replace failed comments with a real constraint or delete them.
-- Verify every cited issue, incident, ADR or commit exists, per `thinking`; keep comments current as code changes.
+Sentence-level register (reader model, two-term/portability/falsifiability
+tests, forbidden filler and hedges) is owned by
+[senior-voice](../senior-voice/references/register.md). Read it when writing or
+reviewing any comment. Comment-specific additions:
+
+- Assume no project, runtime, or incident context, and no access to the commit
+  that prompted the comment.
+- Replace a comment that fails the portability or falsifiability test with a
+  real constraint, or delete it.
 
 ## README and User Guides
 

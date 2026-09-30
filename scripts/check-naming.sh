@@ -18,7 +18,8 @@ set -u
 # reported by a human, not by this check, so adding a new one is a one-line
 # edit here instead of a design discussion. Kept short on purpose.
 DOCUMENTED_PAIRS='loop
-manual'
+manual
+senior-voice'
 
 fail=0
 

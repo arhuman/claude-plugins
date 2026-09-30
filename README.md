@@ -31,8 +31,8 @@ on OpenCode's `tool.execute.after` event. To install, clone this repo and run:
 sh scripts/install-opencode.sh
 ```
 
-This symlinks into `~/.config/opencode/`: the 11 commands (as `/10x-<name>`),
-the 6 agents, the hook plugin, and the 16 skills plus their shared `_shared`
+This symlinks into `~/.config/opencode/`: the 12 commands (as `/10x-<name>`),
+the 7 agents, the hook plugin, and the 17 skills plus their shared `_shared`
 references. `sh scripts/install-opencode.sh --uninstall` reverses it, removing
 only symlinks that point into this repo. `make install-opencode` runs the
 install and the model binding below in one step.

@@ -75,6 +75,7 @@ note appended to the tool result rather than a separate hook message.
 | Command | `manual` | supported | generated (`/10x-manual`) |
 | Command | `plan` | supported | generated (`/10x-plan`) |
 | Command | `propose-probe` | supported | generated (`/10x-propose-probe`) |
+| Command | `senior-voice` | supported | generated (`/10x-senior-voice`) |
 | Command | `tellme` | supported | generated (`/10x-tellme`) |
 | Agent | `coder-agent` | supported | generated |
 | Agent | `conform-agent` | supported | generated |
@@ -96,6 +97,7 @@ note appended to the tool result rather than a separate hook message.
 | Skill | `loop` | supported | linked |
 | Skill | `makefile` | supported | linked |
 | Skill | `manual` | supported | linked |
+| Skill | `senior-voice` | supported | linked |
 | Skill | `steering` | supported | linked |
 | Skill | `testing` | supported | linked |
 | Skill | `thinking` | supported | linked |
