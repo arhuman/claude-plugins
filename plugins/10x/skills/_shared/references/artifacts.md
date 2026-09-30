@@ -24,6 +24,7 @@ two different spellings of the same artifact.
 | `.claude/doc/design-brief-<scope>.md` | /design-handoff (brief mode) | external generator, humans | `../../design-system/references/design-handoff.md` | One per brief, never re-read by the plugin |
 | `.claude/doc/<task-resume>.md` (+ `-gemini`/`-openai`/`-deepseek` siblings) | /evaluate | humans | inline in `commands/evaluate.md` | One per question; slug per the collision rule below |
 | `.claude/doc/test-report-<slug>.md` | testing, tester-agent | humans | `../../testing/references/test-reports.md` | Snapshot per test campaign |
+| `.claude/doc/simplify-<repo>.md` (or `-<scope-slug>` suffix) | simplify-agent | humans | inline in `agents/simplify-agent.md` | Snapshot, regenerated per run, never re-read |
 | `<css-dir>/.audit-ui-baseline` | /audit-ui (`baseline`) | `audit-ui.sh` (ratchet) | `../../design-system/references/quality-guards.md` | Durable ratchet floor |
 | `CLAUDE.md` / `AGENTS.md` stamp (`10x-standard:`, `10x-profile:`) | nobody automated (hand-written; see note) | `conform.sh`, `ownership.sh` | `../../conform/SKILL.md` repo-stamp section | Durable declaration |
 | `CHANGELOG.md` `[Unreleased]` (tracked, repo root) | commit (feat/fix/perf) | release tooling | Keep a Changelog | Durable; promoted at release. Distinct from a private `.claude/CHANGELOG.md` working log |

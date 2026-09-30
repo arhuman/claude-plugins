@@ -28,6 +28,7 @@ Plugin to make Claude Code a 10x more efficient
 | Agent | `conform-agent` | Audits a repo against the standard and dispatches remediation |
 | Agent | `coder-agent`, `fixer-agent` | Non-trivial implementation; mechanical fully-specified edits |
 | Agent | `tester-agent`, `docker-agent`, `documentation-agent` | Testing, Docker, and documentation delegates |
+| Agent | `simplify-agent` | Reports redundancy, unnecessary abstraction, YAGNI drift, overlong docs, and mergeable test files. Read-only |
 
 `/10x:manual` prints this catalogue from the plugin files themselves. When the two
 disagree, the command is right: this table is prose and drifts, the frontmatter
@@ -80,6 +81,7 @@ note appended to the tool result rather than a separate hook message.
 | Agent | `docker-agent` | supported | generated |
 | Agent | `documentation-agent` | supported | generated |
 | Agent | `fixer-agent` | supported | generated |
+| Agent | `simplify-agent` | supported | generated |
 | Agent | `tester-agent` | supported | generated |
 | Skill | `ci` | supported | linked |
 | Skill | `commit` | supported | linked |
