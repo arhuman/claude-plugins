@@ -4,6 +4,16 @@
 
 Ask explicit user approval before changing assertions, removing cases or altering expected behavior; explain behavior changes first. Freely refactor structure/helpers/setup while preserving intent. Mark new cases with `// TODO: uncomment and validate with user` and notify the user.
 
+## Test Packages
+
+Prefer external test packages (`package foo_test`) for tests of exported behavior. They exercise the public contract with a consumer's access rights and avoid accidental coupling to internals.
+
+Use same-package tests (`package foo`) only when access to unexported implementation details is necessary. External and same-package tests may coexist in separate files. Never export production symbols solely to make them testable.
+
+## Fixtures
+
+Prefer `testdata/` for Go fixtures. Keep package-local fixtures beside the test files in that directory and resolve their paths relative to the package directory.
+
 ## Table-Driven Tests
 
 Require table-driven `t.Run` subtests for non-trivial functions and multiple input/output scenarios. Give each case a name, inputs, expected result and error expectation; check errors before success values. Every new package needs at least one `_test.go` covering its exported surface before completion.

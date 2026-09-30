@@ -2,7 +2,7 @@
 
 ## Go: API Integration Tests
 
-Use a real Compose-started server after health readiness. Reference layout: `internal/api/api_test.go`, expected JSON in `assets/tests/*.json`; adapt to the project.
+Use a real Compose-started server after health readiness. Reference layout: `internal/api/api_test.go`, expected JSON in `internal/api/testdata/*.json`; adapt to the project. Follow the canonical [Go fixture guidance](../../lang-go/references/testing.md#fixtures).
 
 ### HTTP Request Helper
 
@@ -10,7 +10,7 @@ Share request construction with JSON content type and caller-supplied authentica
 
 ### JSON Fixture Comparison
 
-Compare actual and expected JSON structurally, with `github.com/wI2L/jsondiff` diagnostics on mismatch. Resolve fixtures from project root; surface fixture-read/JSON errors. Keep separate fixtures for distinct authorization outcomes.
+Compare actual and expected JSON structurally, with `github.com/wI2L/jsondiff` diagnostics on mismatch. Resolve package-local fixtures relative to the package directory, such as `testdata/response.json`; surface fixture-read/JSON errors. Keep separate fixtures for distinct authorization outcomes.
 
 ### Environment Setup for Tests
 
