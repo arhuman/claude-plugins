@@ -1,3 +1,5 @@
+version: "2"
+
 # golangci-lint config — MINIMAL tier (golangci-lint v2)
 #
 # The lowest-friction gate that still catches real correctness/resource bugs.
@@ -15,8 +17,6 @@
 # rule at a specific path with a reason; never drop the linter.
 #
 # Pin the golangci-lint binary to the version in ./versions.md.
-
-version: "2"
 
 linters:
   default: none

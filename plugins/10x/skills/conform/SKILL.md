@@ -99,6 +99,8 @@ Remediation dispatch for `make-conform` [Fix]:
 | (none) / mechanical | `fixer-agent` | dropping in a template file (ci.yml, dependabot.yml, SECURITY.md) |
 | docs updates after a fix | `documentation-agent` | README / CHANGELOG / ADR |
 
+Drop templates in with `cp`, verbatim: never reshape them with `sed`/`awk` (macOS ships BSD sed; a failed filter leaves an empty file). Validate the copy before running it, e.g. `golangci-lint config verify` for `.golangci.yml`.
+
 Done when, per command:
 
 - `check-conform`: the runner has actually run against the target (`sh ./references/conform.sh <target>`; exit 0 = no P0 drift, 1 = P0 drift, 2 = target unreachable) and its exit code is quoted in the report. The report file exists, names the active profile and its source in the header, leaves no `<...>` placeholder (`grep -cE '<[a-z_]+>' <report>` returns 0), and every P0 FAIL row cites the source evidence that confirmed it (or is downgraded to PARTIAL).
