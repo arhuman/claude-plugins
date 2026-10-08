@@ -56,6 +56,8 @@ Commit `.golangci.yml`, schema `version: "2"`; never rely on defaults. Select fr
 
 Pin golangci-lint/govulncheck to [versions](../_shared/references/versions.md); Makefile `tools` and CI `lint` must agree with it.
 
+When a prebuilt analyzer rejects the module because it was built with an older Go, run it through the module's toolchain instead of installing anything: `go run <tool>@<pinned version>` from the module root (`GOTOOLCHAIN=auto` selects the go.mod toolchain), or `go tool <name>` when go.mod declares it. Falling back to another prebuilt analyzer (staticcheck) fails the same way. If the toolchain cannot be fetched, report the analysis as not run; a source read does not replace it.
+
 ## Module Preferences
 
 Logging is owned by [slog](references/slog.md); testify (`require`, `assert`, `suite`) by [testing](references/testing.md).
