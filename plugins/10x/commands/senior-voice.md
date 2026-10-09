@@ -1,6 +1,7 @@
 ---
 description: 'Rewrite an existing report, finding, or document in the senior-voice register without changing its diagnosis, evidence, severity, or confidence. For review findings, preserves the existing report shape and technical detail while making behavior and consequence clear. Not for producing a new graded review.'
 argument-hint: <path to a report or document, or paste the text>
+disable-model-invocation: true
 ---
 
 ## Usage

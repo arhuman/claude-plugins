@@ -80,6 +80,14 @@ overlap=$(printf '%s\n%s\n%s\n%s\n' "$cmd_stems" "$agent_stems" "$skill_stems" "
   | sed '/^$/d' | sort | uniq -d)
 for stem in $overlap; do
   if printf '%s\n' "$DOCUMENTED_PAIRS" | grep -qx "$stem"; then
+    # A pair shares one /10x:<stem> name, so Claude Code lists only one
+    # description to the model. The command must be manual-only, or its
+    # description can replace the skill's and the skill never auto-triggers.
+    cmd="plugins/10x/commands/$stem.md"
+    if [ -f "$cmd" ] && [ "$(fm_field "$cmd" disable-model-invocation)" != true ]; then
+      echo "documented pair '$stem': $cmd lacks disable-model-invocation: true, so it can hide the skill's description"
+      fail=1
+    fi
     continue
   fi
   echo "cross-surface collision on '$stem': not a documented pair, needs a rename or an entry in DOCUMENTED_PAIRS"
