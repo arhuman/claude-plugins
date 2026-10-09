@@ -2,7 +2,9 @@
 description: 'Audits a repo (or a given scope) for redundancy, unnecessary abstraction, YAGNI violations, overlong or jargon-heavy documentation, and test files that should be merged. Produces a findings report only, never edits. Not for the current diff: use the built-in `simplify` skill. Not for standard-conformance drift: use conform-agent. Not for a graded quality score: use the built-in /code-review.'
 mode: subagent
 permission:
-  edit: deny
+  edit:
+    "*": deny
+    ".claude/doc/*": allow
   bash: allow
   webfetch: deny
   task: deny

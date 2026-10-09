@@ -44,6 +44,28 @@ for f in $(gen_agents); do
   [ "${#stem}" -le 64 ] || { echo "agent id over 64 chars: $stem"; fail=1; }
 done
 
+# 3. Report-only agents. Claude's Write without Edit means "write the report,
+# never patch the repo"; OpenCode folds write into edit, so a bare
+# `edit: deny` forbids the report too. The generated block must deny edit
+# broadly, then allow .claude/doc/* last, since OpenCode's last matching rule
+# wins. Checked on the text: a JSON rule in opencode.json would not do, the
+# agent file's rules are appended after it and override it.
+for src in $(plugin_agents); do
+  tools=$(fm_field "$src" tools)
+  case "$tools" in *Write*) ;; *) continue ;; esac
+  case "$tools" in *Edit*) continue ;; esac
+  gen="opencode/agents/$(basename "$src")"
+  block=$(awk 'NR==1&&$0=="---"{fm=1;next} fm&&$0=="---"{exit} fm' "$gen" \
+    | awk '/^  edit:/{on=1} on&&/^  [a-z]/&&!/^  edit:/{exit} on')
+  want=$(printf '  edit:\n    "*": deny\n    ".claude/doc/*": allow')
+  if [ "$block" != "$want" ]; then
+    echo "report-only agent cannot write its report under OpenCode: $gen"
+    echo "  want: edit denied except .claude/doc/*, got:"
+    printf '%s\n' "$block" | sed 's/^/  | /'
+    fail=1
+  fi
+done
+
 if grep -rn '—\|–' opencode/ >/dev/null 2>&1; then
   echo "em or en dash in generated output:"
   grep -rn '—\|–' opencode/ | head -10

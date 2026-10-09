@@ -78,11 +78,11 @@ note appended to the tool result rather than a separate hook message.
 | Command | `senior-voice` | supported | generated (`/10x-senior-voice`) |
 | Command | `tellme` | supported | generated (`/10x-tellme`) |
 | Agent | `coder-agent` | supported | generated |
-| Agent | `conform-agent` | supported | generated |
+| Agent | `conform-agent` | supported | generated (writes only under `.claude/doc/`) |
 | Agent | `docker-agent` | supported | generated |
 | Agent | `documentation-agent` | supported | generated |
 | Agent | `fixer-agent` | supported | generated |
-| Agent | `simplify-agent` | supported | generated |
+| Agent | `simplify-agent` | supported | generated (writes only under `.claude/doc/`) |
 | Agent | `tester-agent` | supported | generated |
 | Skill | `ci` | supported | linked |
 | Skill | `commit` | supported | linked |

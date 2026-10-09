@@ -121,10 +121,21 @@ for f in "$SRC"/agents/*.md; do
   # dead. Depth is the second gate and is not per-agent: install-opencode.sh
   # sets subagent_depth in opencode.json, since the default 1 blocks the second
   # hop whatever the permissions say.
+  #
+  # Write without Edit is a report-only agent. OpenCode folds write into
+  # edit, so it gets edit denied except under .claude/doc/, in that order:
+  # the last matching rule wins. The rule has to live here: one written into
+  # opencode.json is overridden by the rules this file carries. The V2 list
+  # form (`permissions:`) in agent frontmatter silently drops every agent of
+  # the directory under 2.0.20, hence the V1 object form.
   if [ -z "$tools" ]; then
     edit=allow bash=allow webfetch=allow task=allow
   else
-    case "$tools" in *Edit*) edit=allow ;; *) edit=deny ;; esac
+    case "$tools" in
+      *Edit*) edit=allow ;;
+      *Write*) edit=report ;;
+      *) edit=deny ;;
+    esac
     case "$tools" in *Bash*) bash=allow ;; *) bash=deny ;; esac
     case "$tools" in *WebFetch*|*WebSearch*) webfetch=allow ;; *) webfetch=deny ;; esac
     # Anchored on the list delimiters: a bare Task, not a TaskOutput/TaskStop
@@ -137,7 +148,13 @@ for f in "$SRC"/agents/*.md; do
     echo "$desc"
     echo "mode: subagent"
     echo "permission:"
-    echo "  edit: $edit"
+    if [ "$edit" = report ]; then
+      echo "  edit:"
+      echo '    "*": deny'
+      echo '    ".claude/doc/*": allow'
+    else
+      echo "  edit: $edit"
+    fi
     echo "  bash: $bash"
     echo "  webfetch: $webfetch"
     echo "  task: $task"
