@@ -90,10 +90,17 @@ Two checks degrade instead of failing when a tool is missing, and say so on
 stdout: the token budget needs `tiktoken`, and the shell lint needs
 `shellcheck`. The OpenCode sync check needs `pyyaml` for its YAML parse. CI
 installs all three before running `make check`, so a local `SKIP` line never
-means CI skipped it too.
+means CI skipped it too. Only a missing tool skips: a token budget that is
+exceeded fails the run.
+
+`make tools` installs the pinned `tiktoken` and `pyyaml` into a repo-local
+`.venv/` (gitignored), and every later `make` target runs its Python from it.
+A venv rather than the system Python, which refuses `pip install` on most
+current distributions (PEP 668). These are maintainer-side checks: nothing a
+user installs imports them.
 
 ```bash
-python3 -m pip install tiktoken==0.12.0 pyyaml
+make tools
 brew install shellcheck   # or your package manager; CI pins 0.11.0
 ```
 

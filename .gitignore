@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
+.venv/
 
 # Private working context. Gitignored globally on the author's machine; repeated
 # here so a fresh clone gets the same protection. Note the trailing slash: it must

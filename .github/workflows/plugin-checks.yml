@@ -10,11 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # Installed before `make check` so the token-budget and frontmatter
-      # checks take their real path: both degrade to a weaker check (or skip)
-      # when their import is missing, which would pass silently here.
-      - name: Check dependencies
-        run: python3 -m pip install --quiet tiktoken==0.12.0 pyyaml
       # Pinned, not the runner's preinstalled copy: a lint gate that moves
       # with the image changes its verdict without a commit to blame.
       - name: Install shellcheck
@@ -23,9 +18,13 @@ jobs:
             | tar -xJ
           sudo mv shellcheck-v0.11.0/shellcheck /usr/local/bin/shellcheck
           shellcheck --version
-      # The pinned spproof; make check would install it anyway, but a named
-      # step keeps the download failure separate from a policy failure.
-      - name: Install spproof
+      # The pinned spproof, tiktoken and pyyaml, the same pins a local
+      # `make tools` installs. Before `make check` so the token-budget and
+      # frontmatter checks take their real path: both degrade to a weaker
+      # check (or skip) when their import is missing, which would pass
+      # silently here. A named step keeps a download failure separate from a
+      # check failure.
+      - name: Install pinned tools
         run: make tools
       - name: Static checks
         run: make check
