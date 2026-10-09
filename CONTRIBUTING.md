@@ -76,6 +76,12 @@ make check
 It runs the same static checks as CI, in the same order, and stops on the first
 failure. `make help` lists every target.
 
+CI also validates the plugin manifests with `claude plugin validate --strict`,
+pinned to one Claude Code version in `.github/workflows/plugin-checks.yml`.
+`make validate` runs the same check with your local `claude` (override with
+`make validate CLAUDE=/path/to/claude`). Before bumping the CI pin, run
+`make validate` with the new version.
+
 The declarative checks (frontmatter shape, SKILL.md size, Makefile template
 indentation, relative links, the no-dash rule, the analysis agents' tool
 allowlist) are one policy, `.spproof.yml`,

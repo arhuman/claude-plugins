@@ -12,6 +12,11 @@ SPPROOF_VERSION ?= v0.2.0
 SPPROOF_INSTALL_DIR ?= $(HOME)/.local/bin
 SPPROOF ?= $(SPPROOF_INSTALL_DIR)/spproof
 
+# Claude Code CLI for validate. A variable so a caller can point at another
+# binary; recipes run under /bin/sh, where no interactive alias applies. CI
+# installs the pinned version named in plugin-checks.yml.
+CLAUDE ?= claude
+
 # Python dependencies of the checks, maintainer-side only: nothing under
 # plugins/ imports them. tools installs them into a repo-local venv, because
 # the system Python refuses pip installs (PEP 668). When the venv exists every
@@ -30,7 +35,7 @@ SHELL_SCRIPTS = scripts/*.sh plugins/10x/hooks/*.sh \
 	plugins/10x/skills/_shared/references/resolve-paths.sh
 
 # PHONY DECLARATIONS (in alphabetical order)
-.PHONY: check confirm gen help install-opencode policy shellcheck tokens tools uninstall-opencode
+.PHONY: check confirm gen help install-opencode policy shellcheck tokens tools uninstall-opencode validate
 
 # STANDARD TARGETS (in alphabetical order)
 
@@ -85,6 +90,10 @@ tokens:
 	else \
 		echo 'SKIP token budget: run make tools to install tiktoken into $(VENV) (CI always does)'; \
 	fi
+
+## validate: validate the plugin manifests with Claude Code in strict mode, as CI does
+validate:
+	@$(CLAUDE) plugin validate plugins/10x --strict
 
 ## install-opencode: symlink the generated tree and skills into ~/.config/opencode, then bind models
 install-opencode:

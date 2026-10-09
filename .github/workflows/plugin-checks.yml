@@ -28,7 +28,10 @@ jobs:
         run: make tools
       - name: Static checks
         run: make check
+      # Pinned for the same reason as shellcheck: an unpinned CLI changes the
+      # validator's verdict without a commit to blame. Bump it on purpose,
+      # after `make validate` passes locally with the new version.
       - name: Validate plugin manifests (strict)
         run: |
-          npm install -g @anthropic-ai/claude-code
-          claude plugin validate plugins/10x --strict
+          npm install -g @anthropic-ai/claude-code@2.1.286
+          make validate
