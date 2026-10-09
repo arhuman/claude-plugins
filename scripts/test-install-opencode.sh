@@ -306,41 +306,74 @@ then ok; else ko "models/preserves-existing-keys" "$out"; fi
 
 # subagent_depth gates agent-to-agent delegation: OpenCode's default of 1 lets
 # a primary spawn a subagent but stops that subagent spawning another, which
-# kills conform-agent's [Fix] dispatch. Absent or too low is raised to 2; a
-# higher value the user chose is left alone.
+# kills conform-agent's [Fix] dispatch. OpenCode 2.x reads it only under
+# `experimental` (its depth check reads experimental.subagent_depth ?? 1); a
+# root key is ignored. Absent or too low is raised to 2; a higher value the
+# user chose is left alone.
+
+# depth_is <file> <expected>: experimental.subagent_depth equals <expected>
+# and no root key is left behind to suggest otherwise.
+depth_is() {
+  python3 - "$1" "$2" <<'PY' >/dev/null 2>&1
+import json, sys
+doc = json.load(open(sys.argv[1], encoding="utf-8"))
+assert doc["experimental"]["subagent_depth"] == int(sys.argv[2]), doc
+assert "subagent_depth" not in doc, doc
+PY
+}
+
 h=$(fresh_home models-depth)
 out=$(HOME="$h" sh "$INST" --models 2>&1)
-if python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
-import json, sys
-assert json.load(open(sys.argv[1], encoding="utf-8"))["subagent_depth"] == 2
-PY
-then ok; else ko "models/depth-set-when-absent" "$out"; fi
+depth_is "$h/.config/opencode/opencode.json" 2 && ok \
+  || ko "models/depth-set-when-absent" "$out"
 
 h=$(fresh_home models-depth-low)
-printf '{"subagent_depth": 1}\n' > "$h/.config/opencode/opencode.json"
+printf '{"experimental": {"subagent_depth": 1, "batch_tool": true}}\n' \
+  > "$h/.config/opencode/opencode.json"
 out=$(HOME="$h" sh "$INST" --models 2>&1)
+depth_is "$h/.config/opencode/opencode.json" 2 && ok \
+  || ko "models/depth-raised-from-default" "$out"
 if python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
 import json, sys
-assert json.load(open(sys.argv[1], encoding="utf-8"))["subagent_depth"] == 2
+assert json.load(open(sys.argv[1], encoding="utf-8"))["experimental"]["batch_tool"] is True
 PY
-then ok; else ko "models/depth-raised-from-default" "$out"; fi
+then ok; else ko "models/depth-preserves-other-experimental-keys" "$out"; fi
 
 h=$(fresh_home models-depth-high)
-printf '{"subagent_depth": 5}\n' > "$h/.config/opencode/opencode.json"
+printf '{"experimental": {"subagent_depth": 5}}\n' > "$h/.config/opencode/opencode.json"
 out=$(HOME="$h" sh "$INST" --models 2>&1)
-if python3 - "$h/.config/opencode/opencode.json" <<'PY' >/dev/null 2>&1
-import json, sys
-assert json.load(open(sys.argv[1], encoding="utf-8"))["subagent_depth"] == 5
-PY
-then ok; else ko "models/depth-preserves-higher" "$out"; fi
+depth_is "$h/.config/opencode/opencode.json" 5 && ok \
+  || ko "models/depth-preserves-higher" "$out"
 
-# A non-integer is the user's typo, not ours to coerce.
+# A root key left by an earlier install is migrated, then removed: the higher
+# of the two values wins, and never below the minimum.
+h=$(fresh_home models-depth-migrate)
+printf '{"subagent_depth": 3, "experimental": {"subagent_depth": 1}}\n' \
+  > "$h/.config/opencode/opencode.json"
+out=$(HOME="$h" sh "$INST" --models 2>&1)
+depth_is "$h/.config/opencode/opencode.json" 3 && ok \
+  || ko "models/depth-migrates-higher-root" "$out"
+
+h=$(fresh_home models-depth-migrate-low)
+printf '{"subagent_depth": 1}\n' > "$h/.config/opencode/opencode.json"
+out=$(HOME="$h" sh "$INST" --models 2>&1)
+depth_is "$h/.config/opencode/opencode.json" 2 && ok \
+  || ko "models/depth-migrates-low-root" "$out"
+
+# A non-integer is the user's typo, not ours to coerce, at either location.
 h=$(fresh_home models-depth-bad)
-printf '{"subagent_depth": "2"}\n' > "$h/.config/opencode/opencode.json"
+printf '{"experimental": {"subagent_depth": "2"}}\n' > "$h/.config/opencode/opencode.json"
 out=$(HOME="$h" sh "$INST" --models 2>&1)
 rc=$?
 [ "$rc" != 0 ] && printf '%s' "$out" | grep -q 'is not an integer' && ok \
   || ko "models/depth-rejects-non-integer" "$out"
+
+h=$(fresh_home models-depth-bad-root)
+printf '{"subagent_depth": "2"}\n' > "$h/.config/opencode/opencode.json"
+out=$(HOME="$h" sh "$INST" --models 2>&1)
+rc=$?
+[ "$rc" != 0 ] && printf '%s' "$out" | grep -q 'is not an integer' && ok \
+  || ko "models/depth-rejects-non-integer-root" "$out"
 
 # A tier override rebinds every agent of that tier and no other.
 h=$(fresh_home models-tier)
@@ -405,6 +438,8 @@ rc=$?
   || ko "doctor/reports-healthy" "rc=$rc: $out"
 printf '%s' "$out" | grep -q 'model: agent.coder-agent -> ' && ok \
   || ko "doctor/reports-bindings" "$out"
+printf '%s' "$out" | grep -q 'depth: experimental.subagent_depth = 2' && ok \
+  || ko "doctor/reports-depth" "$out"
 
 # An agent left unbound inherits the primary model silently; doctor must say so.
 h=$(fresh_home doctor-unbound)

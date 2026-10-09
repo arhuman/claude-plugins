@@ -294,8 +294,9 @@ PY
 # a value the user wants to keep belongs in the override file, not in
 # opencode.json by hand. Every other key of the config is preserved.
 #
-# Also raises subagent_depth to 2 when it is lower, since agent-to-agent
-# delegation is dead at OpenCode's default of 1. Grouped here because this is
+# Also raises experimental.subagent_depth to 2 when it is lower, since
+# agent-to-agent delegation is dead at OpenCode's default of 1, and migrates a
+# root subagent_depth left by an earlier install. Grouped here because this is
 # the mode that already owns opencode.json and needs no path resolution.
 # install_models [OVERRIDE_FILE]
 install_models() {
@@ -393,23 +394,39 @@ changed = 0
 # primary may spawn a subagent but that subagent may not spawn another, so
 # conform-agent's [Fix] dispatch and the coder/tester handoffs are inert.
 # Raised when too low, never lowered: a higher value is the user's choice.
+# OpenCode 2.x reads it only as experimental.subagent_depth; a root key, which
+# earlier installs wrote, is ignored there. It is folded in (higher value
+# wins) and removed, so the file never shows a depth OpenCode does not apply.
 MIN_SUBAGENT_DEPTH = 2
-depth = doc.get("subagent_depth")
-if depth is None:
-    doc["subagent_depth"] = MIN_SUBAGENT_DEPTH
+
+
+def int_depth(value, where):
+    if value is not None and (not isinstance(value, int) or isinstance(value, bool)):
+        sys.exit("%s: %s = %r is not an integer; fix it first" % (target, where, value))
+    return value
+
+
+experimental = doc.setdefault("experimental", {})
+if not isinstance(experimental, dict):
+    sys.exit("%s has a non-object \"experimental\" key; fix it first" % target)
+depth = int_depth(experimental.get("subagent_depth"), "experimental.subagent_depth")
+legacy = int_depth(doc.get("subagent_depth"), "subagent_depth")
+if legacy is not None:
+    del doc["subagent_depth"]
     changed += 1
-    print("set:       subagent_depth -> %d (agent delegation needs >= 2)"
-          % MIN_SUBAGENT_DEPTH)
-elif not isinstance(depth, int) or isinstance(depth, bool):
-    sys.exit("%s: subagent_depth = %r is not an integer; fix it first"
-             % (target, depth))
-elif depth < MIN_SUBAGENT_DEPTH:
-    doc["subagent_depth"] = MIN_SUBAGENT_DEPTH
+    print("migrated:  root subagent_depth = %d (ignored by OpenCode 2.x) removed" % legacy)
+    depth = legacy if depth is None else max(depth, legacy)
+if depth is None or depth < MIN_SUBAGENT_DEPTH:
+    print("raised:    experimental.subagent_depth %s -> %d (agent delegation needs >= 2)"
+          % ("unset" if depth is None else depth, MIN_SUBAGENT_DEPTH))
+    depth = MIN_SUBAGENT_DEPTH
     changed += 1
-    print("raised:    subagent_depth %d -> %d (agent delegation needs >= 2)"
-          % (depth, MIN_SUBAGENT_DEPTH))
+elif depth != experimental.get("subagent_depth"):
+    changed += 1
+    print("set:       experimental.subagent_depth -> %d" % depth)
 else:
-    print("unchanged: subagent_depth = %d" % depth)
+    print("unchanged: experimental.subagent_depth = %d" % depth)
+experimental["subagent_depth"] = depth
 
 for section, entries in wanted.items():
     block = doc.setdefault(section, {})
@@ -462,6 +479,16 @@ for f in sorted(os.listdir(d)):
     else:
         print("model: agent.%s unbound, inherits the primary agent's model (run --models)" % name)
         unbound += 1
+experimental = doc.get("experimental")
+depth = experimental.get("subagent_depth") if isinstance(experimental, dict) else None
+if isinstance(depth, int) and not isinstance(depth, bool) and depth >= 2:
+    print("depth: experimental.subagent_depth = %d" % depth)
+else:
+    print("depth: experimental.subagent_depth = %s, agents cannot delegate (run --models)"
+          % ("unset" if depth is None else depth))
+    unbound += 1
+if "subagent_depth" in doc:
+    print("depth: root subagent_depth is ignored by OpenCode 2.x (run --models to migrate it)")
 sys.exit(1 if unbound else 0)
 PY
 }
