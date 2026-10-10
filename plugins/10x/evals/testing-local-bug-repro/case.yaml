@@ -1,0 +1,33 @@
+schema_version: "1.0"
+name: testing-local-bug-repro
+description: 'testing vs lang-go: a local bug to reproduce with a failing test, no plan'
+tags: [trigger]
+execution:
+  prompt: |
+    parseDuration("1h30m") returns 0 in my Go code instead of 90 minutes. Reproduce it with a failing test, then fix it. Here is the function:
+
+    ```go
+    func parseDuration(s string) time.Duration {
+    	d, err := time.ParseDuration(s + "m")
+    	if err != nil {
+    		return 0
+    	}
+    	return d
+    }
+    ```
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-testing-or-lang-go
+    tool: Skill
+    input_match: '"(10x:testing|10x:lang-go)"'
+  - type: tool_used
+    name: not-loop
+    tool: Skill
+    input_match: '"10x:loop"'
+    min: 0
+    max: 0
+    arm: both

@@ -89,7 +89,12 @@ skill or agent and not its neighbour. `make eval` runs the cases tagged
 each, and fails when a case scores below `EVAL_THRESHOLD` (default 0.66, two
 runs of three routed right). Every run is a real `claude` session billed to
 your account, so it never runs in CI; `EVAL_MAX_COST_USD` caps a run and the
-report stays local. Run it after changing a skill or agent description. Cases
+report stays local. Run it after changing a skill or agent description. A case
+whose prompt assumes files ships a `scaffold.sh` that stages them into the
+sandbox; `make eval` passes `--scaffold` so it runs. A case named
+`*-ambiguous` has no single right route: it passes when either neighbour
+fires or, where a direct answer is also right, fails only when a wrong
+component fires. Cases
 tagged `heldout` exist to catch a description tuned to the suite: never edit
 their prompts to make them pass.
 

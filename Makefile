@@ -21,6 +21,8 @@ CLAUDE ?= claude
 # session billed to the maintainer's credential: local only, never in CI.
 # Ablation is off because a no-plugin arm can never route to a 10x skill. The
 # threshold lets a case pass with two of three runs routed right.
+# --scaffold runs the scaffold.sh committed beside a case, which stages the
+# fixture its prompt assumes into the sandbox.
 EVAL_TAG ?= trigger
 EVAL_MODEL ?= sonnet
 EVAL_MAX_COST_USD ?= 10
@@ -68,7 +70,7 @@ check: shellcheck policy
 ## eval: run the plugin eval cases tagged EVAL_TAG on EVAL_MODEL; local only, each run is billed
 eval:
 	@$(CLAUDE) plugin eval plugins/10x --tag $(EVAL_TAG) --model $(EVAL_MODEL) --ablation none \
-		--no-publish --max-cost-usd $(EVAL_MAX_COST_USD) --threshold $(EVAL_THRESHOLD) $(EVAL_FLAGS)
+		--no-publish --scaffold --max-cost-usd $(EVAL_MAX_COST_USD) --threshold $(EVAL_THRESHOLD) $(EVAL_FLAGS)
 
 ## gen: regenerate the OpenCode commands and agents from plugin source
 gen:
