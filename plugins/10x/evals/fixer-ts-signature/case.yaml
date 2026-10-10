@@ -39,6 +39,12 @@ graders:
     name: dispatches-fixer
     tool: Agent
     input_match: '"10x:fixer-agent"'
+  # Since P35 nothing is preloaded: a TypeScript change that never invokes
+  # lang-typescript is the loss this case exists to catch.
+  - type: tool_used
+    name: loads-lang-typescript
+    tool: Skill
+    input_match: 'lang-typescript'
   - type: regex
     name: signal-typed
     pattern: 'fetchUser\(\s*id: string,\s*signal\??: AbortSignal'
