@@ -10,6 +10,13 @@ drift from the Makefile.
 If the project has only one compose file, keep the base skeleton's simple
 `up`/`down` instead; do not add this complexity unprompted.
 
+## Contents
+
+- Variables
+- Targets
+- Env bootstrap
+- Rules
+
 ## Variables
 
 Build the compose command once as a variable, then layer overlays on top. This

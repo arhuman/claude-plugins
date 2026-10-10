@@ -4,6 +4,20 @@ The authoritative shape of a plan file. Consumed by `loop` (which executes
 phases) and `steering` (which writes and audits them). Neither carries its own
 copy: a format described in two places drifts in two directions.
 
+## Contents
+
+- File resolution
+- Shape
+- Fields
+- `Refs`
+- Status
+- Claiming a phase
+- Phase ids
+- Ordering
+- Bugfix phases
+- Log
+- Validity
+
 ## File resolution
 
 Resolved once per turn, in this order, and the result is stated before any work:

@@ -14,6 +14,12 @@ for a tagged release installed the way most users install it, and the Makefile
 probe still passes because the Makefile does stamp. The fallback below is what
 closes that path.
 
+## Contents
+
+- Rules
+- Template
+- Verifying it
+
 ## Rules
 
 - Name the three variables exactly as the Makefile's `VERSION_PKG` expects

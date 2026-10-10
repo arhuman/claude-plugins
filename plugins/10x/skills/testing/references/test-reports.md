@@ -3,6 +3,12 @@
 Written to `.claude/doc/test-report-<slug>.md` in the target repo; the path
 contract lives in `../../_shared/references/artifacts.md`.
 
+## Contents
+
+- Test Report Template
+- Severity Definitions
+- Quick Reference
+
 ## Test Report Template
 
 ```markdown

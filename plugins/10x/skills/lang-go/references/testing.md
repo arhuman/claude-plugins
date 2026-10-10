@@ -1,5 +1,28 @@
 # Testing
 
+## Contents
+
+- Tests as User Contracts
+- Test Packages
+- Fixtures
+- Table-Driven Tests
+- Parallel Subtests
+- Test Helpers
+- testify Usage
+- Mocking with Interfaces
+- Benchmarking
+- Fuzzing (Go 1.18+)
+- Race Detector
+- Coverage
+- Golden Files
+- Build-Tag Matrix
+- Shared Helpers (internal/testutil)
+- Short Tests
+- Integration Tests
+- HTTP Handler Testing
+- Environment Variables in Tests
+- Quick Reference
+
 ## Tests as User Contracts
 
 Ask explicit user approval before changing assertions, removing cases or altering expected behavior; explain behavior changes first. Freely refactor structure/helpers/setup while preserving intent. Mark new cases with `// TODO: uncomment and validate with user` and notify the user.

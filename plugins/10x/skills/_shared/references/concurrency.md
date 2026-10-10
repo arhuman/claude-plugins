@@ -17,6 +17,14 @@ cannot untangle overlapping paths after the fact. commit's stop rule
 ("changes you did not make this session") is the safety net for that
 situation, not a substitute for avoiding it.
 
+## Contents
+
+- Setup, once per concurrent session
+- Landing work
+- Cleanup
+- What this deliberately does not add
+- What differs under OpenCode (checked 2026-09-28, P21)
+
 ## Setup, once per concurrent session
 
 ```

@@ -6,6 +6,19 @@ Source: https://every-layout.dev
 
 ---
 
+## Contents
+
+- Stack
+- Box
+- Center
+- Cluster
+- Sidebar
+- Grid
+- Frame
+- Reel
+- Icon
+- Composition Decisions
+
 ## Stack
 
 Vertical spacing between siblings. The most-used primitive.

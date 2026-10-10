@@ -5,6 +5,12 @@ overlays merged with `-f` keeps each environment's differences small and
 explicit. The `makefile` skill's `makefile-compose.md` provides the targets
 that drive these files.
 
+## Contents
+
+- Base: `docker-compose.yml` (neutral)
+- Overlays
+- Rules
+
 ## Base: `docker-compose.yml` (neutral)
 
 The base defines services, images, healthchecks, `depends_on`, and named volumes

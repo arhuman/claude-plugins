@@ -3,6 +3,21 @@
 Go projects use [swaggo/swag](https://github.com/swaggo/swag) to generate OpenAPI 2.0 (Swagger) specs from
 docstring annotations. The spec is served live via `gin-swagger`.
 
+## Contents
+
+- Setup
+- Generate the Spec
+- main.go: Global Annotations
+- routes.go: Register the UI Endpoint
+- Handler Annotations
+- Reusable Response Structs
+- Struct Tags for Schema Generation
+- Security Schemes
+- Multiple Tags per Handler
+- Path Parameters with Gin
+- Healthcheck (No Spec Entry Needed)
+- Best Practices
+
 ## Setup
 
 ```bash

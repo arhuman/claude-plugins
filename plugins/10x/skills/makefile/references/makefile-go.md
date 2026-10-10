@@ -2,6 +2,16 @@
 
 Merge alphabetically into the base standard targets.
 
+## Contents
+
+- Variables
+- Targets
+- Release automation
+- Coverage gate is a ratchet
+- Multi-module repos (go.work)
+- Reference Configuration
+- Standard conformance gate
+
 ## Variables
 
 Tunables use `?=`, computed-once values `:=`; shared versions own tool pins.

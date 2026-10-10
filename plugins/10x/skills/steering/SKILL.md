@@ -127,7 +127,7 @@ Done: all closed or refusal names remaining phases; archive path reported, point
 
 ## check
 
-Diagnosis only; no repairs or writes. Run `references/verify-plan.sh` and `references/verify-ux.sh` with resolved paths; quote outputs verbatim. ADR conformance is relayed through `verify-adr.sh`.
+Diagnosis only; no repairs or writes. Run `references/verify-plan.sh` and `references/verify-ux.sh` with resolved paths; quote outputs verbatim. ADR conformance is relayed through `references/verify-adr.sh`.
 
 | Result | Cases |
 |---|---|

@@ -10,6 +10,14 @@ with, and bump them in one edit here rather than per-skill. When bumping, keep
 the CI action `version:` field, the Makefile `tools` target, and any committed
 config identical.
 
+## Contents
+
+- Go toolchain
+- Go quality tools (pin in the Makefile `tools` target AND the CI `lint` job)
+- Repository static checks
+- GitHub Actions (pin in every workflow)
+- Reconciled drift (why these values)
+
 ## Go toolchain
 
 | Field | Value | Rule |

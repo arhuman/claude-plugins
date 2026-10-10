@@ -2,6 +2,12 @@
 
 For generators that do not load this skill, send the directive verbatim and audit the return.
 
+## Contents
+
+- Protocol
+- The directive (copy from here)
+- After the handoff
+
 ## Protocol
 
 1. Fill only the three PROJECT blocks (tokens/screens/components).

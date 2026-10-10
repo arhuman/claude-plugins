@@ -4,6 +4,17 @@ The authoritative shape of `docs/ux.md`. Consumed by `steering` (which writes
 and audits it) and `design-system` (which requires a screen table and a
 component registry without ever saying where they live).
 
+## Contents
+
+- Why the file exists
+- Location and tracking
+- Shape
+- Frontmatter
+- Sections
+- Rules
+- What `verify-ux.sh` checks
+- Evolution
+
 ## Why the file exists
 
 `design-system` defends the CSS layer with machinery: twelve audits, a

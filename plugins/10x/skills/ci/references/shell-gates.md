@@ -2,6 +2,14 @@
 
 Pure-shell gates beyond `ci.yml`; emit `::error::` / `::error file=::` annotations.
 
+## Contents
+
+- License gate (multi-module)
+- Public-tree gate (code-absence invariant)
+- Service-backed integration jobs
+- Inline coverage-gate fallback
+- go.work multi-module release (goreleaser alternative)
+
 ## License gate (multi-module)
 
 Every `go.mod` directory must contain `LICENSE`.

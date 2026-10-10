@@ -4,6 +4,16 @@ Targets **htmx 2.x**. Source: https://htmx.org/docs
 
 ---
 
+## Contents
+
+- Core Attributes
+- Swap Strategies
+- Common Patterns
+- Request Headers HTMX Sends
+- Response Headers Server Can Send
+- MUST DO
+- MUST NOT
+
 ## Core Attributes
 
 | Attribute | Purpose |

@@ -54,6 +54,7 @@ SHELL_SCRIPTS = scripts/*.sh plugins/10x/hooks/*.sh \
 ## check: run every static check, in the same order as CI
 check: shellcheck policy
 	@sh scripts/check-skill-references.sh
+	@sh scripts/check-reference-shape.sh
 	@$(MAKE) --no-print-directory tokens
 	@sh scripts/check-rule-duplication.sh
 	@sh scripts/check-dangling-refs.sh

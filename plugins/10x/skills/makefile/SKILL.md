@@ -13,6 +13,7 @@ Load by task:
 | `references/makefile-base.md` | Always: skeleton, exact help, confirm |
 | `references/makefile-go.md`, `references/version-go.md` | Go: targets, gates, ldflags and go-install fallback |
 | `references/makefile-compose.md` | Multi-environment Compose targets |
+| `references/release.sh` | Go `make release`: copy verbatim into `scripts/` |
 | `references/.golangci.yml` | Go standard tier; other tiers in `../_shared/README.md` |
 | `../_shared/references/versions.md` | Tool pins, identical in CI |
 

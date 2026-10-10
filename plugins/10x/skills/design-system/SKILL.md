@@ -17,6 +17,7 @@ Load when the task involves:
 | Fragments, mutation events, HTMX pitfalls | `references/htmx-ui.md` |
 | Contrast, focus, overflow, translations/glossary | `references/accessibility-i18n.md` |
 | Audits, ratchets, tests, regression review | `references/quality-guards.md` |
+| Running the CSS audit gate (`all`, ratchets, self-test) | `references/audit-ui.sh` |
 | Generator without this skill | `references/design-handoff.md` (verbatim brief + return gate) |
 | Visual identity | `references/aesthetics.md` |
 
