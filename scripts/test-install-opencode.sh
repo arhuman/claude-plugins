@@ -7,7 +7,7 @@
 # Pass --mcp to run only the MCP cases.
 set -u
 
-REPO=$(git rev-parse --show-toplevel 2>/dev/null) || REPO=$(cd "$(dirname "$0")/.." && pwd)
+REPO=$(cd "$(dirname "$0")/.." && pwd)
 INST="$REPO/scripts/install-opencode.sh"
 ONLY=${1:-all}
 ROOT=$(mktemp -d) || exit 1

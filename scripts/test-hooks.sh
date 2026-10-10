@@ -10,7 +10,7 @@
 # output, which is the only channel a hook has to the model there.
 set -u
 
-REPO=$(git rev-parse --show-toplevel 2>/dev/null) || REPO=$(cd "$(dirname "$0")/.." && pwd)
+REPO=$(cd "$(dirname "$0")/.." && pwd)
 HOOKS="$REPO/plugins/10x/hooks"
 ADAPTER="$REPO/opencode/plugins/10x-hooks.js"
 WORK=$(mktemp -d) || exit 1

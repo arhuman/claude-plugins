@@ -27,6 +27,24 @@ plugin_commands() { for f in plugins/*/commands/*.md; do [ -f "$f" ] && echo "$f
 gen_commands() { for f in opencode/commands/*.md; do [ -f "$f" ] && echo "$f"; done; }
 gen_agents() { for f in opencode/agents/*.md; do [ -f "$f" ] && echo "$f"; done; }
 
+# repo_files: tracked and not-yet-tracked files of the checkout this script
+# belongs to, minus ignored ones, relative to its root. Git answers only when
+# its toplevel is that root: a secondary jj workspace has no .git, and git
+# would otherwise answer for whatever repo encloses it. jj answers there.
+# Returns non-zero, printing nothing, when neither can list the checkout, so
+# a caller never mistakes an empty listing for a clean tree.
+repo_files() {
+  root=$(cd "$(dirname "$0")/.." && pwd -P)
+  if [ "$(git -C "$root" rev-parse --show-toplevel 2>/dev/null)" = "$root" ]; then
+    git -C "$root" ls-files --cached --others --exclude-standard
+  elif command -v jj >/dev/null 2>&1 && [ "$(cd "$root" && jj root 2>/dev/null)" = "$root" ]; then
+    (cd "$root" && jj file list)
+  else
+    echo "repo_files: neither git nor jj can list $root" >&2
+    return 1
+  fi
+}
+
 # fm_field <file> <key>: print the value of <key> from the first frontmatter
 # block, leading whitespace stripped, empty when the key or the block is
 # absent. Frontmatter only: the same key written in prose further down is not

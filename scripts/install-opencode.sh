@@ -21,8 +21,7 @@
 # a JSON entry carrying only a model invalidates the whole config.
 set -u
 
-REPO=$(git rev-parse --show-toplevel 2>/dev/null)
-[ -n "$REPO" ] || REPO=$(cd "$(dirname "$0")/.." && pwd)
+REPO=$(cd "$(dirname "$0")/.." && pwd)
 CFG="$HOME/.config/opencode"
 MODE=${1:-install}
 

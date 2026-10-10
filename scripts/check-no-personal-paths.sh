@@ -13,6 +13,10 @@
 # exactly the commit that introduces one. .claude/ is gitignored private
 # working context and legitimately full of local paths.
 set -u
+. "$(dirname "$0")/lib.sh"
+# An empty listing would scan nothing and report clean.
+files=$(repo_files) && [ -n "$files" ] || { echo "cannot list the repository files" >&2; exit 1; }
+cd "$(dirname "$0")/.." || exit 1
 
 fail=0
 
@@ -20,7 +24,7 @@ fail=0
 # portably, so only expanded forms are violations.
 pattern='/Users/[A-Za-z0-9._-]\{1,\}\|/home/[A-Za-z0-9._-]\{1,\}'
 
-for f in $(git ls-files --cached --others --exclude-standard); do
+for f in $files; do
   case "$f" in
     scripts/check-no-personal-paths.sh) continue ;;  # names the pattern itself
   esac

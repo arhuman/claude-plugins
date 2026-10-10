@@ -7,7 +7,7 @@
 # Usage: sh scripts/test-token-gate.sh
 set -u
 
-REPO=$(git rev-parse --show-toplevel 2>/dev/null) || REPO=$(cd "$(dirname "$0")/.." && pwd)
+REPO=$(cd "$(dirname "$0")/.." && pwd)
 WORK=$(mktemp -d) || exit 1
 trap 'rm -rf "$WORK"' EXIT
 
