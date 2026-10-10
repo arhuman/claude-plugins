@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: design-score-screen
+description: 'design-system vs lang-html: scoring a screen'
+tags: [trigger]
+execution:
+  prompt: |
+    Score our invoices dashboard page on readability, action and relief, and tell me what to change so a user understands it in five seconds. It is an SSR page with HTMX and hand-written CSS.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-design-system
+    tool: Skill
+    input_match: '"10x:design-system"'
+  - type: tool_used
+    name: not-lang-html
+    tool: Skill
+    input_match: '"10x:lang-html"'
+    min: 0
+    max: 0
+    arm: both

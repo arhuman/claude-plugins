@@ -1,0 +1,16 @@
+schema_version: "1.0"
+name: testing-strict-tdd
+description: 'testing vs strict TDD: test-first work routes to the shipped testing skill'
+tags: [trigger]
+execution:
+  prompt: |
+    Let's work strictly test-first on a Go Slugify function: red, green, refactor. Start with the first failing test only, nothing else.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-testing
+    tool: Skill
+    input_match: '"10x:testing"'

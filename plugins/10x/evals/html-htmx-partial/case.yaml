@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: html-htmx-partial
+description: 'lang-html vs design-system: HTMX swap mechanics'
+tags: [trigger]
+execution:
+  prompt: |
+    In my Go server-rendered app, a search form should replace only the results list when submitted, without a full page reload. Show me the hx-get, hx-target and hx-swap attributes and the partial template the handler should return.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-lang-html
+    tool: Skill
+    input_match: '"10x:lang-html"'
+  - type: tool_used
+    name: not-design-system
+    tool: Skill
+    input_match: '"10x:design-system"'
+    min: 0
+    max: 0
+    arm: both

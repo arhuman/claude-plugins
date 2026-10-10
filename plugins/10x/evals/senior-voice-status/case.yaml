@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: senior-voice-status
+description: 'senior-voice vs documentation-rules: reader-facing prose'
+tags: [trigger]
+execution:
+  prompt: |
+    Rewrite this status update for stakeholders who do not know the codebase: "fixed the race in the claim mutex, lease renew now atomic, flake gone, P21 green".
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-senior-voice
+    tool: Skill
+    input_match: '"10x:senior-voice"'
+  - type: tool_used
+    name: not-documentation-rules
+    tool: Skill
+    input_match: '"10x:documentation-rules"'
+    min: 0
+    max: 0
+    arm: both

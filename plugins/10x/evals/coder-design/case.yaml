@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: coder-design
+description: 'coder-agent vs fixer-agent: positive, design work'
+tags: [trigger]
+execution:
+  prompt: |
+    Delegate this to the right subagent: design and implement per-client token-bucket rate limiting middleware for our Go HTTP server.
+  max_turns: 4
+  timeout_seconds: 300
+  allowed_tools: [Agent]
+runs: 3
+graders:
+  - type: tool_used
+    name: dispatches-coder
+    tool: Agent
+    input_match: '"10x:coder-agent"'
+  - type: tool_used
+    name: not-fixer
+    tool: Agent
+    input_match: '"10x:fixer-agent"'
+    min: 0
+    max: 0
+    arm: both

@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: fixer-rename
+description: 'coder-agent vs fixer-agent: negative, a fully specified rename'
+tags: [trigger]
+execution:
+  prompt: |
+    Delegate this to the right subagent: rename the Go function GetUser to FetchUser in every file and update all callers. Nothing else changes.
+  max_turns: 4
+  timeout_seconds: 300
+  allowed_tools: [Agent]
+runs: 3
+graders:
+  - type: tool_used
+    name: dispatches-fixer
+    tool: Agent
+    input_match: '"10x:fixer-agent"'
+  - type: tool_used
+    name: not-coder
+    tool: Agent
+    input_match: '"10x:coder-agent"'
+    min: 0
+    max: 0
+    arm: both

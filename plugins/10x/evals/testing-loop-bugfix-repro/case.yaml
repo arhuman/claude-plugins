@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: testing-loop-bugfix-repro
+description: 'testing vs bug reproduction: negative, a loop bugfix phase keeps its test inline'
+tags: [trigger]
+execution:
+  prompt: |
+    Run the next todo phase of .claude/plan/billing.md. It is a bugfix phase: its Accept test must reproduce the Repro line before the fix.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-loop
+    tool: Skill
+    input_match: '"10x:loop"'
+  - type: tool_used
+    name: not-testing
+    tool: Skill
+    input_match: '"10x:testing"'
+    min: 0
+    max: 0
+    arm: both

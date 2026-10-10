@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: makefile-target
+description: 'makefile vs ci: a Makefile target'
+tags: [trigger, heldout]
+execution:
+  prompt: |
+    Add a lint target to our Makefile that runs golangci-lint, declared .PHONY and listed in make help.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-makefile
+    tool: Skill
+    input_match: '"10x:makefile"'
+  - type: tool_used
+    name: not-ci
+    tool: Skill
+    input_match: '"10x:ci"'
+    min: 0
+    max: 0
+    arm: both

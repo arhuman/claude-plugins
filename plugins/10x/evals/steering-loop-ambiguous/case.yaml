@@ -1,0 +1,16 @@
+schema_version: "1.0"
+name: steering-loop-ambiguous
+description: 'steering vs loop: ambiguous, bootstrap a plan from a roadmap'
+tags: [trigger]
+execution:
+  prompt: |
+    We have a ROADMAP.md and a few ADRs. Turn them into an executable phased plan for this project.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-steering-or-loop
+    tool: Skill
+    input_match: '"(10x:steering|10x:loop)"'

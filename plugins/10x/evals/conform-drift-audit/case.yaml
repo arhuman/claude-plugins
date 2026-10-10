@@ -1,0 +1,16 @@
+schema_version: "1.0"
+name: conform-drift-audit
+description: 'conform vs quality review: positive, standard drift'
+tags: [trigger]
+execution:
+  prompt: |
+    Audit this repository for drift from the 10x engineering standard: Makefile targets, CI, Docker, version stamps. List what is missing.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-conform
+    tool: Skill
+    input_match: '"10x:conform"'

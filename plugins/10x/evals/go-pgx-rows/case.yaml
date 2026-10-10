@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: go-pgx-rows
+description: 'lang-go vs lang-sql: driver code in Go'
+tags: [trigger, heldout]
+execution:
+  prompt: |
+    My Go function that runs a pgx query and scans rows into structs leaks connections under load. Fix the rows handling and the error checks.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-lang-go
+    tool: Skill
+    input_match: '"10x:lang-go"'
+  - type: tool_used
+    name: not-lang-sql
+    tool: Skill
+    input_match: '"10x:lang-sql"'
+    min: 0
+    max: 0
+    arm: both

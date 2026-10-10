@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: commit-conventions-audit
+description: 'commit vs conform: auditing commit conventions is drift, not a commit'
+tags: [trigger]
+execution:
+  prompt: |
+    Check whether this repo follows the 10x standard for commit conventions and hooks, and report the drift.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-conform
+    tool: Skill
+    input_match: '"10x:conform"'
+  - type: tool_used
+    name: not-commit
+    tool: Skill
+    input_match: '"10x:commit"'
+    min: 0
+    max: 0
+    arm: both

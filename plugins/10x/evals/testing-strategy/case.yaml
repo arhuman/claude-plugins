@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: testing-strategy
+description: 'testing vs bug reproduction: positive, a test strategy'
+tags: [trigger]
+execution:
+  prompt: |
+    Propose a test strategy for our Go order service: what to cover with unit tests, what with integration tests against Postgres, which E2E flows matter, and a coverage target we can enforce in CI.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-testing
+    tool: Skill
+    input_match: '"10x:testing"'
+  - type: tool_used
+    name: not-loop
+    tool: Skill
+    input_match: '"10x:loop"'
+    min: 0
+    max: 0
+    arm: both

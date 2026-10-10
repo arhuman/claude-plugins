@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: ci-github-workflow
+description: 'ci vs makefile: a GitHub Actions workflow'
+tags: [trigger]
+execution:
+  prompt: |
+    Our Go repo has make audit and make test but no CI. Write the GitHub Actions workflow that runs them on every push and pull request.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-ci
+    tool: Skill
+    input_match: '"10x:ci"'
+  - type: tool_used
+    name: not-makefile
+    tool: Skill
+    input_match: '"10x:makefile"'
+    min: 0
+    max: 0
+    arm: both

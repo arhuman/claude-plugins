@@ -17,6 +17,16 @@ SPPROOF ?= $(SPPROOF_INSTALL_DIR)/spproof
 # installs the pinned version named in plugin-checks.yml.
 CLAUDE ?= claude
 
+# Trigger evals (plugins/10x/evals/*/case.yaml). Each run is a real claude
+# session billed to the maintainer's credential: local only, never in CI.
+# Ablation is off because a no-plugin arm can never route to a 10x skill. The
+# threshold lets a case pass with two of three runs routed right.
+EVAL_TAG ?= trigger
+EVAL_MODEL ?= sonnet
+EVAL_MAX_COST_USD ?= 10
+EVAL_THRESHOLD ?= 0.66
+EVAL_FLAGS ?=
+
 # Python dependencies of the checks, maintainer-side only: nothing under
 # plugins/ imports them. tools installs them into a repo-local venv, because
 # the system Python refuses pip installs (PEP 668). When the venv exists every
@@ -35,7 +45,7 @@ SHELL_SCRIPTS = scripts/*.sh plugins/10x/hooks/*.sh \
 	plugins/10x/skills/_shared/references/resolve-paths.sh
 
 # PHONY DECLARATIONS (in alphabetical order)
-.PHONY: check confirm gen help install-opencode policy shellcheck tokens tools uninstall-opencode validate
+.PHONY: check confirm eval gen help install-opencode policy shellcheck tokens tools uninstall-opencode validate
 
 # STANDARD TARGETS (in alphabetical order)
 
@@ -54,6 +64,11 @@ check: shellcheck policy
 	@sh scripts/test-install-opencode.sh
 	@sh scripts/test-claim.sh
 	@sh scripts/test-token-gate.sh
+
+## eval: run the plugin eval cases tagged EVAL_TAG on EVAL_MODEL; local only, each run is billed
+eval:
+	@$(CLAUDE) plugin eval plugins/10x --tag $(EVAL_TAG) --model $(EVAL_MODEL) --ablation none \
+		--no-publish --max-cost-usd $(EVAL_MAX_COST_USD) --threshold $(EVAL_THRESHOLD) $(EVAL_FLAGS)
 
 ## gen: regenerate the OpenCode commands and agents from plugin source
 gen:

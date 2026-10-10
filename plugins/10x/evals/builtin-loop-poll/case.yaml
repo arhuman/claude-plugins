@@ -1,0 +1,19 @@
+schema_version: "1.0"
+name: builtin-loop-poll
+description: 'built-in loop vs 10x:loop: a recurring poll'
+tags: [trigger]
+execution:
+  prompt: |
+    Check whether the staging deploy finished every 5 minutes until it is green.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: not-10x-loop
+    tool: Skill
+    input_match: '"10x:loop"'
+    min: 0
+    max: 0
+    arm: both

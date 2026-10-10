@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: steering-add-phase
+description: 'steering vs loop: positive, plan maintenance'
+tags: [trigger]
+execution:
+  prompt: |
+    Add a new phase to our execution plan for migrating sessions to Redis, after the last verified phase, and give me the plan status.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-steering
+    tool: Skill
+    input_match: '"10x:steering"'
+  - type: tool_used
+    name: not-loop
+    tool: Skill
+    input_match: '"10x:loop"'
+    min: 0
+    max: 0
+    arm: both

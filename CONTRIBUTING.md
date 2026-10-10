@@ -82,6 +82,17 @@ pinned to one Claude Code version in `.github/workflows/plugin-checks.yml`.
 `make validate CLAUDE=/path/to/claude`). Before bumping the CI pin, run
 `make validate` with the new version.
 
+Routing evals live in `plugins/10x/evals/<case>/case.yaml` and run with
+`claude plugin eval`. Each case checks that a prompt invokes the expected
+skill or agent and not its neighbour. `make eval` runs the cases tagged
+`EVAL_TAG` (default `trigger`) on `EVAL_MODEL` (default `sonnet`), three runs
+each, and fails when a case scores below `EVAL_THRESHOLD` (default 0.66, two
+runs of three routed right). Every run is a real `claude` session billed to
+your account, so it never runs in CI; `EVAL_MAX_COST_USD` caps a run and the
+report stays local. Run it after changing a skill or agent description. Cases
+tagged `heldout` exist to catch a description tuned to the suite: never edit
+their prompts to make them pass.
+
 The declarative checks (frontmatter shape, SKILL.md size, Makefile template
 indentation, relative links, the no-dash rule, the analysis agents' tool
 allowlist) are one policy, `.spproof.yml`,

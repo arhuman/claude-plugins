@@ -1,0 +1,19 @@
+schema_version: "1.0"
+name: conform-quality-review
+description: 'conform vs quality review: negative, a graded code review'
+tags: [trigger]
+execution:
+  prompt: |
+    Give the internal/billing Go package a graded code-quality review, with a score for architecture, security and correctness.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: not-conform
+    tool: Skill
+    input_match: '"10x:conform"'
+    min: 0
+    max: 0
+    arm: both

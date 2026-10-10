@@ -1,0 +1,16 @@
+schema_version: "1.0"
+name: coder-fixer-ambiguous
+description: 'coder-agent vs fixer-agent: ambiguous, a signature change with one decision'
+tags: [trigger]
+execution:
+  prompt: |
+    Delegate this to the right subagent: add a context.Context first parameter to Store.Save in our Go code and pass it through from the HTTP handlers.
+  max_turns: 4
+  timeout_seconds: 300
+  allowed_tools: [Agent]
+runs: 3
+graders:
+  - type: tool_used
+    name: dispatches-coder-or-fixer
+    tool: Agent
+    input_match: '"(10x:coder-agent|10x:fixer-agent)"'

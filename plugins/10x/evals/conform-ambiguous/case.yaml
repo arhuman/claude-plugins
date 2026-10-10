@@ -1,0 +1,16 @@
+schema_version: "1.0"
+name: conform-ambiguous
+description: 'conform vs quality review: ambiguous, is this repo in good shape'
+tags: [trigger, heldout]
+execution:
+  prompt: |
+    Is this repository in good shape? Check it and tell me what to fix first.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-conform-or-review
+    tool: Skill
+    input_match: '"(10x:conform|code-review)"'
