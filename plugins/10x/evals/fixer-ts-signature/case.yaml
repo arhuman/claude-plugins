@@ -1,0 +1,50 @@
+schema_version: "1.0"
+name: fixer-ts-signature
+description: 'fixer-agent on TypeScript: a signature update types the new parameter and the return (lang-typescript explicit types)'
+tags: [fixer]
+execution:
+  prompt: |
+    Use the 10x:fixer-agent subagent for this change. Do not write files: the
+    subagent returns the complete updated file in one ```ts block, and your
+    final reply is exactly that block, nothing else.
+
+    Change: in api.ts, add a second parameter `signal`, an AbortSignal, to
+    fetchUser, pass it to fetch as `{ signal }`, and update loadProfile to
+    pass `controller.signal`. Nothing else changes.
+
+    api.ts:
+    ```ts
+    export interface User {
+      readonly id: string;
+      readonly name: string;
+    }
+
+    export async function fetchUser(id: string) {
+      const res = await fetch(`/api/users/${id}`);
+      if (!res.ok) throw new Error(`fetchUser: ${res.status}`);
+      return (await res.json()) as User;
+    }
+
+    export async function loadProfile(controller: AbortController): Promise<User> {
+      const user = await fetchUser("me");
+      return user;
+    }
+    ```
+  max_turns: 6
+  timeout_seconds: 300
+  allowed_tools: [Agent]
+runs: 3
+graders:
+  - type: tool_used
+    name: dispatches-fixer
+    tool: Agent
+    input_match: '"10x:fixer-agent"'
+  - type: regex
+    name: signal-typed
+    pattern: 'fetchUser\(\s*id: string,\s*signal\??: AbortSignal'
+  - type: regex
+    name: caller-updated
+    pattern: 'fetchUser\("me",\s*controller\.signal\)'
+  - type: regex
+    name: explicit-return-type
+    pattern: 'function fetchUser\([^)]*\)\s*:\s*Promise<'

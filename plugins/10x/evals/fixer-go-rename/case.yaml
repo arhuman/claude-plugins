@@ -1,0 +1,71 @@
+schema_version: "1.0"
+name: fixer-go-rename
+description: 'fixer-agent on Go: a rename keeps the exported doc comment in step (lang-go documents every exported function)'
+tags: [fixer]
+execution:
+  prompt: |
+    Use the 10x:fixer-agent subagent for this change. Do not write files: the
+    subagent returns the complete updated file in one ```go block, and your
+    final reply is exactly that block, nothing else.
+
+    Change: rename the exported function FetchUser to GetUser in store.go and
+    update every call. Nothing else changes.
+
+    store.go:
+    ```go
+    package store
+
+    import (
+    	"errors"
+    	"net/http"
+    )
+
+    // ErrNotFound reports a missing user.
+    var ErrNotFound = errors.New("user not found")
+
+    // User is a stored account.
+    type User struct {
+    	ID   string
+    	Name string
+    }
+
+    var users = map[string]User{}
+
+    // FetchUser returns the user stored under id, or ErrNotFound.
+    func FetchUser(id string) (User, error) {
+    	u, ok := users[id]
+    	if !ok {
+    		return User{}, ErrNotFound
+    	}
+    	return u, nil
+    }
+
+    func userHandler(w http.ResponseWriter, r *http.Request) {
+    	u, err := FetchUser(r.PathValue("id"))
+    	if err != nil {
+    		http.Error(w, err.Error(), http.StatusNotFound)
+    		return
+    	}
+    	_, _ = w.Write([]byte(u.Name))
+    }
+    ```
+  max_turns: 6
+  timeout_seconds: 300
+  allowed_tools: [Agent]
+runs: 3
+graders:
+  - type: tool_used
+    name: dispatches-fixer
+    tool: Agent
+    input_match: '"10x:fixer-agent"'
+  - type: regex
+    name: renamed-declaration
+    pattern: 'func GetUser\(id string\) \(User, error\)'
+  - type: regex
+    name: doc-comment-follows-rename
+    pattern: '^\s*// GetUser '
+    flags: m
+  - type: regex
+    name: no-old-name-left
+    pattern: 'FetchUser'
+    match: not_contains
