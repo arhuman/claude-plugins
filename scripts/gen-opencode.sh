@@ -110,6 +110,7 @@ for f in "$SRC"/agents/*.md; do
   [ -n "$tier" ] || { echo "missing model tier in $f" >&2; exit 1; }
   tools=$(fm_line "$f" tools | sed 's/^tools: *//')
   skills=$(fm_line "$f" skills | sed 's/^skills: *//')
+  disallowed=$(fm_line "$f" disallowedTools | sed 's/^disallowedTools: *//')
 
   # No tools: line in Claude Code means full inheritance; the port
   # preserves behavior, it never silently tightens.
@@ -142,6 +143,10 @@ for f in "$SRC"/agents/*.md; do
     # that happens to share the prefix.
     case ", $tools," in *", Task,"*) task=allow ;; *) task=deny ;; esac
   fi
+
+  # disallowedTools subtracts from whatever the branch above granted. Agent is
+  # the current name of the spawn tool and Task its legacy alias.
+  case ", $disallowed," in *", Agent,"*|*", Task,"*) task=deny ;; esac
 
   {
     echo "---"

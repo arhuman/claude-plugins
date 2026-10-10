@@ -5,7 +5,7 @@ permission:
   edit: allow
   bash: allow
   webfetch: allow
-  task: allow
+  task: deny
 ---
 Read these skills first: lang-go, lang-typescript.
 
