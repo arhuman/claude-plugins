@@ -11,7 +11,7 @@ Plugin to make Claude Code a 10x more efficient
 | Command | `/10x:loop` | One plan-driven work turn: take a phase, implement, prove it with a mutation-checked gate, commit, stop. Never pushes |
 | Command | `/10x:handoff` | Save or restore the thread of a phase interrupted mid-way (`--resume` to read it back) |
 | Command | `/10x:check-conform` | Diagnose a repo against the engineering standard and report drift. Read-only |
-| Command | `/10x:make-conform` | Apply the standard's remediations and open one PR. Modifies the repo |
+| Command | `/10x:make-conform` | Apply the standard's remediations and commit them. Modifies the repo; never pushes or opens a PR |
 | Command | `/10x:propose-probe` | Turn a confirmed conformance false negative into a draft new check |
 | Command | `/10x:tellme` | Read-only technical Q&A and architectural guidance |
 | Command | `/10x:evaluate` | Multi-model comparison of an answer via PAL, synthesized into one doc |

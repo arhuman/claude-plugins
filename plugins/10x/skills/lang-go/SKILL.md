@@ -1,6 +1,6 @@
 ---
 name: lang-go
-description: 'Go coding best practices and patterns. Use when working with Go or Golang files: implementation, testing, refactoring, architectural review, goroutines, channels, interfaces, error handling, memory management, and API development. Not for Makefile or CI workflow authoring in a Go repo: use the `makefile` and `ci` skills.'
+description: 'Go implementation, review and refactoring rules: error handling, interfaces, concurrency, generics, project structure, HTTP APIs, CLIs, logging, memory and tests. Use when writing, fixing, reviewing or refactoring Go code, including Go code that queries a database. Not for SQL schema or migrations: use `lang-sql`. Not for Makefile or CI workflow authoring in a Go repo: use the `makefile` and `ci` skills.'
 ---
 
 # 10x Go

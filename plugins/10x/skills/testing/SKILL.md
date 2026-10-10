@@ -1,6 +1,6 @@
 ---
 name: testing
-description: 'Use for unit, integration, E2E, performance/security tests, strategies, coverage, defects, test failures, manual QA and CI test pipelines. Strict red-green-refactor belongs to tdd; a loop bugfix phase keeps its single failing test inline.'
+description: 'Test discipline for test-first TDD (red-green-refactor, one failing test at a time), bug reproduction with a failing test, and test suites: unit, integration, E2E, performance and security tests, strategy, coverage, failing tests, manual QA and CI test pipelines. Use before writing or changing any test. Not for the single failing test a loop bugfix phase writes: that stays inline in the phase.'
 ---
 
 # Testing contracts

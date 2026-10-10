@@ -1,6 +1,6 @@
 ---
 name: lang-html
-description: 'HTML, HTMX and CSS mechanics using CUBE CSS and Every Layout. Use for templates, partial updates, styles and server-rendered components. For visual identity and screen quality use `design-system`.'
+description: 'Writes and reviews server-rendered HTML templates, HTMX interactions (requests, targets, swaps, partial responses) and hand-written CSS using CUBE CSS and Every Layout. Use when writing or changing templates, HTMX attributes, partial updates, components or stylesheets. For visual identity and screen quality use `design-system`.'
 ---
 # lang-html
 

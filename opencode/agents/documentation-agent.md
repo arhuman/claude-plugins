@@ -1,5 +1,5 @@
 ---
-description: 'Use when code changes affect public APIs or user-facing functionality, new features need documentation, architectural decisions should be recorded, README files need creating or updating, or the user explicitly asks for documentation work. Not for code changes: use coder-agent or fixer-agent; this agent writes docs, CHANGELOG, and ADRs only.'
+description: 'Writes and updates project documentation: README files, guides, public API and user-facing feature docs, CHANGELOG entries and ADRs. Use when code changes affect public APIs or user-facing behavior, a new feature needs documenting, an architectural decision should be recorded, or the user asks for documentation work. Not for code changes: use coder-agent or fixer-agent; this agent writes docs, CHANGELOG, and ADRs only.'
 mode: subagent
 permission:
   edit: allow

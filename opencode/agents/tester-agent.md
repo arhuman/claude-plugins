@@ -1,5 +1,5 @@
 ---
-description: 'A specialized agent for all testing tasks. Use for writing tests, analyzing coverage, debugging test failures, and running performance or security audits. Not for a strict red-green-refactor loop: use the tdd skill. Not for the single inline test a loop bugfix phase writes: that stays in the phase.'
+description: 'Testing specialist: writes tests, analyzes coverage, debugs failing tests, and runs performance or security test audits, applying the testing skill (test-first work included). Use for testing work worth delegating. Not for the single inline test a loop bugfix phase writes: that stays in the phase.'
 mode: subagent
 permission:
   edit: allow

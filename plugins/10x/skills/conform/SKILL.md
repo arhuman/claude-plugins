@@ -1,6 +1,6 @@
 ---
 name: conform
-description: 'Detect and enforce a repo''s drift from the 10x engineering standard (Makefile, CI, Docker, versioning, tests, governance, security headers, supply chain). Use when asked to audit a repo for standard conformance, check for drift, bring a repo up to standard, add a conformance gate to CI, or after scaffolding a project to stamp and verify its standard version. Not for grading code quality: a scored review of architecture, security, or correctness is the built-in /code-review; conform measures drift from the standard manifest, nothing else.'
+description: 'Detects and enforces a repo''s drift from the 10x engineering standard: Makefile, CI, Docker, versioning, tests, commit conventions and hooks, governance, security headers, supply chain. Use when auditing or health-checking a repo''s engineering setup, checking for drift, bringing a repo up to standard, adding a conformance gate to CI, or stamping a freshly scaffolded project. Not for grading code quality: a scored review of architecture, security, or correctness is the built-in /code-review; conform measures drift from the standard manifest, nothing else.'
 ---
 # 10x Conform
 

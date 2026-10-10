@@ -1,6 +1,6 @@
 ---
 name: thinking
-description: 'Use when writing, reviewing, or refactoring code: surface assumptions, avoid overcomplication, make surgical changes, and verify success. Not for grading code: use built-in /code-review.'
+description: 'Coding discipline for writing, reviewing and refactoring code: surfaces assumptions, avoids overcomplication, keeps changes surgical, and verifies success. Use whenever code is about to be written or changed. Not for grading code: use built-in /code-review.'
 ---
 
 # Thinking contracts

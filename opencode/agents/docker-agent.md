@@ -1,5 +1,5 @@
 ---
-description: 'Use for creating or modifying Dockerfiles and docker-compose files, optimizing builds, setting up development environments, or troubleshooting Docker issues. Not for non-Docker implementation work: use coder-agent or fixer-agent.'
+description: 'Creates and modifies Dockerfiles and docker-compose files, optimizes image builds, sets up containerized development environments, and troubleshoots Docker issues, applying the docker skill. Not for non-Docker implementation work: use coder-agent or fixer-agent.'
 mode: subagent
 permission:
   edit: allow
