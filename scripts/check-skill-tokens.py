@@ -40,44 +40,55 @@ def frontmatter_field(text, key):
     return ""
 
 
+def body(text):
+    """Markdown after the frontmatter block: what a harness injects as prompt."""
+    match = re.match(r"---\n.*?\n---\n", text, re.DOTALL)
+    return text[match.end() :] if match else text
+
+
 def report(root):
-    """Per-harness always-loaded context: skill descriptions (both harnesses)
-    plus, on OpenCode, the generated 'Read these skills first' preamble every
-    agent declaring `skills:` carries (gen-opencode.sh, rewrite step)."""
+    """Per-harness context cost in three buckets, as text.
+
+    catalogue: skill and agent descriptions, paid by every session.
+    agent start: paid each time an agent starts. Claude Code injects the agent
+    prompt plus the full body of every `skills:` entry; OpenCode injects its
+    generated prompt, which only names those skills (gen-opencode.sh preamble).
+    on-invoke: a skill's SKILL.md body, paid when the skill is invoked; the
+    same file on both harnesses.
+    """
     encoder = tiktoken.get_encoding("cl100k_base")
-    skills_dir = root / "plugins/10x/skills"
-    description_tokens = 0
-    per_skill = {}
-    for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
-        name = skill_md.parent.name
-        desc = frontmatter_field(skill_md.read_text(), "description")
-        tokens = len(encoder.encode(desc, disallowed_special=()))
-        per_skill[name] = tokens
-        description_tokens += tokens
 
-    preamble_tokens = 0
-    per_agent_preamble = {}
-    for agent_md in sorted((root / "plugins/10x/agents").glob("*.md")):
-        skills_line = frontmatter_field(agent_md.read_text(), "skills")
-        if not skills_line:
-            continue
-        names = re.sub(r"\s+", ", ", skills_line.strip())
-        preamble = f"Read these skills first: {names}."
-        tokens = len(encoder.encode(preamble, disallowed_special=()))
-        per_agent_preamble[agent_md.stem] = tokens
-        preamble_tokens += tokens
+    def count(text):
+        return len(encoder.encode(text, disallowed_special=()))
 
-    return {
-        "claude_code": {
-            "always_loaded": description_tokens,
-            "skill_descriptions": per_skill,
-        },
-        "opencode": {
-            "always_loaded": description_tokens + preamble_tokens,
-            "skill_descriptions": per_skill,
-            "agent_preambles": per_agent_preamble,
-        },
-    }
+    skills = {p.parent.name: p.read_text() for p in sorted((root / "plugins/10x/skills").glob("*/SKILL.md"))}
+    agents = {p.stem: p.read_text() for p in sorted((root / "plugins/10x/agents").glob("*.md"))}
+    generated = {p.stem: p.read_text() for p in sorted((root / "opencode/agents").glob("*.md"))}
+
+    skill_desc = sum(count(frontmatter_field(t, "description")) for t in skills.values())
+    claude_agent_desc = sum(count(frontmatter_field(t, "description")) for t in agents.values())
+    opencode_agent_desc = sum(count(frontmatter_field(t, "description")) for t in generated.values())
+
+    lines = [
+        "Context cost in cl100k_base tokens (tiktoken 0.12.0): a comparable indicator, not billing.",
+        f"skills: {len(skills)}, agents: {len(agents)}",
+        "",
+        "catalogue (every session: skill and agent descriptions)",
+        f"  claude_code  {skill_desc + claude_agent_desc:>6}  (skills {skill_desc}, agents {claude_agent_desc})",
+        f"  opencode     {skill_desc + opencode_agent_desc:>6}  (skills {skill_desc}, agents {opencode_agent_desc})",
+        "",
+        "agent start (each time the agent starts)",
+        f"  {'agent':<22}{'claude_code':>12}{'opencode':>10}  preloaded on claude_code",
+    ]
+    for name, text in agents.items():
+        preloaded = frontmatter_field(text, "skills").split()
+        claude = count(body(text)) + sum(count(body(skills[s])) for s in preloaded if s in skills)
+        opencode = count(body(generated[name])) if name in generated else 0
+        lines.append(f"  {name:<22}{claude:>12}{opencode:>10}  {' '.join(preloaded) or '-'}")
+    lines += ["", "on-invoke (each time the skill is invoked, both harnesses: SKILL.md body)"]
+    for name, text in skills.items():
+        lines.append(f"  {name:<22}{count(body(text)):>6}")
+    return "\n".join(lines)
 
 
 def main():
@@ -86,14 +97,14 @@ def main():
     parser.add_argument(
         "--report",
         action="store_true",
-        help="Print per-harness always-loaded context cost (measurement only, no budget)",
+        help="Print per-harness context cost: catalogue, agent start, on-invoke (measurement only, no budget)",
     )
     args = parser.parse_args()
     if importlib.metadata.version("tiktoken") != "0.12.0":
         parser.error("Install tiktoken==0.12.0 for reproducible counts")
     root = Path(__file__).resolve().parent.parent
     if args.report:
-        print(json.dumps(report(root), indent=2))
+        print(report(root))
         return 0
     current = measure(root)
     print(json.dumps(current, indent=2))

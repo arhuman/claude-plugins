@@ -114,23 +114,36 @@ Agents under OpenCode also take their model from `opencode.json`, bound by
 
 ## Context cost per harness
 
-What is always loaded into context before any skill or agent is invoked,
-measured by `python3 scripts/check-skill-tokens.py --report` (`cl100k_base`
-via `tiktoken==0.12.0`, same tokenizer as the budget check above). This is a
-measurement, not a budget: it does not enforce a limit, and the numbers move
-as skill descriptions and agent rosters change.
+Measured by `python3 scripts/check-skill-tokens.py --report` with
+`cl100k_base` (`tiktoken==0.12.0`, the tokenizer of the budget check above).
+Neither harness bills in `cl100k_base`: the counts compare components and
+harnesses with each other, they are not what a session costs. This is a
+measurement, not a budget, and it moves with every description and roster
+change. Counts below are for 17 skills and 7 agents.
 
-| Harness | Always loaded | What it is |
+Context is paid at three moments:
+
+| Moment | Claude Code | OpenCode |
 |---|---|---|
-| Claude Code | 969 tokens | The 16 skill `description:` fields only; skill bodies load lazily on invocation. |
-| OpenCode | 1,035 tokens | The same 16 descriptions, plus the generated `Read these skills first: ...` preamble line every agent declaring `skills:` carries in `opencode/agents/*.md`. |
+| Catalogue, every session | 1,499 (skill descriptions 1,048, agent descriptions 451) | 1,499, the same descriptions |
+| Agent start, each time an agent runs | The agent prompt plus the full body of every `skills:` entry | The generated prompt, which only names those skills |
+| On invoke, each time a skill runs | The skill's `SKILL.md` body | The same |
 
-OpenCode's fixed floor is about 7% above Claude Code's for this repo today:
-66 tokens across the 6 generated agent preambles (`coder-agent` 17,
-`conform-agent` 12, `fixer-agent` 12, `documentation-agent` 9,
-`tester-agent` 9, `docker-agent` 7). Both numbers are small relative to the
-skill-body budget above; optimizing this floor is not warranted by these
-numbers and is deliberately out of scope here.
+Agent start is where the harnesses differ. Claude Code preloads the skills an
+agent declares; OpenCode leaves them to be read on demand:
+
+| Agent | Claude Code | OpenCode | Preloaded on Claude Code |
+|---|---|---|---|
+| `coder-agent` | 3,211 | 695 | thinking, lang-go, lang-typescript, makefile |
+| `conform-agent` | 5,372 | 501 | conform, thinking, lang-go |
+| `docker-agent` | 1,225 | 101 | docker |
+| `documentation-agent` | 2,164 | 560 | documentation-rules |
+| `fixer-agent` | 1,922 | 392 | lang-go, lang-typescript |
+| `simplify-agent` | 4,433 | 1,085 | thinking, documentation-rules, senior-voice |
+| `tester-agent` | 1,283 | 272 | thinking, testing |
+
+A skill invoked on demand costs its `SKILL.md` body, from 320 tokens
+(`lang-typescript`) to 3,144 (`conform`); `--report` lists every skill.
 
 ## Prerequisites
 
