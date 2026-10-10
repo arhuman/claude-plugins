@@ -102,10 +102,10 @@ shellcheck:
 		echo 'SKIP shellcheck: install shellcheck 0.11.0 to run it locally (CI always does)'; \
 	fi
 
-## tokens: enforce the skill token budget; SKIP only when tiktoken cannot be imported
+## tokens: enforce the skill token budget and the README agent-start table; SKIP only when tiktoken cannot be imported
 tokens:
 	@if python3 -c 'import tiktoken' 2>/dev/null; then \
-		python3 scripts/check-skill-tokens.py; \
+		python3 scripts/check-skill-tokens.py && python3 scripts/check-skill-tokens.py --check-readme; \
 	else \
 		echo 'SKIP token budget: run make tools to install tiktoken into $(VENV) (CI always does)'; \
 	fi

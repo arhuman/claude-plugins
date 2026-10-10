@@ -138,7 +138,7 @@ agent declares; OpenCode leaves them to be read on demand:
 | `conform-agent` | 5,372 | 501 | conform, thinking, lang-go |
 | `docker-agent` | 1,225 | 101 | docker |
 | `documentation-agent` | 2,164 | 560 | documentation-rules |
-| `fixer-agent` | 402 | 402 | none |
+| `fixer-agent` | 436 | 436 | none |
 | `simplify-agent` | 4,433 | 1,085 | thinking, documentation-rules, senior-voice |
 | `tester-agent` | 1,283 | 272 | thinking, testing |
 

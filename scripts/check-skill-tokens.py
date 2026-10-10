@@ -46,6 +46,47 @@ def body(text):
     return text[match.end() :] if match else text
 
 
+def agent_start(root):
+    """Tokens each agent costs when it starts, per harness: {name: (claude_code,
+    opencode, preloaded skills)}. Claude Code injects the agent prompt plus the
+    body of every `skills:` entry; OpenCode injects its generated prompt."""
+    encoder = tiktoken.get_encoding("cl100k_base")
+
+    def count(text):
+        return len(encoder.encode(text, disallowed_special=()))
+
+    skills = {p.parent.name: p.read_text() for p in (root / "plugins/10x/skills").glob("*/SKILL.md")}
+    generated = {p.stem: p.read_text() for p in (root / "opencode/agents").glob("*.md")}
+    starts = {}
+    for path in sorted((root / "plugins/10x/agents").glob("*.md")):
+        text = path.read_text()
+        preloaded = frontmatter_field(text, "skills").split()
+        claude = count(body(text)) + sum(count(body(skills[s])) for s in preloaded if s in skills)
+        opencode = count(body(generated[path.stem])) if path.stem in generated else 0
+        starts[path.stem] = (claude, opencode, preloaded)
+    return starts
+
+
+def check_readme(root):
+    """Compare the plugin README's agent-start rows with agent_start(); return
+    one message per agent whose row is missing or carries other numbers."""
+    rows = {}
+    row = re.compile(r"^\| `([A-Za-z0-9-]+)` \| ([\d,]+) \| ([\d,]+) \|")
+    for line in (root / "plugins/10x/README.md").read_text().splitlines():
+        match = row.match(line)
+        if match:
+            rows[match.group(1)] = (int(match.group(2).replace(",", "")), int(match.group(3).replace(",", "")))
+    problems = []
+    for name, (claude, opencode, _) in agent_start(root).items():
+        if name not in rows:
+            problems.append(f"README: no agent-start row for {name} (report: {claude} / {opencode})")
+        elif rows[name] != (claude, opencode):
+            problems.append(
+                f"README: {name} row says {rows[name][0]} / {rows[name][1]}, report says {claude} / {opencode}"
+            )
+    return problems
+
+
 def report(root):
     """Per-harness context cost in three buckets, as text.
 
@@ -64,6 +105,7 @@ def report(root):
     skills = {p.parent.name: p.read_text() for p in sorted((root / "plugins/10x/skills").glob("*/SKILL.md"))}
     agents = {p.stem: p.read_text() for p in sorted((root / "plugins/10x/agents").glob("*.md"))}
     generated = {p.stem: p.read_text() for p in sorted((root / "opencode/agents").glob("*.md"))}
+    starts = agent_start(root)
 
     skill_desc = sum(count(frontmatter_field(t, "description")) for t in skills.values())
     claude_agent_desc = sum(count(frontmatter_field(t, "description")) for t in agents.values())
@@ -80,10 +122,7 @@ def report(root):
         "agent start (each time the agent starts)",
         f"  {'agent':<22}{'claude_code':>12}{'opencode':>10}  preloaded on claude_code",
     ]
-    for name, text in agents.items():
-        preloaded = frontmatter_field(text, "skills").split()
-        claude = count(body(text)) + sum(count(body(skills[s])) for s in preloaded if s in skills)
-        opencode = count(body(generated[name])) if name in generated else 0
+    for name, (claude, opencode, preloaded) in starts.items():
         lines.append(f"  {name:<22}{claude:>12}{opencode:>10}  {' '.join(preloaded) or '-'}")
     lines += ["", "on-invoke (each time the skill is invoked, both harnesses: SKILL.md body)"]
     for name, text in skills.items():
@@ -99,6 +138,11 @@ def main():
         action="store_true",
         help="Print per-harness context cost: catalogue, agent start, on-invoke (measurement only, no budget)",
     )
+    parser.add_argument(
+        "--check-readme",
+        action="store_true",
+        help="Fail when the plugin README's agent-start rows differ from --report",
+    )
     args = parser.parse_args()
     if importlib.metadata.version("tiktoken") != "0.12.0":
         parser.error("Install tiktoken==0.12.0 for reproducible counts")
@@ -106,6 +150,13 @@ def main():
     if args.report:
         print(report(root))
         return 0
+    if args.check_readme:
+        problems = check_readme(root)
+        for problem in problems:
+            print(f"FAIL: {problem}")
+        if not problems:
+            print("README agent-start table matches --report.")
+        return bool(problems)
     current = measure(root)
     print(json.dumps(current, indent=2))
     if args.measure:

@@ -48,10 +48,11 @@ else
   exit 1
 fi
 
-mkdir -p "$WORK/repo/scripts" "$WORK/repo/plugins/10x"
+mkdir -p "$WORK/repo/scripts" "$WORK/repo/plugins/10x" "$WORK/repo/opencode"
 cp "$REPO/Makefile" "$WORK/repo/"
 cp "$REPO/scripts/check-skill-tokens.py" "$REPO/scripts/skill-token-budget.json" "$WORK/repo/scripts/"
-cp -R "$REPO/plugins/10x/skills" "$WORK/repo/plugins/10x/"
+cp -R "$REPO/plugins/10x/skills" "$REPO/plugins/10x/agents" "$REPO/plugins/10x/README.md" "$WORK/repo/plugins/10x/"
+cp -R "$REPO/opencode/agents" "$WORK/repo/opencode/"
 
 # tokens <outfile> [extra env assignments...]
 tokens() {
@@ -69,6 +70,24 @@ if grep -q 'SKIP' "$WORK/within.out"; then
 else
   pass=$((pass + 1))
 fi
+
+# The README's agent-start table is hand-written from --report; a row that
+# no longer matches the report must fail and name the agent.
+cp "$WORK/repo/plugins/10x/README.md" "$WORK/README.good"
+sed 's/^| `fixer-agent` | [^|]* | [^|]* |/| `fixer-agent` | 1 | 1 |/' "$WORK/README.good" \
+  > "$WORK/repo/plugins/10x/README.md"
+tokens "$WORK/readme.out"
+rc=$?
+if [ "$rc" -ne 0 ]; then pass=$((pass + 1)); else echo "FAIL stale README row: exit 0, want non-zero"; fail=$((fail + 1)); fi
+check_out "stale README row names the agent" 'README.*fixer-agent' "$WORK/readme.out"
+
+# Each column drifts on its own: the OpenCode number alone must also fail.
+sed 's/^\(| `fixer-agent` | [^|]* | \)[^|]* |/\11 |/' "$WORK/README.good" \
+  > "$WORK/repo/plugins/10x/README.md"
+tokens "$WORK/readme-oc.out"
+rc=$?
+if [ "$rc" -ne 0 ]; then pass=$((pass + 1)); else echo "FAIL stale OpenCode column: exit 0, want non-zero"; fail=$((fail + 1)); fi
+cp "$WORK/README.good" "$WORK/repo/plugins/10x/README.md"
 
 # Shrink the baseline so the current tree exceeds its limit.
 PATH="$RUN_PATH" python3 - "$WORK/repo/scripts/skill-token-budget.json" <<'PY'
