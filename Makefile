@@ -65,6 +65,7 @@ check: shellcheck policy
 	@sh scripts/test-hooks.sh
 	@sh scripts/test-install-opencode.sh
 	@sh scripts/test-claim.sh
+	@sh scripts/test-promotion-check.sh
 	@sh scripts/test-token-gate.sh
 
 ## eval: run the plugin eval cases tagged EVAL_TAG on EVAL_MODEL; local only, each run is billed

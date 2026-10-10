@@ -86,19 +86,11 @@ Every applicable item must produce real output:
 4. Any `SKIP` is red; name the test and reason.
 5. Goldens must remain byte-identical. Drift: report and set `blocked`, never regenerate it away.
 6. If the diff touches the migration directory, replay the whole chain onto an empty volume and restart the stack; quote successful output from both. Failure is a hard `blocked` stop, even if the full check/fresh build passed; never wave through a reordering.
-7. Inspect `jj diff go.mod go.sum` or the ecosystem manifest. A dependency diff not named by phase scope is a hard `blocked` stop; report the added module. Run the promotion check below; it must print nothing.
+7. Inspect `jj diff go.mod go.sum` or the ecosystem manifest. A dependency diff not named by phase scope is a hard `blocked` stop; report the added module. Run the promotion check below; it must exit 0 and print nothing.
 8. Prefix every claim not backed by a command executed this turn `UNVERIFIED:`; never argue from untested assertions.
 9. Run `../steering/references/verify-plan.sh` on the resolved plan. All `Refs` must resolve; deprecated/superseded ADR refs hard-stop. Resolve UX with `eval "$(../_shared/references/resolve-paths.sh)"`, never assume `docs/ux.md` (foreign repos use `.claude/project/ux.md`). If `$UX` exists and scope intersects its `ui_paths`, require `UX:<screen-id>` or `UX:system` and run `../steering/references/verify-ux.sh "$UX"`, exit 0. Absent `$UX` skips only this UX half.
 
-Promotion check: with `go.mod`, run:
-
-```bash
-SELF=$(go list -m)
-comm -13 \
-  <(go mod edit -json | python3 -c 'import json,sys; d=json.load(sys.stdin); [print(r["Path"]) for r in (d.get("Require") or []) if not r.get("Indirect")]' | sort) \
-  <(go list -deps -f '{{if .Module}}{{.Module.Path}}{{end}}' ./... | sort -u) \
-  | grep -v "^${SELF}$"
-```
+Promotion check: with `go.mod`, run `references/promotion-check.sh` from the module root, passing the gate's build tags (e.g. `-tags embed`). It lists modules the module's own packages and tests import directly that go.mod does not declare direct; a module reached only through a dependency is legitimately indirect. Exit 1 prints the offenders; exit 2 means go failed.
 
 No `go.mod`: skip this command, manually check the ecosystem's direct-dependency list or mark `UNVERIFIED:`. An errored command printing nothing is not a pass. Never directly import a package present only transitively. Functional depth is bounded to 1; structural dependency depth is unbounded. Apply the same ownership rule to support code: a package supporting another must not be imported by a third; enforce with `internal/<owner>/internal/` placement.
 
