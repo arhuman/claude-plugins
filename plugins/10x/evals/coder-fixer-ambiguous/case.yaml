@@ -14,3 +14,4 @@ graders:
     name: dispatches-coder-or-fixer
     tool: Agent
     input_match: '"(10x:coder-agent|10x:fixer-agent)"'
+    weight: 2

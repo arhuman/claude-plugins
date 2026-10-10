@@ -14,6 +14,7 @@ graders:
     name: fires-lang-sql
     tool: Skill
     input_match: '"10x:lang-sql"'
+    weight: 2
   - type: tool_used
     name: not-lang-go
     tool: Skill

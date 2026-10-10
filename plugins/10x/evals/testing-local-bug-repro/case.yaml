@@ -24,6 +24,7 @@ graders:
     name: fires-testing-or-lang-go
     tool: Skill
     input_match: '"(10x:testing|10x:lang-go)"'
+    weight: 2
   - type: tool_used
     name: not-loop
     tool: Skill

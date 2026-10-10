@@ -14,6 +14,7 @@ graders:
     name: fires-commit
     tool: Skill
     input_match: '"10x:commit"'
+    weight: 2
   - type: tool_used
     name: not-senior-voice
     tool: Skill

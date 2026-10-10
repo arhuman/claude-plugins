@@ -87,7 +87,10 @@ Routing evals live in `plugins/10x/evals/<case>/case.yaml` and run with
 skill or agent and not its neighbour. `make eval` runs the cases tagged
 `EVAL_TAG` (default `trigger`) on `EVAL_MODEL` (default `sonnet`), three runs
 each, and fails when a case scores below `EVAL_THRESHOLD` (default 0.66, two
-runs of three routed right). Every run is a real `claude` session billed to
+runs of three routed right). A case scores the weighted mean of its graders,
+and a "never" grader (`max: 0`) almost always passes, so every grader that
+expects a route carries `weight: 2`: without it, one routed run of three
+would clear the threshold. Every run is a real `claude` session billed to
 your account, so it never runs in CI; `EVAL_MAX_COST_USD` caps a run and the
 report stays local. Run it after changing a skill or agent description. A case
 whose prompt assumes files ships a `scaffold.sh` that stages them into the

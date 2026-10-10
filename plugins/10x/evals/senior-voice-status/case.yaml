@@ -14,6 +14,7 @@ graders:
     name: fires-senior-voice
     tool: Skill
     input_match: '"10x:senior-voice"'
+    weight: 2
   - type: tool_used
     name: not-documentation-rules
     tool: Skill

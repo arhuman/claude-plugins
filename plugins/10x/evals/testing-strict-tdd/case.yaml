@@ -14,3 +14,4 @@ graders:
     name: fires-testing
     tool: Skill
     input_match: '"10x:testing"'
+    weight: 2

@@ -14,6 +14,7 @@ graders:
     name: fires-makefile
     tool: Skill
     input_match: '"10x:makefile"'
+    weight: 2
   - type: tool_used
     name: not-ci
     tool: Skill
