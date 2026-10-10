@@ -110,6 +110,17 @@ check "refs/phantom-reported" check-refs.sh 0 'Phantom reference check' <<EOF
 {"tool_name":"Write","tool_input":{"file_path":"$WORK/phantom.md","content":"ignored, the hook reads the file"}}
 EOF
 
+# A secondary jj workspace has .jj and no .git. Nested in another git repo,
+# git answers for that repo, whose same-named script must not hide the phantom.
+# The .jj directory alone marks the boundary, so this needs no jj binary.
+mkdir -p "$WORK/outer/scripts" "$WORK/outer/ws/.jj"
+git init -q "$WORK/outer"
+printf '#!/bin/sh\n' > "$WORK/outer/scripts/deploy-xyz.sh"
+printf 'Run `scripts/deploy-xyz.sh` to proceed.\n' > "$WORK/outer/ws/doc.md"
+check "refs/jj-workspace-boundary" check-refs.sh 0 'Phantom reference check' <<EOF
+{"tool_name":"Write","tool_input":{"file_path":"$WORK/outer/ws/doc.md","content":"ignored"}}
+EOF
+
 printf 'Nothing but prose here.\n' > "$WORK/noscript.md"
 check "refs/no-reference-silent" check-refs.sh 0 "" <<EOF
 {"tool_name":"Write","tool_input":{"file_path":"$WORK/noscript.md","content":"ignored"}}

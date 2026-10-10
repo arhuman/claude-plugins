@@ -17,10 +17,24 @@ case "$fp" in
   *) exit 0 ;;
 esac
 
-dir=$(dirname "$fp")
-root=$(cd "$dir" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null)
-[ -n "$root" ] || root=$dir
-tracked=$(cd "$root" 2>/dev/null && git ls-files --cached --others --exclude-standard 2>/dev/null)
+dir=$(cd "$(dirname "$fp")" 2>/dev/null && pwd) || exit 0
+
+# The nearest .git or .jj is the project. A secondary jj workspace has no .git,
+# and git rev-parse would answer for whatever repo encloses it. Same rule as
+# scripts/lib.sh repo_files, duplicated: this hook ships without that file.
+# --ignore-working-copy keeps the hook read-only (no snapshot per edit).
+root=$dir
+while [ "$root" != / ] && [ ! -e "$root/.git" ] && [ ! -d "$root/.jj" ]; do
+  root=$(dirname "$root")
+done
+if [ -e "$root/.git" ]; then
+  tracked=$(cd "$root" && git ls-files --cached --others --exclude-standard 2>/dev/null)
+elif [ -d "$root/.jj" ]; then
+  tracked=$(cd "$root" && jj --ignore-working-copy file list 2>/dev/null)
+else
+  root=$dir
+  tracked=""
+fi
 
 # Strip URLs (a host like docs.astral.sh is not a script) and <placeholders>,
 # then require a non-alphanumeric after the extension so change_id.short() is
