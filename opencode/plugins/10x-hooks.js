@@ -114,7 +114,7 @@ async function afterTool(event, cwd) {
   const reports = [];
   for (const command of commandsFor(payload.tool_name)) {
     const text = reportOf(command, payload, cwd);
-    if (text) reports.push(`[10x hook ${basename(command)}] ${text}`);
+    if (text) reports.push(`[10x hook ${basename(command.replace(/["']/g, ""))}] ${text}`);
   }
   if (!reports.length) return;
   const result = event.result;

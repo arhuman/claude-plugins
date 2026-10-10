@@ -256,6 +256,22 @@ oc_check "names-the-hook" '\[10x hook check-dashes.sh\]' <<EOF
 {"tool":"write","args":{"filePath":"$md","content":"a line with an — dash"},"output":"tool result"}
 EOF
 
+# hooks.json quotes the placeholder for the strict validator; the quotes are
+# shell syntax and must not leak into the label.
+if [ -n "$JS" ]; then
+  out=$("$JS" "$ADAPTER" 2>"$WORK/stderr" <<EOF
+{"tool":"write","args":{"filePath":"$md","content":"a line with an — dash"},"output":"tool result"}
+EOF
+)
+  if printf '%s' "$out" | grep -q '\[10x hook [^]]*["'"'"']'; then
+    echo "FAIL opencode/label-unquoted: hook label carries a quote"
+    printf '  got: %s\n' "$out"
+    fail=$((fail + 1))
+  else
+    pass=$((pass + 1))
+  fi
+fi
+
 # install-opencode.sh links the adapter into ~/.config/opencode/plugins/; it
 # must find hooks.json from its real path, not from the link's directory.
 if [ -n "$JS" ]; then
