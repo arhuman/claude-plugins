@@ -12,7 +12,7 @@ if ! command -v go >/dev/null 2>&1; then
   exit 0
 fi
 
-REPO=$(git rev-parse --show-toplevel 2>/dev/null) || REPO=$(cd "$(dirname "$0")/.." && pwd)
+REPO=$(cd "$(dirname "$0")/.." && pwd)
 CHECK="$REPO/plugins/10x/skills/loop/references/promotion-check.sh"
 WORK=$(mktemp -d) || exit 1
 trap 'rm -rf "$WORK"' EXIT
