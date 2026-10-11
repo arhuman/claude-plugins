@@ -33,7 +33,7 @@ with. Document the gap in-repo if a reviewer might mistake it for a mistake.
 
 | Tool | Version | Install |
 |------|---------|---------|
-| golangci-lint | `v2.13.2` | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2` |
+| golangci-lint | `v2.14.0` | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0` |
 | govulncheck | `v1.7.0` | `go install golang.org/x/vuln/cmd/govulncheck@v1.7.0` |
 
 The golangci-lint version pinned here MUST equal the `version:` field passed to
@@ -55,7 +55,7 @@ run when they differ, so the two cannot drift apart silently.
 |--------|---------|-------|
 | `actions/checkout` | `v7` | `fetch-depth: 0` in release workflows (needs tags/history for changelogs). |
 | `actions/setup-go` | `v7` | Prefer `go-version-file: go.mod`; use `check-latest: true` with a matrix. Handles module + build caching. v7.0.0 is an ESM/dependency migration: no input or behavior change from v6. |
-| `golangci/golangci-lint-action` | `v8` | Set `version: v2.13.2` to match the pin above. |
+| `golangci/golangci-lint-action` | `v8` | Set `version: v2.14.0` to match the pin above. |
 | `goreleaser/goreleaser-action` | `v7` | `version: "~> v2"`, `args: release --clean`. Release workflow only. |
 | `sigstore/cosign-installer` | `v4` | Release workflow only; needed when `goreleaser.yaml` has `signs:` (cosign keyless). |
 | `anchore/sbom-action/download-syft` | `v0` | Release workflow only; needed when `goreleaser.yaml` has `sboms:` (syft). Upstream has no major above v0. |
@@ -111,6 +111,15 @@ Observed across the reference repos before this baseline was set:
 - New rows from ansible-static-lint, which ships a PyPI wheel beside the Go
   binary: `actions/setup-python` **v7**, `pypa/gh-action-pypi-publish`
   **v1.14.2**.
+
+### 2026-10-11 golangci-lint floor for Go 1.27.2
+
+- golangci-lint: `v2.13.2` → **v2.14.0**. Not a routine bump: the Go 1.27.2
+  stdlib ships export data version 5, and v2.13.x bundles x/tools v0.49.0,
+  which rejects it at typecheck (`export data version 5 is greater than
+  maximum supported version 4`) on every stdlib import. v2.14.0 bundles
+  x/tools v0.50.0. Any CI job on `go-version: stable` needs this floor.
+- govulncheck `v1.7.0` verified working under Go 1.27.2; unchanged.
 
 Pick the newest observed and move every repo to it; do not leave two workflows
 on different majors.

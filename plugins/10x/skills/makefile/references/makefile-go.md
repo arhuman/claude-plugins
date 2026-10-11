@@ -31,7 +31,7 @@ COVER_MIN  ?= 80
 LINE_LIMIT ?= 500
 
 # Pinned tool versions: must match ../../_shared/references/versions.md
-GOLANGCI_VERSION    ?= v2.13.2
+GOLANGCI_VERSION    ?= v2.14.0
 GOVULNCHECK_VERSION ?= v1.7.0
 
 # VERSION_PKG declares Version/GitCommit/BuildDate (main or internal/version).
