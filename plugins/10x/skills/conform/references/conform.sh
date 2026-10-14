@@ -15,7 +15,7 @@
 #                           (default: read `10x-profile:` from CLAUDE.md, else public)
 set -u
 
-STANDARD_VERSION="1.15"
+STANDARD_VERSION="1.16"
 TARGET="${1:-.}"
 cd "$TARGET" 2>/dev/null || { echo "conform: cannot enter $TARGET" >&2; exit 2; }
 
@@ -111,8 +111,37 @@ _ui_no_color_literals() {
   [ -z "$hits" ]
 }
 
+# ---- ci and governance probes ----
+# A gate command neutralized by `|| true`, a lint autofix the CI never diffs,
+# or a dependency bot whose version updates are switched off.
+_ci_gate_effective() {
+  wf=$(find .github/workflows -maxdepth 1 -name '*.y*ml' 2>/dev/null)
+  gates='(^|[[:space:]"])(golangci-lint|go (test|vet)|eslint|oxlint|biome|ruff|mypy|pytest|tsc|(npm|pnpm|yarn|bun)( run)? (lint|test|typecheck|check)|make (audit|lint|test|ci))'
+  # shellcheck disable=SC2086
+  grep -sqE "${gates}[^#]*\|\| *(true|:)" $wf Makefile && return 1
+  fixlint=$(find . -maxdepth 4 -name package.json -not -path '*/node_modules/*' \
+    -exec grep -lsE '"lint": *".*--fix' {} + 2>/dev/null)
+  for f in $wf; do
+    grep -qsE 'git diff --(exit-code|quiet)[[:space:]]*($|[;&|)])|git status --porcelain' "$f" && continue
+    grep -qsE '(eslint|oxlint|biome|ruff|golangci-lint)[^#]* --fix' "$f" && return 1
+    [ -n "$fixlint" ] && grep -qsE '(npm|pnpm|yarn|bun)( run)? lint([[:space:]]|$)' "$f" && return 1
+  done
+  ! grep -qsE 'open-pull-requests-limit: *0([^0-9]|$)' .github/dependabot.yml .github/dependabot.yaml
+}
+# dependabot.yml exists and every directory it names exists (a glob must match).
+_gov_dependabot() {
+  f=.github/dependabot.yml; [ -f "$f" ] || f=.github/dependabot.yaml
+  [ -f "$f" ] || return 1
+  # shellcheck disable=SC2013
+  for p in $(sed -nE "s/^[[:space:]]*(directory:|-)[[:space:]]*[\"']?(\/[^\"' #]*).*/\2/p" "$f"); do
+    # shellcheck disable=SC2086
+    ls -d .$p >/dev/null 2>&1 || return 1
+  done
+}
+
 CHECKS='
 ci.audit|go|P0||grep -rqsE "make audit" .github/workflows
+ci.gate_effective|all|P1||_ci_gate_effective
 version.stamp|go-service,go-cli|P0||grep -qsE "\-X .*\.Version=" Makefile && grep -rqs ReadBuildInfo --include=*.go .
 docker.nonroot|go-service,web-app|P0||grep -qsE "^USER +[A-Za-z1-9]" Dockerfile* && ! grep -qsE "^USER +root" Dockerfile*
 compose.security_headers|go-service,web-app|P0||grep -qsE "headers\.stsSeconds" docker-compose.prod.yml || grep -rqsE "Strict-Transport-Security" --include=*.go .
@@ -134,7 +163,7 @@ release.python_build|python-service,python-cli,python-lib|P1|private=P2,internal
 release.script|go-service,go-cli,go-lib,python-service,python-cli,python-lib|P2||test -f scripts/release.sh && { [ ! -f Makefile ] || grep -qsE "scripts/release\.sh" Makefile ; }
 governance.security_md|all|P1|private=NA,internal=P2,public=P1|test -f SECURITY.md
 governance.contributing|all|P1|private=NA,internal=P2,public=P1|test -f CONTRIBUTING.md
-governance.dependabot|all|P1||test -f .github/dependabot.yml
+governance.dependabot|all|P1||_gov_dependabot
 governance.codeowners|all|P2|private=NA,internal=P1,public=P2|test -f CODEOWNERS || test -f .github/CODEOWNERS
 governance.changelog_root|all|P2|private=P2,internal=P2,public=P1|test -f CHANGELOG.md
 ui.cube_layers|web-app|P2||_ui_layers

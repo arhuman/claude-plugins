@@ -99,7 +99,22 @@
 #        in the installed binary, not in any file they read. P1 rather than P0,
 #        because it weakens a gate rather than shipping a defect, and the CI side
 #        still catches what the local side missed.
-standard_version: "1.15"
+# v1.16: ci.gate_effective and ci.package_coverage, and governance.dependabot
+#        checks the directories it names. A gate that exists is not a gate that
+#        can fail: measured on public repos on 2026-10-14, a CI lint ran
+#        `eslint --fix` with no diff check (fixable violations never block),
+#        two repos set Dependabot's `open-pull-requests-limit: 0` (version
+#        updates off, file still present), and turbo monorepos linted 2 of 17
+#        and 10 of 23 packages because the rest declare no `lint` script. Every
+#        one of those jobs was green and every existing check passed.
+#        gate_effective probes the unambiguous signatures and leaves
+#        continue-on-error to judgment, since a later step can fail on the
+#        recorded outcome; package_coverage is manual, because mapping a CI
+#        command to the units it reaches spans turbo, nx, pnpm, linter ignores
+#        and Go build tags, which no one-line probe gets right in both
+#        directions. The dependabot probe also caught a pip entry pointing at a
+#        directory absent from the tree.
+standard_version: "1.16"
 
 # Audience profiles. A repo declares one; everything else is a default, never an
 # inference. Declare it as `10x-profile: <name>` in the repo's CLAUDE.md or
@@ -127,6 +142,22 @@ checks:
     severity: P0
     probe: 'grep -rqsE "make audit" .github/workflows'
     expected: "CI calls `make audit` (golangci-lint + govulncheck + -race + coverage), never reimplements it in YAML."
+    remediation: {skill: ci, ref: ci.yml}
+
+  - id: ci.gate_effective
+    dimension: ci
+    applies_to: [all]
+    severity: P1
+    probe: '_ci_gate_effective'
+    expected: "Every wired quality gate can fail. No lint, test, typecheck or audit command in a workflow or the Makefile ends in `|| true` or `|| :`; a lint run with `--fix` in CI (directly or through a `lint` script that carries it) is followed by an unscoped `git diff --exit-code` or `git status --porcelain` check; no dependency bot entry sets `open-pull-requests-limit: 0`. Judgment part, for the agent: no gate step carries `continue-on-error: true` unless a later step fails on its outcome, no test suite is skipped wholesale for a service the CI never starts, no typecheck or test script is empty or `exit 0`, and `ignoreBuildErrors` is not set on the only build that type-checks."
+    remediation: {skill: ci, ref: shell-gates.md}
+
+  - id: ci.package_coverage
+    dimension: ci
+    applies_to: [all]
+    severity: P1
+    manual: true
+    expected: "Each blocking gate (lint, typecheck, tests) reaches every unit that holds source. Enumerate the units (workspace packages from pnpm-workspace.yaml, package.json workspaces, nx or turbo config; Go packages under each module; each Python package with its own pyproject.toml), excluding examples, templates, fixtures and documentation sites, and report covered over total per gate with the uncovered names. Typical gaps: a package without the task the CI runs through turbo, nx or `pnpm -r`; paths ignored by the linter config or a tsconfig `exclude`; a hand-maintained package list in a workflow; Go packages outside `./...` or behind a build tag no job sets; `-short` or a subset of test files in CI."
     remediation: {skill: ci, ref: ci.yml}
 
   - id: version.stamp
@@ -306,8 +337,8 @@ checks:
     dimension: governance
     applies_to: [all]
     severity: P1
-    probe: 'test -f .github/dependabot.yml'
-    expected: "dependabot.yml covering gomod + github-actions (+ docker where images are built)."
+    probe: '_gov_dependabot'
+    expected: "dependabot.yml covering gomod + github-actions (+ docker where images are built), and every `directory` (or `directories` entry) it names exists in the tree, a glob matching at least one directory. An entry pointing at a moved or deleted directory leaves the ecosystem it was meant to cover without updates while the file still exists."
     remediation: {skill: ci, ref: dependabot.yml}
 
   - id: governance.codeowners
