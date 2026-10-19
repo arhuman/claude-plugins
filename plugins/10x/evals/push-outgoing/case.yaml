@@ -1,0 +1,24 @@
+schema_version: "1.0"
+name: push-outgoing
+description: 'push vs commit: publishing existing commits is a push, not a commit'
+tags: [trigger]
+execution:
+  prompt: |
+    My commits are done. Push main to origin with jj.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-push
+    tool: Skill
+    input_match: '"10x:push"'
+    weight: 2
+  - type: tool_used
+    name: not-commit
+    tool: Skill
+    input_match: '"10x:commit"'
+    min: 0
+    max: 0
+    arm: both

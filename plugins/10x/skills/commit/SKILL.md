@@ -1,6 +1,6 @@
 ---
 name: commit
-description: 'jj commit protocol: scope, split, message composition, hooks, bookmarks and push without rewriting published history. Use when creating/describing/pushing a jj or colocated-git commit, and before squash/amend/split/abandon. For auditing commit conventions or standard drift, use conform.'
+description: 'jj commit protocol: scope, split, message composition and hooks, without rewriting published history. Use when creating/describing a jj or colocated-git commit, and before squash/amend/split/abandon. For pushing, use push. For auditing commit conventions or standard drift, use conform.'
 ---
 
 # 10x Commit
@@ -17,23 +17,14 @@ Follow this pipeline, not a one-shot `jj describe`.
 6. **Compose and validate first.** Build the full message, check applicable lengths, then describe. Body optional: omit when the header suffices; otherwise terse `*` bullets, one change each, no narrative or leading `-` lines. Use a quoted heredoc through `jj describe --stdin <<'EOF' ... EOF`; never interpolate a potentially dash-leading body into `-m` argv.
 7. **Hook stop.** If a hook rejects after compose checks, report the hook and reason, then stop. Re-stage only files the hook auto-formatted. Never repeat describe/fail/tweak until quiet.
 8. **Verify and close.** Run `jj status` after describing: non-empty, intended repo and scope. Perform Done-when checks on the described revision before `jj new`. Whenever further work may follow, finish with `jj new` so edits cannot silently amend this commit.
-9. **Before a requested push.** Run the full gate CI uses (`make audit`/`make ci` in 10x), not `make test` alone. Confirm `jj bookmark list` points at the change and tracks the remote; create/track explicitly if needed (`jj bookmark create <name>`, `jj bookmark track <name>@<remote>`). Do not push first and retry missing/untracked errors.
-
-Under `set -o pipefail`, capture jj output before matching:
-
-```sh
-out=$(jj bookmark list 2>/dev/null || true)
-grep -q ... <<<"$out"
-```
-
-Never pipe jj into `grep -q`: early grep exit can give jj broken-pipe exit 3 and falsely report a missing bookmark.
+9. **Push.** Pushing is its own protocol: load `push` before any `jj git push`.
 
 ## MUST NOT
 
 - Bypass scope, authorship, explicit-fileset, changelog, message or hook gates above.
-- Modify any revision reachable from a remote bookmark, even for a one-line fix or cleaner history. Never offer "if nobody pulled" as an exception; that is unknowable.
-- Use `jj git push --allow-backwards` or `git push --force`. Fix published mistakes forward; a red historical CI result is not permission to rewrite.
-- Push before the full local gate, or leave described `@` open when work may follow.
+- Modify any revision reachable from a remote bookmark, even for a one-line fix or cleaner history. Never offer "if nobody pulled" as an exception; that is unknowable. Only an explicit user request to rewrite published history lifts this, and then `push` owns the procedure.
+- Rewrite a published mistake instead of fixing it forward. A red historical CI result is not permission to rewrite.
+- Leave described `@` open when work may follow.
 - Append any agent attribution trailer to a message: no `Co-Authored-By: Claude`, no `Generated with` line. Authorship is the committer's alone.
 
 ## Done when
@@ -45,8 +36,6 @@ Before opening the fresh change:
 - A tracked root changelog accompanies `feat`/`fix`/`perf`, or the body explains user invisibility.
 - The description carries no agent attribution trailer (`Co-Authored-By`, `Generated with`).
 - Each rewritten revision was unpushed, with the required `remote_bookmarks()..<rev>` check before rewriting.
-
-For a push: bookmark pointed at the change and was tracked beforehand; full gate passed; `jj git push` exited 0 and named the moved bookmark without retrying bookmark errors into silence. Movement must be strictly forward (`Move forward bookmark <name> from <old> to <new>`), never sideways/backward; no force/backwards flags.
 
 ## Colocated git repos
 

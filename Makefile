@@ -44,7 +44,8 @@ endif
 # not in this set: -s sh would lint it as the wrong dialect.
 SHELL_SCRIPTS = scripts/*.sh plugins/10x/hooks/*.sh \
 	plugins/10x/skills/_shared/references/claim.sh \
-	plugins/10x/skills/_shared/references/resolve-paths.sh
+	plugins/10x/skills/_shared/references/resolve-paths.sh \
+	plugins/10x/skills/push/scripts/audit-outgoing.sh
 
 # PHONY DECLARATIONS (in alphabetical order)
 .PHONY: check confirm eval gen help install-opencode policy shellcheck tokens tools uninstall-opencode validate

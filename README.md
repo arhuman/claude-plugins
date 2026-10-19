@@ -32,7 +32,7 @@ sh scripts/install-opencode.sh
 ```
 
 This symlinks into `~/.config/opencode/`: the 12 commands (as `/10x-<name>`),
-the 7 agents, the hook plugin, and the 17 skills plus their shared `_shared`
+the 7 agents, the hook plugin, and the 18 skills plus their shared `_shared`
 references. `sh scripts/install-opencode.sh --uninstall` reverses it, removing
 only symlinks that point into this repo. `make install-opencode` runs the
 install and the model binding below in one step.

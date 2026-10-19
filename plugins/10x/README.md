@@ -22,6 +22,7 @@ Plugin to make Claude Code a 10x more efficient
 | Skill | `design-system` | UX/frontend design system for SSR + HTMX UIs: quality grid, CSS token contract, component and accessibility rules, UI CI guards |
 | Skill | `ci` | GitHub Actions CI/CD, release automation, coverage gates |
 | Skill | `commit` | jj (Jujutsu) commit mechanics, hardened against recurring jj/commitlint failures |
+| Skill | `push` | Push protocol: audits every outgoing commit (messages, attribution, private paths), not only the session's, then pushes forward only |
 | Skill | `thinking` | Thinking guidelines to reduce common coding mistakes |
 | Skill | `docker`, `makefile`, `documentation-rules`, `testing` | Domain best practices (Docker, Makefiles, docs, testing) |
 | Skill | `lang-go`, `lang-typescript`, `lang-html`, `lang-sql` | Per-language coding standards |
@@ -97,6 +98,7 @@ note appended to the tool result rather than a separate hook message.
 | Skill | `loop` | supported | linked |
 | Skill | `makefile` | supported | linked |
 | Skill | `manual` | supported | linked |
+| Skill | `push` | supported | linked |
 | Skill | `senior-voice` | supported | linked |
 | Skill | `steering` | supported | linked |
 | Skill | `testing` | supported | linked |
@@ -119,13 +121,13 @@ Measured by `python3 scripts/check-skill-tokens.py --report` with
 Neither harness bills in `cl100k_base`: the counts compare components and
 harnesses with each other, they are not what a session costs. This is a
 measurement, not a budget, and it moves with every description and roster
-change. Counts below are for 17 skills and 7 agents.
+change. Counts below are for 18 skills and 7 agents.
 
 Context is paid at three moments:
 
 | Moment | Claude Code | OpenCode |
 |---|---|---|
-| Catalogue, every session | 1,499 (skill descriptions 1,048, agent descriptions 451) | 1,499, the same descriptions |
+| Catalogue, every session | 1,703 (skill descriptions 1,225, agent descriptions 478) | 1,703, the same descriptions |
 | Agent start, each time an agent runs | The agent prompt plus the full body of every `skills:` entry | The generated prompt, which only names those skills |
 | On invoke, each time a skill runs | The skill's `SKILL.md` body | The same |
 
