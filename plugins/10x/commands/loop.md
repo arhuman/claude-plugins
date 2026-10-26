@@ -1,14 +1,15 @@
 ---
 description: 'Run one plan-driven work turn: take the first todo phase from the plan file, implement it, prove it with a mutation-checked gate, commit atomically, stop. Never pushes. State lives in the plan file, so the loop resumes after a context clear.'
-argument-hint: "[phase-id | bootstrap] [--plan <path>] [--chain N]"
+argument-hint: "[phase-id | bootstrap] [--plan <path>] [--chain N|all]"
 disable-model-invocation: true
 ---
 
 ## Usage
-`/10x:loop [phase-id | bootstrap] [--plan <path>]`
+`/10x:loop [phase-id | bootstrap] [--plan <path>] [--chain N|all]`
 
 - No argument: take the first `todo` phase in the resolved plan file.
-- `--chain N`: allow up to N phases in one run, stopping at the first that is not green. Each stays its own commit with its own evidence.
+- `--chain N`: allow up to N phases in one run, stopping at the first that is not green. Each phase runs in a fresh subagent and stays its own commit with its own evidence, so no `/clear` is needed between phases.
+- `--chain all`: same, bounded by the number of eligible `todo` phases at start.
 - `<phase-id>`: run that specific phase, provided it exists in the plan and its dependencies are `verified`.
 - `bootstrap`: no plan yet; mine the repo for existing plans and write one, then stop for approval.
 - `--plan <path>`: use this plan file instead of the default resolution. Required when several plans carry `todo` phases.
@@ -26,7 +27,7 @@ disable-model-invocation: true
 
 ## Constraints
 - The `loop` skill's Invariants section applies in full (one phase per turn, never push or tag, never widen scope or the dependency surface, never fake a pass, two strikes then halt); this command does not restate it.
-- Chaining requires an explicit `--chain N` and stops at the first gate failure, `blocked` phase, or unsatisfied dependency.
+- Chaining requires an explicit `--chain N` or `--chain all` and stops at the first gate failure, `blocked` phase, or unsatisfied dependency.
 
 ## Examples
 

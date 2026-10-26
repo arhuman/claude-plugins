@@ -15,7 +15,7 @@ Private `.claude/` plans stay uncommitted; write their durable status after the 
 
 ## Invariants
 
-- One phase per turn, then stop. Only explicit `--chain N` relaxes this, with bounded consent.
+- One phase per turn, then stop. Only explicit `--chain N` or `--chain all` relaxes this, with bounded consent.
 - Never publish: no push, tag, or `make release`, even to fix CI.
 - Modify only the phase's named files, except the two implementation exceptions below. Record outside defects as new `todo` phases, never fix them inline. No incidental toolchain, dependency or architecture changes.
 - Add a direct dependency only when that phase names it. Unplanned dependencies halt for the user's decision. Never expose external dependency types in exported domain signatures.
@@ -120,11 +120,11 @@ On success set `verified`, clear `Claimed-by` and `Attempts`, append:
 
 Carry phase refs and a real change-id. Include tracked `PLAN.md` updates in the phase commit; private plans are written only to disk after that commit exists. Leave the fresh working change required by step 5.
 
-Stop and report the closed phase, evidence, next `todo`, and any newly recorded phases. Disk state must suffice to resume without conversation history.
+Stop and report the closed phase, evidence, next `todo`, and any newly recorded phases. Name every phase id with its title (`P52 (rate-limit bucket)`), never a bare id. Disk state must suffice to resume without conversation history.
 
-## Chaining (`--chain N`)
+## Chaining (`--chain N` or `--chain all`)
 
-Only when explicitly passed, load `references/chaining.md`. All core steps and gates still run per phase.
+Only when explicitly passed, load `references/chaining.md`. All core steps and gates still run per phase, each in a fresh subagent.
 
 ## Bootstrap (no plan file yet)
 
