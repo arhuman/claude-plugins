@@ -81,6 +81,10 @@ reader needs it to verify or act. Omit it when it merely proves that the writer
 knows the implementation. Explain the relevant history instead of referring to
 `the original bug` without context.
 
+An opaque identifier (plan phase `P52`, finding `F7`, ticket key) carries no
+meaning on its own: pair it with its title or a few plain words every time it
+appears in reader-facing text, e.g. `P52 (rate-limit bucket behind the proxy)`.
+
 ## Rewrite signals
 
 | If the prose starts with | Rewrite toward |

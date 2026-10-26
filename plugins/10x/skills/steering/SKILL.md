@@ -57,7 +57,7 @@ Done: ownership/reason stated, plan/legend and conditional UX exist, `git status
 
 ## status
 
-Read-only. Load plan-format's resolution/eligibility rules, identical to loop: explicit path, else `.claude/plan/*.md`, else `PLAN.md`; multiple private `todo` plans require asking. State resolved path. Report file-derived counts by status including backlog, first eligible `todo` in file order (all dependencies verified), blocked reasons, backlog dependencies, and `must` requirements with no serving phase. No conversation-derived counts or writes.
+Read-only. Load plan-format's resolution/eligibility rules, identical to loop: explicit path, else `.claude/plan/*.md`, else `PLAN.md`; multiple private `todo` plans require asking. State resolved path. Report file-derived counts by status including backlog, first eligible `todo` in file order (all dependencies verified) named with its title, never a bare id, blocked reasons, backlog dependencies, and `must` requirements with no serving phase. No conversation-derived counts or writes.
 
 ## add
 
