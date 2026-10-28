@@ -62,7 +62,8 @@ A bugfix phase carries one extra field, `Repro:` (see below).
 | `Accept` | yes | A command that decides the phase, in backticks. |
 | `Status` | yes | One of the legend values. |
 | `Claimed-by` | no | `<session-id>@<ISO-8601 timestamp>`, present only while `Status: doing`. Absent means unclaimed. See Claiming a phase. |
-| `Attempts` | no | Gate failures under the current claim. Absent means zero. Cleared when the phase reaches `verified` or `blocked`. |
+| `Blocked-by` | no | Phase ids that must be `verified` before a `blocked` phase can run again. Present only while `Status: blocked`. The loop returns the phase to `todo` once they all are; a phase blocked by anything else needs a person. |
+| `Attempts` | no | Gate failures under the current claim: the count, then one diagnosis per failure, e.g. `2 (gocyclo in refreshShares; TestHomeLinksSample)`. Absent means zero. Cleared when the phase reaches `verified` or `blocked`. |
 
 An unknown `- Key: value` line is ignored by readers, which is what keeps this
 format forward-compatible: a plan written against a later contract still runs.
@@ -104,7 +105,7 @@ structurally impossible.
 - **`backlog`**: invisible to the loop until promoted. Carries "some day", which order alone cannot express: a phase merely pushed to the end of the file still gets picked eventually, one evening, with nobody deciding.
 - **`doing`**: claimed by exactly one loop turn, identified by its `Claimed-by` field (see Claiming a phase). A claim is a lease, not a lock: a `doing` phase whose stamp is older than the stale window is eligible again. A `doing` phase with no `Claimed-by` predates this contract or was left by a crash; treat it as stale.
 - **`verified`**: closed, with a log line carrying a real change-id.
-- **`blocked`**: the gate failed twice on the same diagnosis, or a hard stop fired (drifted golden, unplanned dependency).
+- **`blocked`**: the gate failed twice on the same diagnosis or three times in all, or a hard stop fired (drifted golden, unplanned dependency).
 
 ## Claiming a phase
 
@@ -127,8 +128,10 @@ contract it implements.
    advance two different phases of one plan concurrently.
 4. Implement and run the gate as normal, calling `renew` once at the start of
    the gate (the long step) to refresh the lease.
-5. On a gate failure, increment `Attempts` in place, leave `Status: doing`
-   and `Claimed-by` unchanged, stop the turn. At `Attempts: 2` set
+5. On a gate failure, increment `Attempts` in place with its diagnosis,
+   leave `Status: doing` and `Claimed-by` unchanged, stop the turn (the loop
+   may first repair a mechanical failure in-turn). At a second failure on the
+   same diagnosis, or a third in all, set
    `Status: blocked` and clear both claim fields instead: the two-strikes
    count now lives on disk, so it survives a context clear and holds across
    sessions rather than granting each session its own retry budget.

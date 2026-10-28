@@ -6,7 +6,7 @@ Each phase runs in a fresh general-purpose subagent, so the chain replaces the m
 
 Subagent reports are not evidence. Before chaining the next phase, the parent checks on disk: the plan entry is `verified` with the reported change-id, `jj log -r <change-id>` shows that commit, `@` is empty and undescribed, and the phase's acceptance command, rerun by the parent, exits 0 (quote it). Any mismatch stops the chain.
 
-- Stop at N or the first gate failure, `blocked` phase, or phase with unverified dependencies. Never skip red to advance the chain.
+- Stop at N or the first gate failure, `blocked` phase, or phase with unverified dependencies. Never skip red to advance the chain. Exception: a phase blocked by a restoring phase step 4 just recorded continues the chain with that phase, then with the unblocked one; both count toward N, including under `--chain all`.
 - One phase, one commit: no squash or combined message.
 - Persist the plan after each phase, so interruption leaves single-turn-equivalent state.
 - Final report lists every closed phase with its quoted evidence, not only the last.

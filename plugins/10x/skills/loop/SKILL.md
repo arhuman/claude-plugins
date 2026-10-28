@@ -17,10 +17,10 @@ Private `.claude/` plans stay uncommitted; write their durable status after the 
 
 - One phase per turn, then stop. Only explicit `--chain N` or `--chain all` relaxes this, with bounded consent.
 - Never publish: no push, tag, or `make release`, even to fix CI.
-- Modify only the phase's named files, except the two implementation exceptions below. Record outside defects as new `todo` phases, never fix them inline. No incidental toolchain, dependency or architecture changes.
+- Modify only the phase's named files, except the three implementation exceptions below. Record outside defects as new `todo` phases, never fix them inline. No incidental toolchain, dependency or architecture changes; step 4's maintenance phase is the one sanctioned bump.
 - Add a direct dependency only when that phase names it. Unplanned dependencies halt for the user's decision. Never expose external dependency types in exported domain signatures.
 - No stub, mock, skip, threshold reduction or assertion deletion to reach green. Blocked verification halts with `blocked` status.
-- Two gate failures on the same diagnosis exhaust the budget. Persist each failure in `Attempts`; never reset the budget on context clear or session change. Follow the shared claim contract: first failure leaves `doing` and `Claimed-by`, stops the turn; second sets `blocked`, quotes failing output and clears claim fields. Hard stops block immediately.
+- Two gate failures on the same diagnosis, or three in all, exhaust the budget. Persist each failure in `Attempts` with its diagnosis; never reset the budget on context clear or session change. Follow the shared claim contract: a failure leaves `doing` and `Claimed-by` and stops the turn, unless step 4 repairs or reroutes it in-turn; exhaustion sets `blocked`, quotes failing output and clears claim fields. Hard stops block immediately.
 - Concurrent sessions require one isolated jj workspace each. Before concurrent work, load `../_shared/references/concurrency.md`; claims isolate phases, not working copies.
 
 ## Loop turn
@@ -34,11 +34,17 @@ jj log -r @ --no-graph -T 'if(description, "described", "undescribed")'
 jj diff -r @ --stat
 ```
 
-Described `@`: `jj new`, even if empty. Undescribed but non-empty: stop and report leftover files. Proceed only with empty, undescribed `@`; otherwise new edits silently amend prior work.
+Described `@`: `jj new`, even if empty. Undescribed but non-empty, decide from the plan:
+
+- Every file is within the scope (step 3 exceptions included) of one `doing` phase with `Attempts` set: that is its unfinished attempt. Resume it when this conversation still holds its claim token, or step 1's acquire reclaims it as stale; otherwise stop and say when the claim goes stale. Then go straight to step 4 on the existing diff. Never rerun step 2 on it: acceptance passing on the leftover diff is not "already satisfied".
+- No file is within any `doing` phase's scope: `jj new @-` sets the change aside as an undescribed sibling, which jj refuses to push. Report its change-id and that its files left the working copy (`jj restore --from <id>` brings them back), then continue.
+- Anything else (files of several phases, or of a phase claimed live by another session): stop and report the leftover files.
+
+Otherwise proceed only with empty, undescribed `@`; new edits would silently amend prior work.
 
 ### 1. Read state
 
-Read the resolved plan. Take the first eligible `todo` in file order: all `Depends on` must be `verified`. State dependency skips; if none eligible, stop naming blockers, including any `backlog` dependency that needs promotion. Ignore `backlog`, `verified`, `blocked`; stale `doing` recovery follows the loaded claim contract (including its stale window, overrides and legacy claims).
+Read the resolved plan. First return to `todo` every `blocked` phase whose `Blocked-by` phases are all `verified`: drop `Blocked-by` and log `<id> | todo | - | unblocked by <ids> | <refs>`. Then take the first eligible `todo` in file order: all `Depends on` must be `verified`. State dependency skips; if none eligible, stop naming blockers, including any `backlog` dependency that needs promotion. Ignore `backlog`, `verified`, `blocked`; stale `doing` recovery follows the loaded claim contract (including its stale window, overrides and legacy claims).
 
 Never invent a phase, label or acceptance criterion. A requested phase absent from the plan is a stop.
 
@@ -72,7 +78,10 @@ Follow user routing for large work: `coder-agent` for non-trivial Go/TypeScript,
 `jj diff --stat` must contain only scoped files, with exactly these exceptions:
 
 - `docs/ux.md` when the phase touches its declared `ui_paths`, to record the screen/component contract.
-- The adjacent test covering a scoped source file, never a new test package or second source file.
+- The adjacent test covering a scoped source file, never a new test package.
+- A new source file beside a scoped one (same package or directory) when a file-length or size limit forces a split: code moves, nothing new is exported, and the phase entry records the file.
+
+Before the gate, lint the changed packages (`make lint`, else `golangci-lint run --new-from-rev=@-`) and fix what it reports; most first gate failures are lint on new code.
 
 ### 4. Verification gate
 
@@ -93,6 +102,14 @@ Every applicable item must produce real output:
 Promotion check: with `go.mod`, run `references/promotion-check.sh` from the module root, passing the gate's build tags (e.g. `-tags embed`). It lists modules the module's own packages and tests import directly that go.mod does not declare direct; a module reached only through a dependency is legitimately indirect. Exit 1 prints the offenders; exit 2 means go failed.
 
 No `go.mod`: skip this command, manually check the ecosystem's direct-dependency list or mark `UNVERIFIED:`. An errored command printing nothing is not a pass. Never directly import a package present only transitively. Functional depth is bounded to 1; structural dependency depth is unbounded. Apply the same ownership rule to support code: a package supporting another must not be imported by a third; enforce with `internal/<owner>/internal/` placement.
+
+**Gate failure.** Record it in `Attempts`, then classify before stopping:
+
+- **Mechanical**: every finding comes from a lint, format or size check (golangci-lint style or complexity rules, gofmt, file or function length) and points into a file the phase diff touches. Record it as `mechanical: <rule>`, repair it now with a behavior-preserving change (extract a helper, rename, split a test into subtests, split a file under step 3's exception), and rerun the whole gate, mutation included. Never mechanical: security findings (gosec), failing tests, goldens, migrations, dependency diffs.
+- **Unrelated**: note `@`'s change-id, `jj new @-`, rerun only the failing check, then `jj edit` back to the phase change. Passing on the parent means the phase caused it: apply the retry rule. Failing there too means it predates the phase:
+  - A govulncheck finding fixed by a later patch release of the same Go minor version, or by a patch release of the affected module that the report names: this rule pre-approves a maintenance phase. Record `P<n> - chore: bump <toolchain|module> to <version>` before this phase, Scope `go.mod`, `go.sum` and the CI files pinning Go, Accept the failing check. Set the phase change aside with `jj new @-`, run the maintenance phase through steps 1-6 in this turn, `jj rebase -s <phase change> -d <maintenance change>`, `jj edit` the phase change and rerun its gate. The pre-existing failure does not count against the phase.
+  - Anything else: record a `todo` phase that restores the check, placed before this one; set this phase `blocked` with `Blocked-by: <that id>`, quote the failing output, clear the claim fields and stop. Step 1 unblocks it once the restoring phase is verified.
+- Otherwise: stop under the retry rule.
 
 **Done when:** acceptance and full check exited 0 with quoted output; mutation red/restored green are quoted where applicable; no skips or golden drift; migration replay/restart succeeded where applicable; dependency changes are planned and promotion output empty; refs/UX gates pass; diff contains only intended changes. Failures follow the persistent retry/hard-stop rules above.
 
@@ -142,4 +159,4 @@ Before creating a plan, load the canonical Shape, Fields, Phase ids, `Refs`, Bug
 
 ## MUST NOT
 
-Do not bypass Invariants or any point-of-action stop above. In particular, never publish, silently expand scope/dependencies, accept unevidenced green, replace drifted goldens, retry a third time on the same diagnosis, or execute an unapproved phase/acceptance criterion.
+Do not bypass Invariants or any point-of-action stop above. In particular, never publish, silently expand scope/dependencies, accept unevidenced green, replace drifted goldens, exceed the retry budget, or execute an unapproved phase/acceptance criterion (step 4's maintenance phase is approved by that rule).
