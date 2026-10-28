@@ -74,7 +74,8 @@ Allocate new ids repo-wide: max+1 across `.claude/plan/*.md` and `.claude/projec
 
 Require closed `Scope`, decidable `Accept`, resolved `Refs` and all canonical fields, no placeholders. Missing PRD requirement: propose an `R<n>` row and ask, never add silently. This verb also records loop discoveries outside its scope.
 
-- Default validation: run acceptance once and quote output. Require a usable exit verdict, not command-not-found; green is legal for refactoring.
+- Default validation: run acceptance once and quote output. Require a usable exit verdict, not command-not-found. It must fail on the current tree; a pass means it decides nothing yet, so rewrite it. Green is legal only for refactoring, and then say so in the phase.
+- When the verdict comes from a matcher (`grep`, a regex, `jq`) over another command's output, run that command alone and show the matcher fits its real output format (anchors, `ok` vs `PASS`, trailing timing). A matcher that can never match blocks the phase forever.
 - Bugfix validation instead: non-empty `Repro`, test file in scope, `Accept` naming a test not yet doing its job. Establish and state which case: absent test (search returns none), or existing test passing despite the bug (wrong path). The implementation loop must later prove a real assertion failure.
 
 Done: one phase affected, collision-free id, no placeholders, refs resolve, type-appropriate validation output quoted.
