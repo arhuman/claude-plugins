@@ -12,11 +12,12 @@ A push publishes every commit between `<bookmark>@<remote>` and the local bookma
 1. **Explicit ask.** Push only on an explicit request in the current exchange. An approval given earlier, or for another repo, does not carry over.
 2. **Fetch, then check the remote did not move.** Run `jj git fetch`. If `jj log -r '<bookmark>@<remote> & ::<bookmark>'` is empty, the remote moved: report what landed (`jj log -r '<bookmark>..<bookmark>@<remote>'`) and stop. Rebase onto it only when asked.
 3. **Audit the outgoing set.** From the repo root, run `scripts/audit-outgoing.sh <bookmark> [remote]` (path relative to this skill). It lists every outgoing commit, runs the repo's `commit-msg` hook on each message (Conventional Commits and 72/100 when there is none), and fails on agent attribution (`Co-Authored-By`, `Generated with`), empty descriptions, private paths (`.claude/`, `.env`) and conflicts. On any `FAIL`, stop. Fix an unpushed commit through `commit` (describe, split), then rerun the audit.
-4. **Show what goes out.** Before pushing, state how many commits the push publishes. When any were not made in this session, list them (hash, author, date, subject): they go public on the strength of this request, and the user must know it.
-5. **Gate.** Run the full gate CI uses (`make ci`, else `make audit`) on the tip being pushed, not `make test` alone.
-6. **Bookmark.** Confirm `jj bookmark list` points at the tip and tracks the remote; create or track explicitly (`jj bookmark create <name>`, `jj bookmark track <name>@<remote>`). Do not push first and retry missing or untracked errors.
-7. **Push and read the server.** `jj git push --bookmark <name>` must print `Move forward bookmark <name> from <old> to <new>`. Read every `remote:` line. `Bypassed rule violations` means branch protection let an admin skip required checks or a pull request: quote it to the user; never report a plain success.
-8. **Verify.** `jj git fetch`, then `<bookmark>@<remote>` must equal the pushed commit.
+4. **Version bump.** When outgoing commits change a plugin or package whose manifest carries the version users update from (e.g. `.claude-plugin/plugin.json`), and no outgoing commit changes that version, add one `chore(<name>): bump version to <x.y.z>` commit through `commit`: minor by default, patch only when every outgoing commit touching it is a security fix, major never without an explicit ask. The repo's own CLAUDE.md policy overrides this default. An outgoing bump already present is never bumped again. Rerun the audit after adding it.
+5. **Show what goes out.** Before pushing, state how many commits the push publishes. When any were not made in this session, list them (hash, author, date, subject): they go public on the strength of this request, and the user must know it.
+6. **Gate.** Run the full gate CI uses (`make ci`, else `make audit`) on the tip being pushed, not `make test` alone.
+7. **Bookmark.** Confirm `jj bookmark list` points at the tip and tracks the remote; create or track explicitly (`jj bookmark create <name>`, `jj bookmark track <name>@<remote>`). Do not push first and retry missing or untracked errors.
+8. **Push and read the server.** `jj git push --bookmark <name>` must print `Move forward bookmark <name> from <old> to <new>`. Read every `remote:` line. `Bypassed rule violations` means branch protection let an admin skip required checks or a pull request: quote it to the user; never report a plain success.
+9. **Verify.** `jj git fetch`, then `<bookmark>@<remote>` must equal the pushed commit.
 
 Under `set -o pipefail`, capture jj output before matching (`out=$(jj bookmark list 2>/dev/null || true)`, then `grep -q ... <<<"$out"`). Piping jj into `grep -q` can give jj a broken-pipe exit 3 and fake a missing bookmark.
 
@@ -38,6 +39,7 @@ Only when the user explicitly asks for it in the current message, typically to r
 ## Done when
 
 - `audit-outgoing.sh` exited 0 on the set that was pushed, and the user saw the count plus any commits not made in this session.
+- Every versioned plugin or package the push changes carries exactly one version bump in the outgoing set.
 - The full gate passed on the pushed tip.
 - `jj git push` exited 0 and moved the bookmark forward (sideways only for a requested rewrite), and any `remote:` bypass lines were relayed.
 - After a fetch, `<bookmark>@<remote>` is the pushed commit.
