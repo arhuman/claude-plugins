@@ -106,6 +106,7 @@ note appended to the tool result rather than a separate hook message.
 | Skill | `_shared` | supported | linked |
 | Hook | `check-claude-md` | supported | supported (via `plugins/10x-hooks.js`) |
 | Hook | `check-dashes` | supported | supported (via `plugins/10x-hooks.js`) |
+| Hook | `check-inplace` | supported | supported (via `plugins/10x-hooks.js`) |
 | Hook | `check-refs` | supported | supported (via `plugins/10x-hooks.js`) |
 | MCP | `pal` | supported | supported |
 | MCP | `tree_sitter` | supported | unsupported |
@@ -136,13 +137,13 @@ agent declares; OpenCode leaves them to be read on demand:
 
 | Agent | Claude Code | OpenCode | Preloaded on Claude Code |
 |---|---|---|---|
-| `coder-agent` | 3,211 | 695 | thinking, lang-go, lang-typescript, makefile |
-| `conform-agent` | 5,372 | 501 | conform, thinking, lang-go |
+| `coder-agent` | 3,303 | 695 | thinking, lang-go, lang-typescript, makefile |
+| `conform-agent` | 5,464 | 501 | conform, thinking, lang-go |
 | `docker-agent` | 1,225 | 101 | docker |
 | `documentation-agent` | 2,164 | 560 | documentation-rules |
-| `fixer-agent` | 436 | 436 | none |
-| `simplify-agent` | 4,495 | 1,085 | thinking, documentation-rules, senior-voice |
-| `tester-agent` | 1,283 | 272 | thinking, testing |
+| `fixer-agent` | 471 | 471 | none |
+| `simplify-agent` | 4,587 | 1,085 | thinking, documentation-rules, senior-voice |
+| `tester-agent` | 1,375 | 272 | thinking, testing |
 
 A skill invoked on demand costs its `SKILL.md` body, from 320 tokens
 (`lang-typescript`) to 3,144 (`conform`); `--report` lists every skill.

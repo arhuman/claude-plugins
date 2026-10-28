@@ -1,5 +1,5 @@
 #!/bin/sh
-# Feed fixed PostToolUse payloads to the three hooks and assert exit code and
+# Feed fixed PostToolUse payloads to the four hooks and assert exit code and
 # output. The degraded-dependency cases are the point: the hooks were silently
 # inert without jq, so "reports nothing" must be a test failure, not a pass.
 #
@@ -126,6 +126,51 @@ check "refs/no-reference-silent" check-refs.sh 0 "" <<EOF
 {"tool_name":"Write","tool_input":{"file_path":"$WORK/noscript.md","content":"ignored"}}
 EOF
 
+# --- check-inplace.sh ------------------------------------------------------
+#
+# The files are taken from the command's words (globs expanded) or, with none,
+# from what changed under cwd in the last minute. The Go cases need gofmt:
+# without it the hook must say so instead of passing silently.
+
+ip="$WORK/ip"
+mkdir -p "$ip"
+printf 'package x\n\nfunc {\n' > "$ip/broken.go"
+printf 'package x\n' > "$ip/ok.go"
+printf 'caf\351\n' > "$ip/latin1.md"
+
+if command -v gofmt >/dev/null 2>&1; then
+  go_exit=2 go_text='broken.go'
+else
+  go_exit=0 go_text='gofmt missing'
+fi
+
+check "inplace/not-inplace-silent" check-inplace.sh 0 "" <<EOF
+{"tool_name":"Bash","cwd":"$ip","tool_input":{"command":"sed -n 1p broken.go"}}
+EOF
+
+check "inplace/go-parse-error" check-inplace.sh "$go_exit" "$go_text" <<EOF
+{"tool_name":"Bash","cwd":"$ip","tool_input":{"command":"perl -pi -e 's/a/b/' broken.go"}}
+EOF
+
+check "inplace/go-glob-expanded" check-inplace.sh "$go_exit" "$go_text" <<EOF
+{"tool_name":"Bash","cwd":"$ip","tool_input":{"command":"perl -i.bak -pe 's/a/b/' *.go"}}
+EOF
+
+check "inplace/go-clean-silent" check-inplace.sh 0 "" <<EOF
+{"tool_name":"Bash","cwd":"$ip","tool_input":{"command":"sed -E -i '' 's/a/b/' ok.go"}}
+EOF
+
+check "inplace/invalid-utf8" check-inplace.sh 2 'invalid UTF-8' <<EOF
+{"tool_name":"Bash","cwd":"$ip","tool_input":{"command":"sed -i 's/x/y/' latin1.md"}}
+EOF
+
+ip2="$WORK/ip2"
+mkdir -p "$ip2"
+printf 'caf\351\n' > "$ip2/fresh.md"
+check "inplace/xargs-fallback" check-inplace.sh 2 'fresh.md: invalid UTF-8' <<EOF
+{"tool_name":"Bash","cwd":"$ip2","tool_input":{"command":"find . -name '*.md' | xargs sed -i 's/x/y/'"}}
+EOF
+
 # --- invoked through a symlink ---------------------------------------------
 #
 # install-opencode.sh links hooks into a config tree, and dirname "$0" is then
@@ -162,7 +207,7 @@ for cmd in sh grep sed awk cat dirname git mktemp rm column; do
   p=$(command -v "$cmd" 2>/dev/null) && ln -sf "$p" "$no_python_dir/$cmd"
 done
 
-for hook in check-dashes.sh check-refs.sh check-claude-md.sh; do
+for hook in check-dashes.sh check-refs.sh check-claude-md.sh check-inplace.sh; do
   out=$(PATH="$no_python_dir" sh "$HOOKS/$hook" 2>&1 <<EOF
 {"tool_name":"Write","tool_input":{"file_path":"$md","content":"a line with an — dash"}}
 EOF
@@ -259,6 +304,12 @@ EOF
 # Any other tool is none of the hooks' business, whatever its args carry.
 oc_check "other-tool-ignored" "" <<EOF
 {"tool":"bash","args":{"command":"echo — dash"},"output":"tool result"}
+EOF
+
+# Bash maps to the Bash matcher. The adapter sends no cwd, so the path is
+# absolute here.
+oc_check "bash-inplace-invalid-utf8" 'invalid UTF-8' <<EOF
+{"tool":"bash","args":{"command":"sed -i 's/x/y/' $WORK/ip/latin1.md"},"output":"tool result"}
 EOF
 
 # The message names the hook, so the model can tell a check from the tool's

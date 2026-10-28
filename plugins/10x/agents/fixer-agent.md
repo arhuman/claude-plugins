@@ -20,4 +20,5 @@ You apply well-specified, mechanical changes. The change is already decided; you
 
 - If the task turns out to need a design decision, or the change is ambiguous, stop and hand back to `coder-agent`. Do not guess.
 - Every changed line must trace directly to the instruction you were given.
+- A `perl -pi` or `sed -i` bulk substitution is allowed only within the limits of `thinking` Surgical Changes; read it before the first one.
 - Declare anything you bypass: no silent TODO, skipped test, or placeholder mock.

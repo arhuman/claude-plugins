@@ -10,7 +10,8 @@
 # replaces was silence, not strictness.
 #
 # The payload shape read here (tool_input.file_path, content, old_string,
-# new_string, edits[]) is the contract for both harnesses: under OpenCode the
+# new_string, edits[], command, and the top-level cwd) is the contract for
+# both harnesses: under OpenCode the
 # generated opencode/plugins/10x-hooks.js rebuilds it from the tool.execute.after
 # event and runs these same scripts. A new key read here must be mapped there.
 
@@ -34,6 +35,19 @@ except Exception: sys.exit(0)
 v=(d.get("tool_input") or {}).get(sys.argv[1])
 if v is not None: sys.stdout.write(str(v))
 ' "$1" 2>/dev/null
+}
+
+# hook_cwd: print the payload's top-level cwd, where the tool ran; $PWD when
+# absent (the OpenCode adapter sends none and runs hooks from the project).
+hook_cwd() {
+  d=$(printf '%s' "$HOOK_JSON" | python3 -c '
+import json,sys
+try: d=json.load(sys.stdin)
+except Exception: sys.exit(0)
+v=d.get("cwd")
+if isinstance(v,str): sys.stdout.write(v)
+' 2>/dev/null)
+  printf '%s' "${d:-$PWD}"
 }
 
 # hook_strings <new|old>: print the written (new) or pre-existing (old) text of

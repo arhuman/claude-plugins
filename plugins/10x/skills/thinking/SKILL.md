@@ -29,6 +29,8 @@ Bias toward caution; use judgment for trivial tasks.
 
 Every changed line must trace to the request. Match existing style; do not improve adjacent code/comments/formatting or refactor unbroken code. Mention unrelated dead code without deleting it. Remove only imports, variables and functions your changes orphaned, unless broader cleanup was requested.
 
+Edit files with the Edit tool. Shell in-place edits (`perl -pi`, `sed -i`) are only for single-line, ASCII-only substitutions across many files, after `grep` previewed the match set; never for multi-line or structural changes or lines carrying non-ASCII text. Then read the diff of every touched file: the `check-inplace` hook catches broken Go and invalid UTF-8, not garbled lines that still parse.
+
 ## 4. Goal-Driven Execution
 
 Define verifiable goals and loop until verified: validation requires invalid-input tests; bugfixes require a reproducer made green; refactors require tests passing before and after.

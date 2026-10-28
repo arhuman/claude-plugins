@@ -208,7 +208,7 @@ const PLUGIN_ROOT = resolve(dirname(SELF), "..", "..", "plugins", "10x");
 const MANIFEST = join(PLUGIN_ROOT, "hooks", "hooks.json");
 
 // OpenCode tool id to Claude Code tool name, and the argument names the
-// hooks read (lib.sh: file_path, content, old_string, new_string). The path
+// hooks read (lib.sh: file_path, content, old_string, new_string, command). The path
 // argument is `path` in OpenCode 2.x and was `filePath` before it, so both
 // spellings are accepted: the first one present wins.
 const TOOLS = {
@@ -222,6 +222,7 @@ const TOOLS = {
       newString: "new_string",
     },
   },
+  bash: { name: "Bash", args: { command: "command" } },
 };
 
 function payloadFor(tool, input) {
@@ -231,7 +232,7 @@ function payloadFor(tool, input) {
   for (const [from, to] of Object.entries(spec.args)) {
     if (input[from] !== undefined && toolInput[to] === undefined) toolInput[to] = input[from];
   }
-  if (toolInput.file_path === undefined) return null;
+  if (toolInput.file_path === undefined && toolInput.command === undefined) return null;
   return { tool_name: spec.name, tool_input: toolInput };
 }
 
