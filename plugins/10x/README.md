@@ -137,8 +137,8 @@ agent declares; OpenCode leaves them to be read on demand:
 
 | Agent | Claude Code | OpenCode | Preloaded on Claude Code |
 |---|---|---|---|
-| `coder-agent` | 3,303 | 695 | thinking, lang-go, lang-typescript, makefile |
-| `conform-agent` | 5,464 | 501 | conform, thinking, lang-go |
+| `coder-agent` | 3,313 | 695 | thinking, lang-go, lang-typescript, makefile |
+| `conform-agent` | 5,474 | 501 | conform, thinking, lang-go |
 | `docker-agent` | 1,225 | 101 | docker |
 | `documentation-agent` | 2,164 | 560 | documentation-rules |
 | `fixer-agent` | 471 | 471 | none |

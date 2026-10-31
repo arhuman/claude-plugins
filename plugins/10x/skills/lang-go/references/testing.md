@@ -118,7 +118,7 @@ Add `//go:build integration` plus a blank line before package when tests need a 
 
 ## HTTP Handler Testing
 
-Test Gin without a live server: `httptest.NewRecorder`, `httptest.NewRequest`, required auth headers, `router.ServeHTTP(w, req)`, then assert status and decoded body.
+Test handlers (stdlib mux or Gin engine) without a live server: `httptest.NewRecorder`, `httptest.NewRequest`, required auth headers, `router.ServeHTTP(w, req)`, then assert status and decoded body.
 
 ## Environment Variables in Tests
 

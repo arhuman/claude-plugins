@@ -17,7 +17,7 @@ Load the owner for each changed concern; apply its gates:
 | Test contracts, coverage, benchmarks, fuzzing | [testing](references/testing.md) |
 | Packages, composition root, config, modules/builds | [project structure](references/project-structure.md) |
 | Wrapping, sentinels, custom errors, GORM context | [errors](references/errors.md) |
-| Gin, GORM, JWT, CORS, server setup | [API](references/api.md) |
+| Router choice (stdlib `ServeMux` or Gin), GORM, JWT, CORS, server setup | [API](references/api.md) |
 | swaggo annotations, generation, UI, security | [OpenAPI](references/openapi.md) |
 | Cobra, CLI layout/output | [CLI](references/cli.md) |
 | URIs, HTTP semantics, status, caching | [REST](references/rest-patterns.md) |

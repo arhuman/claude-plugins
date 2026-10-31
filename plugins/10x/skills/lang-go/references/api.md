@@ -12,9 +12,11 @@ Use `Server` in `internal/api/server.go` to hold the router, services/repositori
 
 Choose modules only for needed capabilities; the entry skill's minimal-dependency policy applies.
 
-### Web Framework
+### Router and Web Framework
 
-`github.com/gin-gonic/gin`; `github.com/gin-contrib/cors`; `github.com/gin-contrib/pprof`.
+Default to the standard library: Go 1.22+ `net/http` `ServeMux` with method and path patterns (`mux.HandleFunc("GET /users/{id}", h)`, `r.PathValue("id")`) and plain `func(http.Handler) http.Handler` middleware. It fits server-rendered and HTMX apps, and any service whose handlers mostly render pages or stream files rather than bind JSON.
+
+Use Gin (`github.com/gin-gonic/gin`; `github.com/gin-contrib/cors`; `github.com/gin-contrib/pprof`) for JSON APIs that rely on its binding and validation, route groups and middleware ecosystem, or when the repo already uses it. Record the choice in an ADR and use one router per binary. A library shared across products stays `net/http`-native and confines Gin to a thin adapter package.
 
 ### Database/ORM
 
@@ -88,7 +90,7 @@ Production: `Development: false`, `DisableCaller: true`, `DisableStacktrace: fal
 
 ### Standard CORS Setup for APIs
 
-Use gin-contrib/cors before routes. Methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. Headers: Origin, Content-Length, Content-Type, Authorization.
+Same-origin server-rendered apps need no CORS. Otherwise register it before routes: gin-contrib/cors with Gin, a middleware wrapping the mux with the standard library. Methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. Headers: Origin, Content-Length, Content-Type, Authorization.
 
 ### Production Considerations
 
