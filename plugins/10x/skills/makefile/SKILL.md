@@ -25,7 +25,7 @@ Load by task:
 - Use `docker compose` v2.
 - Go: stamp `VERSION`/`COMMIT`/`BUILD_DATE` via ldflags; date is commit timestamp for reproducibility. Load version package reference for the `debug.ReadBuildInfo` fallback used by `go install`.
 - Go: `cover` fails below `COVER_MIN` (default in Go reference); `audit` depends on `cover`.
-- Tools use shared pins, matching CI/config schema; bootstrap before use (`@which golangci-lint > /dev/null || $(MAKE) tools`).
+- Tools use shared pins, matching CI/config schema; before each use, reinstall when the installed version differs from the pin, not only when the tool is absent.
 
 ## MUST NOT
 
