@@ -1,0 +1,24 @@
+schema_version: "1.0"
+name: seo-audit-site
+description: 'seo vs design-system and lang-html: SEO report remediation'
+tags: [trigger]
+execution:
+  prompt: |
+    An SEOptimer report gives my Hugo blog an F in Usability and flags missing Twitter cards, a short title and a plain email address. Check the site for these SEO problems and fix them in the templates.
+  max_turns: 3
+  timeout_seconds: 120
+  allowed_tools: [Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: fires-seo
+    tool: Skill
+    input_match: '"10x:seo"'
+    weight: 2
+  - type: tool_used
+    name: not-design-system
+    tool: Skill
+    input_match: '"10x:design-system"'
+    min: 0
+    max: 0
+    arm: both

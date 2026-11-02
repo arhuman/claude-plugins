@@ -1,0 +1,107 @@
+6 page(s) audited, 46 distinct finding(s)
+
+## On-Page SEO
+FAIL img-alt                1 <img> without alt: ['/img/tomato.png']
+     fix: descriptive alt; alt="" only for decorative images  [https://test.example/post/my_post/]
+FAIL meta-description       missing meta description
+     fix: 120-160 chars summarising the page  [https://test.example/about/]
+FAIL structured-data        JSON-LD does not parse
+     fix: emit JSON with jsonify, never by hand  [https://test.example/post/my_post/]
+WARN canonical              canonical href is not absolute
+     fix: use an absolute https URL  [https://test.example/about/]
+WARN content-amount         3 page(s) under 500 words: ['/about/ (13)', '/ (26)', '/post/my_post/ (7)']
+     fix: 500+ words on pages meant to rank; merge or noindex thin pages  [site]
+WARN h1                     2 <h1> on the page
+     fix: exactly one <h1> stating the page topic  [https://test.example/about/]
+WARN heading-order          h1 followed by h4 ('Articles récents')
+     fix: do not skip levels; restyle with CSS instead of picking a smaller tag  [https://test.example/]
+WARN headings               no H2-H6 subheadings
+     fix: structure content with <h2>/<h3>  [https://test.example/about/]
+WARN hreflang               hreflang set without x-default
+     fix: add an x-default alternate  [https://test.example/]
+WARN hreflang-consistency   hreflang codes differ: pages ['en', 'fr'] vs sitemap ['en', 'fr-fr', 'x-default']
+     fix: emit the same language codes in <head> and sitemap  [site]
+WARN structured-data        no JSON-LD structured data
+     fix: WebSite/Organization on home, BlogPosting/Article on posts, BreadcrumbList on deep pages  [2 pages, e.g. https://test.example/about/]
+WARN title-length           title is 5 chars: 'About'
+     fix: aim for 50-60 chars, keyword first, site name as suffix  [https://test.example/about/]
+INFO keyword-consistency    top body terms ['bienvenue', 'articles', 'récents', 'contact', 'ecrire'] barely appear in title/description/headings
+     fix: use the page's main keywords in title, description and headings  [https://test.example/]
+INFO meta-keywords          meta keywords present
+     fix: ignored by search engines; harmless  [https://test.example/about/]
+INFO noindex                noindex, 404 or pager page: content checks skipped
+     fix: confirm each one must stay out of search  [3 pages, e.g. https://test.example/404.html]
+
+## Links
+FAIL broken-links           3 internal link(s) to missing files: ['/Missing_Page/', '/feed.xml', '/missing/']
+     fix: fix the link or the target slug  [https://test.example/]
+FAIL htmx-href              <a hx-get='/more'> without href
+     fix: keep a real href to the full-page URL; hx-get or hx-boost enhances it  [https://test.example/post/my_post/]
+WARN anchor-text            1 link(s) with no accessible text: ['/feed.xml']
+     fix: add visible text or aria-label (icon links)  [https://test.example/]
+WARN crawlable-links        <a> without real href ('Menu')
+     fix: every navigation link needs an href crawlers can follow  [https://test.example/]
+WARN htmx-lazy-content      <div> loads content on 'revealed': crawlers will not see it
+     fix: render indexable content server side; lazy-load only secondary widgets  [https://test.example/post/my_post/]
+INFO anchor-text            generic anchor text: ['click here']
+     fix: describe the target in the link text  [https://test.example/]
+INFO friendly-urls          2 URL(s) with underscores, capitals or > 115 chars: ['/Missing_Page/', '/post/my_post/']
+     fix: lowercase hyphenated slugs for new pages; renaming live URLs needs 301 redirects  [site]
+
+## Usability
+FAIL viewport               no responsive viewport meta
+     fix: <meta name=viewport content="width=device-width,initial-scale=1">  [3 pages, e.g. https://test.example/404.html]
+WARN email-privacy          plain email address in HTML: ['contact@example.org', 'jean.dupont@example.org']
+     fix: contact form, or assemble the address client side (cloaked mailto)  [https://test.example/]
+WARN favicon                no <link rel=icon>
+     fix: declare favicon (svg + png 180 apple-touch-icon)  [5 pages, e.g. https://test.example/404.html]
+WARN font-size              /style.css: base font 14px
+     fix: base font >= 16px on mobile (override in project CSS)  [site]
+WARN legible-fonts          /style.css: font-size below 12px: ['.meta,\n.date 10px']
+     fix: min 12px for any text, 14px+ for metadata  [site]
+WARN viewport               viewport blocks zoom
+     fix: drop user-scalable=no and maximum-scale  [https://test.example/about/]
+INFO iframes                1 iframe(s)
+     fix: keep indexable content out of iframes  [https://test.example/about/]
+
+## Performance
+WARN deprecated-html        deprecated tags: {'center': 1, 'font': 2}
+     fix: replace with semantic HTML + CSS  [https://test.example/post/my_post/]
+WARN font-display           Google Fonts without display=swap: https://fonts.googleapis.com/css?family=Open+Sans
+     fix: append &display=swap or self-host with font-display: swap  [https://test.example/]
+WARN img-dimensions         <img> without width/height: /img/tomato.png
+     fix: set width and height to avoid layout shift (CLS)  [https://test.example/post/my_post/]
+WARN render-blocking-js     blocking scripts in <head>: ['/js/app.js']
+     fix: add defer (or async for independent scripts)  [https://test.example/post/my_post/]
+INFO image-format           1 JPEG/PNG/GIF images
+     fix: serve WebP/AVIF with srcset  [https://test.example/post/my_post/]
+
+## Social
+FAIL og-image               og:image is not absolute
+     fix: absolute https URL, 1200x630  [https://test.example/]
+WARN og-locale              og:locale 'fr' not in ll_CC form
+     fix: e.g. fr_FR, en_US  [https://test.example/]
+WARN open-graph             missing og:title
+     fix: emit full Open Graph set from page data  [2 pages, e.g. https://test.example/about/]
+WARN open-graph             missing og:description
+     fix: emit full Open Graph set from page data  [2 pages, e.g. https://test.example/about/]
+WARN open-graph             missing og:image
+     fix: emit full Open Graph set from page data  [2 pages, e.g. https://test.example/about/]
+WARN open-graph             missing og:url
+     fix: emit full Open Graph set from page data  [2 pages, e.g. https://test.example/about/]
+WARN open-graph             missing og:type
+     fix: emit full Open Graph set from page data  [2 pages, e.g. https://test.example/about/]
+WARN twitter-card           no twitter:card
+     fix: twitter:card=summary_large_image (falls back to og: for the rest)  [3 pages, e.g. https://test.example/about/]
+
+## GEO
+WARN article-schema         article page without Article/BlogPosting JSON-LD
+     fix: BlogPosting with headline, datePublished, dateModified, author, image  [https://test.example/post/my_post/]
+WARN pubdate                article without machine-readable publication date
+     fix: datePublished in JSON-LD and article:published_time  [https://test.example/post/my_post/]
+INFO llms-txt               no /llms.txt
+     fix: publish llms.txt: site summary + key page links in Markdown  [site]
+
+## Technology
+INFO analytics              no analytics detected
+     fix: add privacy-friendly analytics if traffic matters  [site]

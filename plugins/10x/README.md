@@ -21,6 +21,7 @@ Plugin to make Claude Code a 10x more efficient
 | Skill | `conform` | Drift from the engineering standard: `standard.yml` plus the portable runner |
 | Skill | `design-system` | UX/frontend design system for SSR + HTMX UIs: quality grid, CSS token contract, component and accessibility rules, UI CI guards |
 | Skill | `ci` | GitHub Actions CI/CD, release automation, coverage gates |
+| Skill | `seo` | SEO audit and fix for static HTML, SSR/HTMX and Hugo sites: bundled Go auditor, rendered mobile checks, fixes at the source |
 | Skill | `commit` | jj (Jujutsu) commit mechanics, hardened against recurring jj/commitlint failures |
 | Skill | `push` | Push protocol: audits every outgoing commit (messages, attribution, private paths), not only the session's, then pushes forward only |
 | Skill | `thinking` | Thinking guidelines to reduce common coding mistakes |
@@ -100,6 +101,7 @@ note appended to the tool result rather than a separate hook message.
 | Skill | `manual` | supported | linked |
 | Skill | `push` | supported | linked |
 | Skill | `senior-voice` | supported | linked |
+| Skill | `seo` | supported | linked |
 | Skill | `steering` | supported | linked |
 | Skill | `testing` | supported | linked |
 | Skill | `thinking` | supported | linked |
