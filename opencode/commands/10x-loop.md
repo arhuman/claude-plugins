@@ -7,7 +7,7 @@ description: 'Run one plan-driven work turn: take the first todo phase from the 
 
 - No argument: take the first `todo` phase in the resolved plan file.
 - `--chain N`: allow up to N phases in one run, stopping at the first that is not green. Each phase runs in a fresh subagent and stays its own commit with its own evidence, so no `/clear` is needed between phases.
-- `--chain all`: same, bounded by the number of eligible `todo` phases at start.
+- `--chain all`: same, for every eligible `todo` phase, including phases recorded during the run when they stay in the plan's scope and need no test-contract change.
 - `<phase-id>`: run that specific phase, provided it exists in the plan and its dependencies are `verified`.
 - `bootstrap`: no plan yet; mine the repo for existing plans and write one, then stop for approval.
 - `--plan <path>`: use this plan file instead of the default resolution. Required when several plans carry `todo` phases.
